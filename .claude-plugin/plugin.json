@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "project-kit",
+  "version": "0.1.0",
+  "description": "Idea to launched product: ideate, propose, design, judge, build and ship, with mechanical gates between phases.",
+  "author": {
+    "name": "miricoder",
+    "email": "miriaiml2023@gmail.com"
+  },
+  "homepage": "https://github.com/miricoder/project-kit",
+  "repository": "https://github.com/miricoder/project-kit",
+  "license": "MIT",
+  "keywords": [
+    "planning",
+    "pipeline",
+    "judge",
+    "devops",
+    "product"
+  ],
+  "skills": [
+    "./skills"
+  ]
+}

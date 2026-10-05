@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "project-kit",
+  "description": "Project Kit \u2014 an end-to-end product pipeline for Claude Code: ideate, propose, design, judge, build and ship.",
+  "owner": {
+    "name": "miricoder",
+    "email": "miriaiml2023@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "project-kit",
+      "source": "./",
+      "description": "Idea to launched product: ideate, propose, design, judge, build and ship, with mechanical gates between phases.",
+      "version": "0.1.0"
+    }
+  ]
+}
