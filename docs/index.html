@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Project Kit — pipeline</title>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f9f9f7; --surface:#fcfcfb;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --rule:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --accent:#2a78d6;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b; --idle:#898781;
+}
+@media (prefers-color-scheme:dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --plane:#0d0d0d; --surface:#1a1a19;
+    --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,.10);
+    --accent:#3987e5;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19;
+  --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,.10);
+  --accent:#3987e5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);
+  font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 72px}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;
+  justify-content:space-between;border-bottom:1px solid var(--grid);padding-bottom:16px}
+h1{font-size:25px;margin:0;letter-spacing:-.01em}
+h2{font-size:19px;margin:40px 0 12px;letter-spacing:-.01em}
+h3{font-size:15px;margin:24px 0 8px}
+p{color:var(--ink-2);margin:10px 0}
+a{color:var(--accent)}
+.ver{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.pages{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 0}
+nav.pages a{display:inline-block;padding:6px 12px;border:1px solid var(--ring);
+  border-radius:999px;text-decoration:none;font-size:13px;background:var(--surface)}
+nav.pages a[aria-current="page"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:16px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-2{grid-template-columns:1fr 1fr}}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  font-weight:600;white-space:nowrap}
+td.num,th.num{font-variant-numeric:tabular-nums}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+code{font-size:.9em;background:var(--surface);border:1px solid var(--ring);
+  border-radius:4px;padding:.1em .35em}
+pre{background:var(--surface);border:1px solid var(--ring);border-radius:8px;
+  padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.55}
+pre code{border:0;background:none;padding:0}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  white-space:nowrap}
+.badge .dot{width:9px;height:9px;border-radius:2px;flex:none}
+.s-good .dot{background:var(--good)} .s-warning .dot{background:var(--warning)}
+.s-serious .dot{background:var(--serious)} .s-critical .dot{background:var(--critical)}
+.s-idle .dot{background:var(--idle)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 0;padding:0;list-style:none}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px 16px}
+.tile .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  font-weight:600}
+.tile .v{font-size:30px;line-height:1.15;margin-top:4px;letter-spacing:-.02em}
+.steps{display:flex;gap:2px;min-width:132px}
+.steps i{height:8px;flex:1;border-radius:1px;background:var(--grid)}
+.steps i.done{background:var(--good)} .steps i.now{background:var(--warning)}
+.steps i.stop{background:var(--critical)}
+.muted{color:var(--muted);font-size:12.5px}
+.gate{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--critical);border:1px solid var(--critical);
+  border-radius:4px;padding:1px 5px}
+figure{margin:14px 0}
+figcaption{font-size:12.5px;color:var(--muted);margin-top:8px}
+svg{max-width:100%;height:auto;display:block}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--grid);
+  font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>Project Kit</h1>
+  <span class="ver">v0.1.0 &middot; generated</span>
+</header>
+<nav class="pages"><a href="index.html" aria-current="page">Pipeline</a><a href="project_kit_know_how.html">Know-how &amp; projects</a></nav>
+
+<h2>The pipeline</h2>
+<p>Eleven phases, each owned by one skill. A phase hands off to the next only after
+recording what it produced; the next skill reads that record and <strong>refuses</strong> if a
+precondition is unmet. Gates are decided by scripts, never asserted by a model.</p>
+<figure><svg viewBox="0 0 880 178" role="img" aria-label="Pipeline flow: ideate to proposal to design to handover to verdict, which back-propagates to earlier phases or passes the judge gate into the build phases."><defs><marker id="pk-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs><g fill="none" stroke="currentColor" stroke-width="2" color="var(--rule)" marker-end="url(#pk-arrow)"><path d="M172 60 H200"/><path d="M328 60 H356"/><path d="M484 60 H512"/><path d="M640 60 H668"/><path d="M708 94 V140 H120 V84"/><path d="M772 60 H812 V60"/></g><g><rect x="40" y="38" width="132" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/><text x="106" y="65" text-anchor="middle" font-size="14" font-weight="600" font-family="system-ui,sans-serif" fill="var(--ink)">/ideate</text></g><text x="106" y="27" text-anchor="middle" font-size="10.5" font-family="system-ui,sans-serif" fill="var(--accent)" font-weight="600">checkpoint</text><g><rect x="196" y="38" width="132" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/><text x="262" y="65" text-anchor="middle" font-size="14" font-weight="600" font-family="system-ui,sans-serif" fill="var(--ink)">/proposal</text></g><text x="262" y="27" text-anchor="middle" font-size="10.5" font-family="system-ui,sans-serif" fill="var(--accent)" font-weight="600">checkpoint</text><g><rect x="352" y="38" width="132" height="44" rx="8" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.5"/><text x="418" y="65" text-anchor="middle" font-size="14" font-weight="600" font-family="system-ui,sans-serif" fill="var(--ink)">/design</text></g><g><rect x="508" y="38" width="132" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/><text x="574" y="65" text-anchor="middle" font-size="14" font-weight="600" font-family="system-ui,sans-serif" fill="var(--ink)">/handover</text></g><text x="574" y="27" text-anchor="middle" font-size="10.5" font-family="system-ui,sans-serif" fill="var(--accent)" font-weight="600">checkpoint</text><g><rect x="664" y="38" width="132" height="44" rx="8" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/><text x="730" y="65" text-anchor="middle" font-size="14" font-weight="600" font-family="system-ui,sans-serif" fill="var(--ink)">/verdict</text></g><text x="730" y="27" text-anchor="middle" font-size="10.5" font-family="system-ui,sans-serif" fill="var(--accent)" font-weight="600">checkpoint</text><text x="414" y="163" text-anchor="middle" font-size="11.5" font-family="system-ui,sans-serif" fill="var(--muted)">back-propagate &mdash; bounded by a max-round limit</text><g><rect x="812" y="38" width="56" height="44" rx="8" fill="var(--surface)" stroke="var(--critical)" stroke-width="1.5"/><text x="840" y="59" text-anchor="middle" font-size="10" font-weight="700" font-family="system-ui,sans-serif" fill="var(--critical)">JUDGE</text><text x="840" y="71" text-anchor="middle" font-size="10" font-weight="700" font-family="system-ui,sans-serif" fill="var(--critical)">GATE</text></g><text x="840" y="100" text-anchor="middle" font-size="11" font-family="system-ui,sans-serif" fill="var(--muted)">to build</text></svg>
+<figcaption>Wave 1. Checkpoint phases pause for you in <code>auto</code> mode.
+<code>/verdict</code> either back-propagates for another round or passes the judge gate,
+which <code>/initiate</code> cannot start without.</figcaption></figure>
+
+<h2>Skills</h2>
+<div class="grid cols-2"><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/pipeline</code></h3><span class="badge s-good"><span class="dot" aria-hidden="true"></span>✔ shipped</span></div>
+  <p style="margin:8px 0 10px"><strong>The conductor &mdash; not a phase.</strong>
+  Drive and inspect the Project Kit product pipeline — report which phase a project is in, what may run next, and run or offer the next skill. Also sets the run mode (manual, auto, yolo) and the budget cap. Use when the user says /pipeline, &quot;what&#x27;s next&quot;, &quot;where are we&quot;, &quot;resume this project&quot;, &quot;set mode to yolo&quot;, &quot;run the pipeline&quot;, or asks about a project&#x27;s phase, gate or judge status.</p>
+  <div class="muted"><strong>Reads &amp; writes</strong>
+  <code>pipeline.json</code>, <code>~/.claude/project-kit/registry.json</code></div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/ideate</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> the user&#x27;s idea<br>
+  <strong>Writes</strong> <code>docs/research.md</code></div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/proposal</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> <code>research.md</code><br>
+  <strong>Writes</strong> <code>docs/proposal.md</code></div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/design</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> <code>proposal.md</code><br>
+  <strong>Writes</strong> <code>docs/spec.md</code>, <code>docs/acceptance.feature</code></div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/handover</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> <code>spec.md</code><br>
+  <strong>Writes</strong> <code>judge/&lt;run&gt;/case.json</code>, <code>brief.md</code>, verdicts</div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/verdict</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> verdicts<br>
+  <strong>Writes</strong> <code>docs/ruling.md</code>, recorded judge ruling</div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/initiate</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px"><span class="gate">judge gate</span> Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> <code>spec.md</code>, ruling<br>
+  <strong>Writes</strong> <code>docs/backlog.md</code></div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/build</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> backlog slice<br>
+  <strong>Writes</strong> code + unit tests</div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/devops</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> the working tree<br>
+  <strong>Writes</strong> branches, PRs, releases, tags</div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/test</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> code + <code>acceptance.feature</code><br>
+  <strong>Writes</strong> test report</div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/security</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px">Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> code + deps<br>
+  <strong>Writes</strong> threat model, audit</div>
+</div><div class="card">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+    <h3 style="margin:0"><code>/launch</code></h3><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ planned</span></div>
+  <p style="margin:8px 0 10px"><span class="gate">security gate</span> Declared in pipeline state; its skill has not shipped yet.</p>
+  <div class="muted"><strong>Reads</strong> a green release<br>
+  <strong>Writes</strong> soft launch, rollback drill</div>
+</div></div>
+
+<h2>How phases interact</h2>
+<p>Each row is a phase: what it consumes, what it produces, and the gate that guards it.
+Artifacts are the contract between phases &mdash; a missing artifact is why a skill refuses.</p>
+<div class="scroll"><table>
+<thead><tr><th class="num">#</th><th>Phase</th><th>Reads</th><th>Writes</th><th>Gate before</th><th>Status</th></tr></thead>
+<tbody><tr><td class="num">1</td><td><code>/ideate</code></td><td>the user&#x27;s idea</td><td><code>docs/research.md</code></td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">2</td><td><code>/proposal</code></td><td><code>research.md</code></td><td><code>docs/proposal.md</code></td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">3</td><td><code>/design</code></td><td><code>proposal.md</code></td><td><code>docs/spec.md</code>, <code>docs/acceptance.feature</code></td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">4</td><td><code>/handover</code></td><td><code>spec.md</code></td><td><code>judge/&lt;run&gt;/case.json</code>, <code>brief.md</code>, verdicts</td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">5</td><td><code>/verdict</code></td><td>verdicts</td><td><code>docs/ruling.md</code>, recorded judge ruling</td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">6</td><td><code>/initiate</code></td><td><code>spec.md</code>, ruling</td><td><code>docs/backlog.md</code></td><td><span class=gate>judge</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">7</td><td><code>/build</code></td><td>backlog slice</td><td>code + unit tests</td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">8</td><td><code>/devops</code></td><td>the working tree</td><td>branches, PRs, releases, tags</td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">9</td><td><code>/test</code></td><td>code + <code>acceptance.feature</code></td><td>test report</td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">10</td><td><code>/security</code></td><td>code + deps</td><td>threat model, audit</td><td><span class=muted>&mdash;</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr><tr><td class="num">11</td><td><code>/launch</code></td><td>a green release</td><td>soft launch, rollback drill</td><td><span class=gate>security</span></td><td><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></td></tr></tbody></table></div>
+<ul class="legend"><li><span class="badge s-good"><span class="dot" aria-hidden="true"></span>✔ complete</span></li><li><span class="badge s-warning"><span class="dot" aria-hidden="true"></span>◐ in progress</span></li><li><span class="badge s-critical"><span class="dot" aria-hidden="true"></span>■ blocked</span></li><li><span class="badge s-idle"><span class="dot" aria-hidden="true"></span>○ not started</span></li></ul>
+
+<h2>Run modes</h2>
+<div class="scroll"><table><thead><tr><th>Mode</th><th>Behaviour</th><th>Stops</th></tr></thead><tbody><tr><td><code>manual</code></td><td>Stops after <strong>every</strong> phase and offers a menu</td><td>every phase</td></tr><tr><td><code>auto <span class='muted'>(default)</span></code></td><td>Advances between phases, stopping at the four checkpoints</td><td>4 checkpoints</td></tr><tr><td><code>yolo</code></td><td>End to end with no pipeline stops, subject to the budget cap</td><td>none</td></tr></tbody></table></div>
+<p>The four <code>auto</code> checkpoints: after <code>/ideate</code> (is this the idea?),
+after <code>/proposal</code> (accept scope and cost?), before the judge panel runs (this
+spends API credit), and after <code>/verdict</code> (accept the ruling, or revise?).</p>
+<p><strong>The budget cap is not a checkpoint.</strong> It halts the run in every mode,
+including <code>yolo</code>.</p>
+
+<footer>
+  Generated by <code>docs/build_docs.py</code> from the plugin's own manifests and skill
+  frontmatter &mdash; <a href="https://github.com/miricoder/project-kit">miricoder/project-kit</a>
+</footer>
+</div>
+</body>
+</html>

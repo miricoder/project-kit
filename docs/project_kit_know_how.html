@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Project Kit — know-how &amp; projects</title>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f9f9f7; --surface:#fcfcfb;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --rule:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --accent:#2a78d6;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b; --idle:#898781;
+}
+@media (prefers-color-scheme:dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --plane:#0d0d0d; --surface:#1a1a19;
+    --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,.10);
+    --accent:#3987e5;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19;
+  --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --rule:#383835; --ring:rgba(255,255,255,.10);
+  --accent:#3987e5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);
+  font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 20px 72px}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;
+  justify-content:space-between;border-bottom:1px solid var(--grid);padding-bottom:16px}
+h1{font-size:25px;margin:0;letter-spacing:-.01em}
+h2{font-size:19px;margin:40px 0 12px;letter-spacing:-.01em}
+h3{font-size:15px;margin:24px 0 8px}
+p{color:var(--ink-2);margin:10px 0}
+a{color:var(--accent)}
+.ver{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.pages{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 0}
+nav.pages a{display:inline-block;padding:6px 12px;border:1px solid var(--ring);
+  border-radius:999px;text-decoration:none;font-size:13px;background:var(--surface)}
+nav.pages a[aria-current="page"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:16px}
+.grid{display:grid;gap:12px}
+@media(min-width:720px){.cols-2{grid-template-columns:1fr 1fr}}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  font-weight:600;white-space:nowrap}
+td.num,th.num{font-variant-numeric:tabular-nums}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+code{font-size:.9em;background:var(--surface);border:1px solid var(--ring);
+  border-radius:4px;padding:.1em .35em}
+pre{background:var(--surface);border:1px solid var(--ring);border-radius:8px;
+  padding:12px 14px;overflow-x:auto;font-size:12.5px;line-height:1.55}
+pre code{border:0;background:none;padding:0}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  white-space:nowrap}
+.badge .dot{width:9px;height:9px;border-radius:2px;flex:none}
+.s-good .dot{background:var(--good)} .s-warning .dot{background:var(--warning)}
+.s-serious .dot{background:var(--serious)} .s-critical .dot{background:var(--critical)}
+.s-idle .dot{background:var(--idle)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 0;padding:0;list-style:none}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px 16px}
+.tile .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);
+  font-weight:600}
+.tile .v{font-size:30px;line-height:1.15;margin-top:4px;letter-spacing:-.02em}
+.steps{display:flex;gap:2px;min-width:132px}
+.steps i{height:8px;flex:1;border-radius:1px;background:var(--grid)}
+.steps i.done{background:var(--good)} .steps i.now{background:var(--warning)}
+.steps i.stop{background:var(--critical)}
+.muted{color:var(--muted);font-size:12.5px}
+.gate{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--critical);border:1px solid var(--critical);
+  border-radius:4px;padding:1px 5px}
+figure{margin:14px 0}
+figcaption{font-size:12.5px;color:var(--muted);margin-top:8px}
+svg{max-width:100%;height:auto;display:block}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--grid);
+  font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>Project Kit</h1>
+  <span class="ver">v0.1.0 &middot; generated</span>
+</header>
+<nav class="pages"><a href="index.html">Pipeline</a><a href="project_kit_know_how.html" aria-current="page">Know-how &amp; projects</a></nav>
+
+<h2>Projects</h2>
+<p>Read from your own registry at <code>~/.claude/project-kit/registry.json</code>. Project
+data is deliberately never committed to this repo &mdash; the repo is the tool.</p>
+<div class="tiles"><div class="tile"><div class="k">Projects</div><div class="v">0</div></div><div class="tile"><div class="k">In flight</div><div class="v">0</div></div><div class="tile"><div class="k">Judged</div><div class="v">0</div></div><div class="tile"><div class="k">Launched</div><div class="v">0</div></div></div>
+<h3>Status</h3>
+<div class="card"><p style="margin:0">No projects yet. Run <code>/ideate &lt;your idea&gt;</code> in a project directory and this table fills itself from <code>~/.claude/project-kit/registry.json</code>.</p></div>
+
+<h2>Install</h2>
+<pre><code>claude plugin marketplace add miricoder/project-kit
+claude plugin install project-kit</code></pre>
+<p>Then <code>/reload-plugins</code>, or start a new session. Verify with
+<code>claude plugin details project-kit</code>; update later with
+<code>claude plugin update project-kit</code>.</p>
+<p><strong>Requires Claude Code 2.x or newer</strong> &mdash; plugin support. Check
+<code>claude --version</code>; upgrade with
+<code>npm i -g @anthropic-ai/claude-code@latest</code>.</p>
+
+<h2>Using it</h2>
+<pre><code>/ideate I want an app that tracks my houseplants
+/pipeline                 # where are we, what runs next
+/pipeline mode yolo       # manual | auto | yolo
+/pipeline run --to design</code></pre>
+<div class="scroll"><table><thead><tr><th>Mode</th><th>Behaviour</th><th>Stops</th></tr></thead><tbody><tr><td><code>manual</code></td><td>Stops after <strong>every</strong> phase and offers a menu</td><td>every phase</td></tr><tr><td><code>auto <span class='muted'>(default)</span></code></td><td>Advances between phases, stopping at the four checkpoints</td><td>4 checkpoints</td></tr><tr><td><code>yolo</code></td><td>End to end with no pipeline stops, subject to the budget cap</td><td>none</td></tr></tbody></table></div>
+
+<h2>Two layers of autonomy</h2>
+<p><code>yolo</code> removes Project Kit's checkpoints. It <strong>cannot</strong> remove
+Claude Code's own tool-permission prompts &mdash; those are harness-level and no plugin can
+suppress them. For a genuinely unattended run, allowlist them too:</p>
+<pre><code>// ~/.claude/settings.json
+{
+  "permissions": {
+    "allow": ["Bash(python3:*)", "Bash(git:*)", "Bash(gh:*)", "Edit", "Write"]
+  }
+}</code></pre>
+<p><code>/pipeline mode yolo</code> reports whether this is configured, so the mode never
+<em>looks</em> hands-off while silently waiting on a prompt.</p>
+
+<h2>Budget</h2>
+<p>Every project carries <code>budget.max_usd</code> in its <code>pipeline.json</code>.
+<code>yolo</code> adds no confirmation stops but still halts when spend passes the ceiling &mdash;
+what that rules out is an unattended <code>REJECT</code> &rarr; re-judge &rarr;
+<code>REJECT</code> loop burning credit with nobody watching.</p>
+
+<h2>The judge panel</h2>
+<p>The judge gate needs <strong>three verdicts from three different model families</strong>.
+Two rules are enforced in code, not left to judgement:</p>
+<ol>
+<li><strong>No family may hold two seats.</strong> Two judges from one family share priors,
+producing a ruling that looks independent and is not.</li>
+<li><strong>The authoring family is excluded.</strong> Claude writes the plan, so Anthropic
+cannot judge it.</li>
+</ol>
+<div class="scroll"><table>
+<thead><tr><th>Transport</th><th>When</th></tr></thead>
+<tbody>
+<tr><td><code>api_key</code></td><td>A real API key exists. Fully automated</td></tr>
+<tr><td><code>cli</code></td><td>A subscription-backed CLI &mdash; e.g.
+  <code>npm i -g @openai/codex</code> reuses an existing ChatGPT login, no API key and no
+  extra cost</td></tr>
+<tr><td><code>paste</code></td><td>Neither. The brief is rendered for you to paste, and the
+  returned JSON is validated before being accepted</td></tr>
+</tbody></table></div>
+<p>A ChatGPT subscription is <strong>not</strong> an OpenAI API key. Using
+<code>api_key</code> for that seat means paying for API usage separately;
+<code>cli</code> avoids it.</p>
+
+<h2>Where your data lives</h2>
+<div class="scroll"><table>
+<thead><tr><th>What</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Per-project phase state, gates, mode, budget</td><td><code>&lt;project&gt;/pipeline.json</code></td></tr>
+<tr><td>Human-readable project snapshot</td><td><code>&lt;project&gt;/.github/projects/&lt;name&gt;.md</code></td></tr>
+<tr><td>Registry of all projects, for the table above</td><td><code>~/.claude/project-kit/registry.json</code></td></tr>
+</tbody></table></div>
+
+<footer>
+  Generated by <code>docs/build_docs.py</code> from the plugin's own manifests and skill
+  frontmatter &mdash; <a href="https://github.com/miricoder/project-kit">miricoder/project-kit</a>
+</footer>
+</div>
+</body>
+</html>

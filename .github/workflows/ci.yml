@@ -16,6 +16,8 @@ jobs:
           python-version: '3.12'
       - name: Run unit tests
         run: python3 -m unittest discover -s tests -t . -v
+      - name: Docs are not stale
+        run: python3 docs/build_docs.py --check
 
   validate:
     name: claude plugin validate --strict
