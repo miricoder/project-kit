@@ -87,31 +87,28 @@ Then `/reload-plugins`, or start a new session. Verify with
 
 ## Quick start
 
-**Start in an empty directory for your product** — not in this repo, and not in your home
-directory. The pipeline writes `pipeline.json` and a `docs/` folder into whatever directory
-you run it from.
-
-```bash
-mkdir ~/projects/houseplant-tracker && cd ~/projects/houseplant-tracker
-claude
-```
-
-Then, in the session:
-
 ```
 /ideate an app that tracks my houseplants and tells me when to water them
 ```
 
-`/ideate` sets up `pipeline.json` for you on first run — the project name defaults to the
-directory name — then researches the idea, frames the user and the job, surfaces the
-questions that need answering, and hands off down the pipeline.
+That is it. `/ideate` sorts out where the project lives, sets up `pipeline.json`, then
+researches the idea, frames the user and the job, surfaces the open questions, and hands
+off down the pipeline.
 
-Two things it will refuse to do, both deliberately:
+**On directories.** The pipeline writes `pipeline.json` and `docs/` into the directory you
+run it from, so it checks that the directory is a sensible home first:
 
-- **Run inside the Project Kit plugin itself.** That would write your project's files into
-  the tool's own source. Move to a directory for your product.
-- **Start without an idea.** A bare `/ideate` asks what you want to build and writes
-  nothing, leaving the directory exactly as it found it.
+| Where you run it | What happens |
+|---|---|
+| An empty directory | Used as-is; the project takes its name |
+| An existing git repo | Used as-is — brownfield work is expected |
+| A folder of unrelated work (`~/projects`) or your home directory | `/ideate` creates a subdirectory named from your idea and works there |
+| Inside the Project Kit plugin | Refused — that would write your files into the tool's own source |
+
+Pass `--here` to `pk state init` only if you deliberately want to initialise in place.
+
+A bare `/ideate` with no idea asks what you want to build and writes nothing, leaving the
+directory exactly as it found it.
 
 ## Using it from a terminal
 

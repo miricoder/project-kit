@@ -75,6 +75,28 @@ def plugin_root_of(directory: str | os.PathLike[str]) -> Optional[Path]:
     return None
 
 
+def looks_like_a_container(directory: str | os.PathLike[str]) -> Optional[str]:
+    """Why this directory is a poor home for a project, or None if it is fine.
+
+    A dedicated project directory is empty; a brownfield project is a git repository.
+    Anything else that already has contents - a home directory, a ~/projects holding
+    several unrelated things - would get pipeline.json and docs/ scattered into it, and
+    take the parent folder's name as the project name.
+    """
+    here = Path(os.path.realpath(os.path.expanduser(str(directory))))
+    if here == Path(os.path.realpath(os.path.expanduser("~"))):
+        return "this is your home directory"
+    if (here / ".git").exists():
+        return None                      # a repository: brownfield work, legitimate
+    visible = [e for e in here.iterdir() if not e.name.startswith(".")] \
+        if here.is_dir() else []
+    if not visible:
+        return None                      # empty: exactly right
+    shown = ", ".join(sorted(e.name for e in visible)[:3])
+    return (f"it already contains {len(visible)} item(s) ({shown}"
+            f"{', ...' if len(visible) > 3 else ''}) and is not a git repository")
+
+
 def slugify(text: str) -> str:
     """Directory name to a project name: lowercase, non-alphanumerics to hyphens."""
     out = "".join(ch.lower() if ch.isalnum() else "-" for ch in text)
@@ -295,6 +317,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     p = sub.add_parser("init", help="create pipeline.json")
     p.add_argument("--project", help="project name (default: the directory name)")
+    p.add_argument("--here", action="store_true",
+                   help="initialise in this directory even if it looks like a poor home")
     p.add_argument("--mode", default="auto", choices=MODES)
     p.add_argument("--max-usd", type=float, default=25.0)
 
@@ -331,6 +355,15 @@ def main(argv: Optional[List[str]] = None) -> int:
                     f"refusing to initialise inside the Project Kit plugin at {inside}. "
                     "This would write pipeline.json and docs/ into the tool's own source. "
                     "Change to an empty directory for your product and run it there.")
+            reason = None if args.here else looks_like_a_container(args.dir)
+            if reason is not None:
+                suggestion = slugify(args.project) if args.project else "<project-name>"
+                raise StateError(
+                    f"{Path(os.path.realpath(args.dir))} is probably not where this project "
+                    f"should live: {reason}. Project Kit writes pipeline.json and docs/ into "
+                    f"the directory you run it from.\n"
+                    f"  Create one:   mkdir {suggestion} && cd {suggestion}\n"
+                    f"  Or force it:  --here")
             project = args.project or slugify(Path(os.path.realpath(args.dir)).name)
             state = new_state(project, args.mode, args.max_usd)
             save(state, args.dir)
