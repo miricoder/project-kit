@@ -17,25 +17,34 @@ deliverable — a proposal that says yes to everything is not a proposal.
    depends" is not an estimate.
 4. **This is a checkpoint in every mode except `yolo`.** The user accepts the scope, not you.
 
-## Paths
+## Commands
+
+Project Kit ships a launcher that works the same on macOS, Linux and Windows:
 
 ```bash
-PK="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/skills/project-kit}"
-STATE="$PK/skills/pipeline/scripts/state.py"
-GATE="$PK/skills/pipeline/scripts/gate.py"
+pk state -C . next          # read or write pipeline state
+pk gate  -C . phase <name>  # may this phase run? exits non-zero if not
 ```
 
+`-C <dir>` is the project directory; omit it to use the current one.
+
+If `pk` is not on PATH, use the explicit form with whichever Python the machine has
+(`python3`, `python`, or `py -3` on Windows):
+
+```bash
+python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
+```
 ## Step 1: Gate
 
 ```bash
-python3 "$GATE" -C . phase proposal
+pk gate -C . phase proposal
 ```
 
 Exit 1: report the reasons verbatim and stop. The usual cause is that `/ideate` has not
 completed, which means there is no `docs/research.md` to scope from.
 
 ```bash
-python3 "$STATE" -C . phase proposal "in progress"
+pk state -C . phase proposal "in progress"
 ```
 
 ## Step 2: Read the research
@@ -80,8 +89,8 @@ out-of-scope list. Anything unmapped gets said out loud, not quietly dropped.
 ## Step 8: Record and hand off
 
 ```bash
-python3 "$STATE" -C . phase proposal complete --artifact docs/proposal.md
-python3 "$STATE" -C . next
+pk state -C . phase proposal complete --artifact docs/proposal.md
+pk state -C . next
 ```
 
 Report:

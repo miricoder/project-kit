@@ -18,27 +18,35 @@ it is, who it is for, what already exists, and what nobody yet knows.
 3. **Open questions are a deliverable, not a failure.** The questions you surface here are
    what stop the judges returning `NEEDS INFO` three phases later.
 
-## Paths
+## Commands
+
+Project Kit ships a launcher that works the same on macOS, Linux and Windows:
 
 ```bash
-PK="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/skills/project-kit}"
-STATE="$PK/skills/pipeline/scripts/state.py"
-GATE="$PK/skills/pipeline/scripts/gate.py"
+pk state -C . next          # read or write pipeline state
+pk gate  -C . phase <name>  # may this phase run? exits non-zero if not
 ```
 
-Set these at the start of every Bash call; each call is a fresh shell.
+`-C <dir>` is the project directory; omit it to use the current one.
+
+If `pk` is not on PATH, use the explicit form with whichever Python the machine has
+(`python3`, `python`, or `py -3` on Windows):
+
+```bash
+python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
+```
 
 ## Step 1: Gate
 
 ```bash
-python3 "$GATE" -C . phase ideate
+pk gate -C . phase ideate
 ```
 
 Exit 1: report the reasons verbatim and stop. If it reports no `pipeline.json`, run
 `/pipeline` first to create one — do not create it yourself.
 
 ```bash
-python3 "$STATE" -C . phase ideate "in progress"
+pk state -C . phase ideate "in progress"
 ```
 
 ## Step 2: Understand the idea
@@ -83,8 +91,8 @@ actually wrote. If anything is unmapped, say so plainly and do not claim complet
 ## Step 6: Record and hand off
 
 ```bash
-python3 "$STATE" -C . phase ideate complete --artifact docs/research.md
-python3 "$STATE" -C . next
+pk state -C . phase ideate complete --artifact docs/research.md
+pk state -C . next
 ```
 
 Report to the user:

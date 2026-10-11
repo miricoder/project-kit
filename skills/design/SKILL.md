@@ -22,19 +22,28 @@ panel round.
 5. **Reuse what is proven before inventing.** Check the user's existing repositories for a
    working pattern and cite it rather than designing a new one.
 
-## Paths
+## Commands
+
+Project Kit ships a launcher that works the same on macOS, Linux and Windows:
 
 ```bash
-PK="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/skills/project-kit}"
-STATE="$PK/skills/pipeline/scripts/state.py"
-GATE="$PK/skills/pipeline/scripts/gate.py"
+pk state -C . next          # read or write pipeline state
+pk gate  -C . phase <name>  # may this phase run? exits non-zero if not
 ```
 
+`-C <dir>` is the project directory; omit it to use the current one.
+
+If `pk` is not on PATH, use the explicit form with whichever Python the machine has
+(`python3`, `python`, or `py -3` on Windows):
+
+```bash
+python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
+```
 ## Step 1: Gate
 
 ```bash
-python3 "$GATE" -C . phase design
-python3 "$STATE" -C . phase design "in progress"
+pk gate -C . phase design
+pk state -C . phase design "in progress"
 ```
 
 Exit 1: report verbatim and stop.
@@ -87,9 +96,9 @@ scenario. Report anything unmapped rather than claiming completion.
 ## Step 9: Record and hand off
 
 ```bash
-python3 "$STATE" -C . phase design complete \
+pk state -C . phase design complete \
   --artifact docs/spec.md --artifact docs/acceptance.feature
-python3 "$STATE" -C . next
+pk state -C . next
 ```
 
 Report:
