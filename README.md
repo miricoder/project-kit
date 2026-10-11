@@ -87,12 +87,31 @@ Then `/reload-plugins`, or start a new session. Verify with
 
 ## Quick start
 
-```
-/ideate I want an app that tracks my houseplants and tells me when to water them
+**Start in an empty directory for your product** — not in this repo, and not in your home
+directory. The pipeline writes `pipeline.json` and a `docs/` folder into whatever directory
+you run it from.
+
+```bash
+mkdir ~/projects/houseplant-tracker && cd ~/projects/houseplant-tracker
+claude
 ```
 
-That is enough. `/ideate` researches the idea, frames the user and the job, surfaces the
+Then, in the session:
+
+```
+/ideate an app that tracks my houseplants and tells me when to water them
+```
+
+`/ideate` sets up `pipeline.json` for you on first run — the project name defaults to the
+directory name — then researches the idea, frames the user and the job, surfaces the
 questions that need answering, and hands off down the pipeline.
+
+Two things it will refuse to do, both deliberately:
+
+- **Run inside the Project Kit plugin itself.** That would write your project's files into
+  the tool's own source. Move to a directory for your product.
+- **Start without an idea.** A bare `/ideate` asks what you want to build and writes
+  nothing, leaving the directory exactly as it found it.
 
 ## Using it from a terminal
 
