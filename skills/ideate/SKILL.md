@@ -45,20 +45,42 @@ matter:
   later one. Tell the user now, in one line, rather than letting them discover it three
   phases in.
 
-## Step 1: Gate
+## Step 1: The idea, before anything is written
+
+**If the user did not describe an idea, ask for it and stop.** One sentence is enough
+("an app that ..."). Do not create files, do not initialise state: a bare `/ideate`
+must leave the directory exactly as it found it.
+
+## Step 2: Check the directory, then set up state
 
 ```bash
 pk gate -C . phase ideate
 ```
 
-Exit 1: report the reasons verbatim and stop. If it reports no `pipeline.json`, run
-`/pipeline` first to create one — do not create it yourself.
+Three outcomes:
+
+- **Refused because this is inside the Project Kit plugin.** Say so and stop. The user
+  needs an empty directory for their product; offer to continue once they move there.
+- **`no pipeline.json`.** This is a new project — **create it yourself**, then tell the
+  user plainly what you made and where:
+
+  ```bash
+  pk state -C . init
+  ```
+
+  The project name defaults to the directory name. Use `--project <name>` only if the
+  user asked for something different. If the current directory is their home directory,
+  or already full of unrelated work, say so and confirm before initialising.
+
+- **Exit 1 for any other reason.** Report the reasons verbatim and stop.
+
+Then:
 
 ```bash
 pk state -C . phase ideate "in progress"
 ```
 
-## Step 2: Understand the idea
+## Step 3: Understand the idea
 
 If the user gave only a sentence, ask for what you cannot reasonably infer — but ask
 **once**, in a single batch, and no more than five questions. Prefer inferring and marking
@@ -75,7 +97,7 @@ What must end up known:
 - **Data.** What is stored, how sensitive it is, where it lives.
 - **The one thing** that, if it did not work, would make the whole thing pointless.
 
-## Step 3: Research prior art
+## Step 4: Research prior art
 
 Search for what already exists. This is the step people skip and regret.
 
@@ -86,18 +108,18 @@ adequately" is. Say which it is.
 Mark every finding `VERIFIED` (you fetched it) or `ASSUMED` (you recall it). Do not present
 recalled product details as verified; they go stale.
 
-## Step 4: Write research.md
+## Step 5: Write research.md
 
 Write `docs/research.md` from `references/research-template.md`. Fill every section. Where
 you have nothing, write "nothing found" rather than deleting the heading — an empty section
 is information.
 
-## Step 5: Precision check
+## Step 6: Precision check
 
 Before claiming completion, list what the user asked for and map each item to a section you
 actually wrote. If anything is unmapped, say so plainly and do not claim completion.
 
-## Step 6: Record and hand off
+## Step 7: Record and hand off
 
 ```bash
 pk state -C . phase ideate complete --artifact docs/research.md

@@ -250,3 +250,75 @@ class RegistryTest(StateTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PluginGuardTest(StateTestCase):
+    """Running the pipeline inside the plugin's own source would write the user's project
+    files into the tool. Reported from real testing, so it is guarded mechanically."""
+
+    def make_plugin(self, name="project-kit"):
+        # realpath: on macOS the temp dir lives under /var, a symlink to /private/var, and
+        # plugin_root_of resolves symlinks.
+        root = Path(os.path.realpath(self.dir)) / "fake-plugin"
+        (root / ".claude-plugin").mkdir(parents=True)
+        (root / ".claude-plugin" / "plugin.json").write_text(json.dumps({"name": name}))
+        return root
+
+    def test_detects_the_plugin_root_from_within(self):
+        root = self.make_plugin()
+        nested = root / "skills" / "ideate"
+        nested.mkdir(parents=True)
+        self.assertEqual(state.plugin_root_of(nested), root)
+
+    def test_detects_the_plugin_root_at_the_root_itself(self):
+        root = self.make_plugin()
+        self.assertEqual(state.plugin_root_of(root), root)
+
+    def test_returns_none_for_an_ordinary_directory(self):
+        self.assertIsNone(state.plugin_root_of(self.dir))
+
+    def test_ignores_a_different_plugin(self):
+        other = self.make_plugin(name="some-other-plugin")
+        self.assertIsNone(state.plugin_root_of(other))
+
+    def test_ignores_a_corrupt_manifest(self):
+        root = self.dir / "broken"
+        (root / ".claude-plugin").mkdir(parents=True)
+        (root / ".claude-plugin" / "plugin.json").write_text("{ not json")
+        self.assertIsNone(state.plugin_root_of(root))
+
+    def test_init_refuses_inside_the_plugin(self):
+        root = self.make_plugin()
+        result = state.main(["-C", str(root), "init", "--project", "x"])
+        self.assertEqual(result, 1)
+        self.assertFalse((root / state.STATE_FILE).exists())
+
+
+class SlugifyTest(unittest.TestCase):
+    def test_lowercases_and_hyphenates(self):
+        self.assertEqual(state.slugify("Houseplant Tracker"), "houseplant-tracker")
+
+    def test_collapses_runs_and_trims(self):
+        self.assertEqual(state.slugify("--My  App!!--"), "my-app")
+
+    def test_falls_back_when_nothing_survives(self):
+        self.assertEqual(state.slugify("!!!"), "project")
+
+    def test_keeps_an_already_clean_name(self):
+        self.assertEqual(state.slugify("houseplant-tracker"), "houseplant-tracker")
+
+
+class InitDefaultsTest(StateTestCase):
+    def test_project_name_defaults_to_the_directory_name(self):
+        target = self.dir / "My Plant App"
+        target.mkdir()
+        self.assertEqual(state.main(["-C", str(target), "init"]), 0)
+        saved = json.loads((target / state.STATE_FILE).read_text())
+        self.assertEqual(saved["project"], "my-plant-app")
+
+    def test_explicit_project_name_wins(self):
+        target = self.dir / "whatever"
+        target.mkdir()
+        state.main(["-C", str(target), "init", "--project", "chosen"])
+        self.assertEqual(
+            json.loads((target / state.STATE_FILE).read_text())["project"], "chosen")

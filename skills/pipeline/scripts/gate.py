@@ -91,6 +91,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
 
     if args.command == "phase":
+        inside = state.plugin_root_of(args.dir)
+        if inside is not None:
+            return _refuse([
+                f"this directory is inside the Project Kit plugin at {inside}",
+                "change to an empty directory for your product and run there"])
         reasons = state.blockers(current, args.name)
         advisories: List[str] = []
         if doctor is not None and not args.skip_env:

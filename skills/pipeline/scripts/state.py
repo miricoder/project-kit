@@ -55,6 +55,34 @@ class StateError(RuntimeError):
     """A state or gate precondition was not met."""
 
 
+def plugin_root_of(directory: str | os.PathLike[str]) -> Optional[Path]:
+    """The Project Kit plugin root at or above `directory`, if any.
+
+    Running the pipeline inside the plugin's own source would write pipeline.json and
+    docs/ into the tool itself. Refusing is mechanical rather than advisory because the
+    mistake is easy to make and tedious to undo.
+    """
+    here = Path(os.path.realpath(os.path.expanduser(str(directory))))
+    for candidate in (here, *here.parents):
+        manifest = candidate / ".claude-plugin" / "plugin.json"
+        if not manifest.is_file():
+            continue
+        try:
+            if json.loads(manifest.read_text()).get("name") == "project-kit":
+                return candidate
+        except (json.JSONDecodeError, OSError):
+            continue
+    return None
+
+
+def slugify(text: str) -> str:
+    """Directory name to a project name: lowercase, non-alphanumerics to hyphens."""
+    out = "".join(ch.lower() if ch.isalnum() else "-" for ch in text)
+    while "--" in out:
+        out = out.replace("--", "-")
+    return out.strip("-") or "project"
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -266,7 +294,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("init", help="create pipeline.json")
-    p.add_argument("--project", required=True)
+    p.add_argument("--project", help="project name (default: the directory name)")
     p.add_argument("--mode", default="auto", choices=MODES)
     p.add_argument("--max-usd", type=float, default=25.0)
 
@@ -297,10 +325,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         if args.command == "init":
             if state_path(args.dir).exists():
                 raise StateError(f"{STATE_FILE} already exists in {Path(args.dir).resolve()}")
-            state = new_state(args.project, args.mode, args.max_usd)
+            inside = plugin_root_of(args.dir)
+            if inside is not None:
+                raise StateError(
+                    f"refusing to initialise inside the Project Kit plugin at {inside}. "
+                    "This would write pipeline.json and docs/ into the tool's own source. "
+                    "Change to an empty directory for your product and run it there.")
+            project = args.project or slugify(Path(os.path.realpath(args.dir)).name)
+            state = new_state(project, args.mode, args.max_usd)
             save(state, args.dir)
             registry_upsert(state, args.dir)
-            _emit({"created": str(state_path(args.dir)), "next": describe_next(state)})
+            _emit({"created": str(state_path(args.dir)), "project": project,
+                   "next": describe_next(state)})
             return 0
 
         state = load(args.dir)
