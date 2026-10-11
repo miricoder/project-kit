@@ -61,16 +61,27 @@ Three outcomes:
 
 - **Refused because this is inside the Project Kit plugin.** Say so and stop. The user
   needs an empty directory for their product; offer to continue once they move there.
-- **`no pipeline.json`.** This is a new project — **create it yourself**, then tell the
-  user plainly what you made and where:
+- **`no pipeline.json`.** This is a new project — **set it up yourself**, do not make the
+  user do it:
 
   ```bash
   pk state -C . init
   ```
 
-  The project name defaults to the directory name. Use `--project <name>` only if the
-  user asked for something different. If the current directory is their home directory,
-  or already full of unrelated work, say so and confirm before initialising.
+  The project name defaults to the directory name.
+
+  If that refuses because the directory is a poor home — the home directory, or a folder
+  of unrelated work like `~/projects` — **do not pass `--here` to get around it.** Propose
+  a subdirectory named from the idea and create it:
+
+  ```bash
+  mkdir -p houseplant-tracker && cd houseplant-tracker
+  pk state -C . init
+  ```
+
+  Say which directory you created and that everything will live there. The shell keeps
+  that working directory for the rest of the session, so later phases need no `-C`.
+  Reserve `--here` for a user who explicitly asks to initialise in place.
 
 - **Exit 1 for any other reason.** Report the reasons verbatim and stop.
 

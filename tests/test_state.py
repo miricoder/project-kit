@@ -322,3 +322,47 @@ class InitDefaultsTest(StateTestCase):
         state.main(["-C", str(target), "init", "--project", "chosen"])
         self.assertEqual(
             json.loads((target / state.STATE_FILE).read_text())["project"], "chosen")
+
+
+class ContainerDirectoryTest(StateTestCase):
+    """Running in ~/projects wrote pipeline.json among unrelated work and named the
+    project after the parent folder. An empty dir or a git repo is fine; anything else
+    with contents is not."""
+
+    def test_an_empty_directory_is_a_fine_home(self):
+        target = self.dir / "empty"
+        target.mkdir()
+        self.assertIsNone(state.looks_like_a_container(target))
+
+    def test_a_git_repository_is_a_fine_home(self):
+        target = self.dir / "brownfield"
+        (target / ".git").mkdir(parents=True)
+        (target / "main.py").write_text("x = 1")
+        self.assertIsNone(state.looks_like_a_container(target))
+
+    def test_a_folder_of_unrelated_work_is_not(self):
+        target = self.dir / "projects"
+        for name in ("app-a", "notes", "other"):
+            (target / name).mkdir(parents=True)
+        reason = state.looks_like_a_container(target)
+        self.assertIsNotNone(reason)
+        self.assertIn("3 item(s)", reason)
+
+    def test_dotfiles_alone_do_not_make_it_a_container(self):
+        target = self.dir / "fresh"
+        target.mkdir()
+        (target / ".DS_Store").write_text("")
+        self.assertIsNone(state.looks_like_a_container(target))
+
+    def test_init_refuses_a_container_and_suggests_a_subdirectory(self):
+        target = self.dir / "projects"
+        (target / "existing").mkdir(parents=True)
+        self.assertEqual(
+            state.main(["-C", str(target), "init", "--project", "houseplant-tracker"]), 1)
+        self.assertFalse((target / state.STATE_FILE).exists())
+
+    def test_here_overrides_the_refusal(self):
+        target = self.dir / "projects"
+        (target / "existing").mkdir(parents=True)
+        self.assertEqual(state.main(["-C", str(target), "init", "--here"]), 0)
+        self.assertTrue((target / state.STATE_FILE).exists())
