@@ -134,6 +134,40 @@ class EnvironmentPreconditionTest(GateCliTest):
         self.assertIn("/handover will refuse", result.stdout)
 
 
+class PluginDirectoryGuardTest(GateCliTest):
+    """The guard is a directory check and must not depend on state existing. Shipped once
+    with the check after state.load(), so "no pipeline.json" masked it entirely."""
+
+    def make_plugin(self):
+        root = Path(os.path.realpath(self.dir)) / "plugin"
+        (root / ".claude-plugin").mkdir(parents=True)
+        (root / ".claude-plugin" / "plugin.json").write_text(json.dumps({"name": "project-kit"}))
+        return root
+
+    def run_in(self, directory, *args):
+        return subprocess.run(
+            [sys.executable, str(GATE), "-C", str(directory), *args],
+            capture_output=True, text=True, env=self.env)
+
+    def test_refuses_inside_the_plugin_even_with_no_state_file(self):
+        root = self.make_plugin()
+        result = self.run_in(root, "phase", "ideate")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("inside the Project Kit plugin", result.stderr)
+        self.assertNotIn("no pipeline.json", result.stderr,
+                         "the directory guard must take precedence over the state error")
+
+    def test_refuses_in_a_subdirectory_of_the_plugin(self):
+        nested = self.make_plugin() / "skills" / "ideate"
+        nested.mkdir(parents=True)
+        self.assertIn("inside the Project Kit plugin",
+                      self.run_in(nested, "phase", "ideate").stderr)
+
+    def test_an_ordinary_directory_is_unaffected(self):
+        self.write(self.fresh())
+        self.assertEqual(self.run_gate("phase", "ideate").returncode, 0)
+
+
 class AllowlistTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
