@@ -56,6 +56,25 @@ Options (both platforms; PowerShell uses `-Fix` style, the shell uses `--fix`):
 Exit code is `0` when every required check passes, `1` otherwise — so you can gate a script
 on it.
 
+### The environment check also runs automatically
+
+You do not have to remember to run `setup.sh`. Every skill calls
+`pk gate phase <name>` before doing anything, and that checks the **environment** as well
+as pipeline state — **phase-aware**, so nothing pays for a check it does not need:
+
+| Phase | Environment requirement | Behaviour if unmet |
+|---|---|---|
+| `/ideate`, `/proposal`, `/design` | none | runs; warns early if a later phase will break |
+| `/handover`, `/verdict` | three working judge seats | **refuses**, naming the shortfall and the fix |
+| `/initiate` onward | git identity set | **refuses**, with the `git config` command |
+
+Results are cached for 24 hours at `~/.claude/project-kit/environment.json`, so the common
+path costs nothing measurable. `pk doctor` refreshes the cache; `pk gate phase X --skip-env`
+checks pipeline state only.
+
+The point of the early warning: a judge panel short of a seat is discovered at `/ideate`,
+not three phases later when `/handover` refuses.
+
 ## Install
 
 ```bash
