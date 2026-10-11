@@ -34,6 +34,15 @@ If `pk` is not on PATH, use the explicit form with whichever Python the machine 
 ```bash
 python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
 ```
+
+`pk gate phase <name>` checks the **environment** as well as pipeline state. Two outcomes
+matter:
+
+- **Exit 1** — report every reason verbatim and stop. Environment reasons carry their own
+  `Fix:` command; pass it on rather than paraphrasing.
+- **An `advisories` array in the output** — the phase may run, but something will break a
+  later one. Tell the user now, in one line, rather than letting them discover it three
+  phases in.
 commands take `-C <project dir>`; omit it to use the current directory.
 
 ## Step 1: Find or create the project state

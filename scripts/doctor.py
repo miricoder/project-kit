@@ -453,6 +453,88 @@ def render(checks: Sequence[Check]) -> str:
     return "\n".join(lines)
 
 
+# --------------------------------------------------------------------------- phase gate
+
+# Environment requirements by phase. Everything a running skill has already proved — a
+# working Python, an installed plugin — is deliberately absent: if gate.py is executing,
+# those are true. Only what bites *later* is listed, so /ideate pays nothing and
+# /handover pays for the panel check.
+PHASE_REQUIREMENTS: Dict[str, Tuple[str, ...]] = {
+    "handover": ("panel",),
+    "verdict": ("panel",),
+    "initiate": ("git",),
+    "build": ("git",),
+    "devops": ("git",),
+    "test": ("git",),
+    "security": ("git",),
+    "launch": ("git",),
+}
+
+CACHE = Path(os.path.expanduser(
+    os.environ.get("PROJECT_KIT_ENV_CACHE", "~/.claude/project-kit/environment.json")))
+CACHE_TTL_SECONDS = 24 * 60 * 60
+
+
+def _cached(name: str) -> Optional[dict]:
+    """A recent result for one check, or None. Avoids paying for subprocess calls on
+    every single gate invocation."""
+    if not CACHE.exists():
+        return None
+    try:
+        data = json.loads(CACHE.read_text())
+        if time.time() - float(data.get("checked_at", 0)) > CACHE_TTL_SECONDS:
+            return None
+        return next((c for c in data.get("checks", []) if c.get("name") == name), None)
+    except (json.JSONDecodeError, ValueError, OSError):
+        return None
+
+
+def cache_write(checks: Sequence[Check]) -> None:
+    try:
+        CACHE.parent.mkdir(parents=True, exist_ok=True)
+        CACHE.write_text(json.dumps({
+            "checked_at": time.time(),
+            "checks": [{"name": c.name, "ok": c.ok, "required": c.required,
+                        "detail": c.detail, "fix": c.fix} for c in checks]}, indent=2))
+    except OSError:
+        pass  # a read-only home must not break the pipeline
+
+
+def environment_blockers(phase: str) -> Tuple[List[str], List[str]]:
+    """(blockers, advisories) for `phase`.
+
+    Blockers are environment problems that make this phase impossible. Advisories are
+    problems that will bite a later phase — surfaced early so a short judge panel is
+    discovered at /ideate rather than three phases in.
+    """
+    needed = PHASE_REQUIREMENTS.get(phase, ())
+    blockers: List[str] = []
+
+    if "git" in needed:
+        cached = _cached("git identity")
+        check = check_git_identity() if cached is None else Check(
+            "git identity", cached["ok"], cached["detail"], fix=cached.get("fix"))
+        if not check.ok:
+            blockers.append(f"git identity {check.detail} — needed to commit. Fix: {check.fix}")
+
+    if "panel" in needed:
+        cached = _cached("Judge panel")
+        check = check_panel() if cached is None else Check(
+            "Judge panel", cached["ok"], cached["detail"], required=False,
+            fix=cached.get("fix"))
+        if not check.ok:
+            blockers.append(f"judge panel: {check.detail}. Fix: {check.fix}")
+
+    advisories: List[str] = []
+    if phase not in ("handover", "verdict"):
+        panel = _cached("Judge panel")
+        if panel and not panel["ok"]:
+            advisories.append(
+                f"judge panel is not ready ({panel['detail']}) — /handover will refuse. "
+                "Run `pk doctor --live` to check the seats.")
+    return blockers, advisories
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(prog="doctor.py", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -474,6 +556,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 apply_git_identity(name, email)
 
     checks = collect(dev=args.dev, live=args.live)
+    cache_write(checks)
     if args.json:
         print(json.dumps({"checks": [
             {"name": c.name, "ok": c.ok, "required": c.required, "status": c.status,

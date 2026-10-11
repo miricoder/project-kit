@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gate checks for Project Kit. Exits non-zero so a skill refuses rather than proceeds.
 
-    gate.py phase design         may /design run here?
+    gate.py phase design         may /design run here? (state + environment)
     gate.py gate judge           has the judge gate passed?
     gate.py harness              is the harness allowlisted for an unattended yolo run?
 
@@ -17,8 +17,15 @@ from pathlib import Path
 from typing import List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# scripts/doctor.py lives at the plugin root, three levels up from this file.
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "scripts"))
 
 import state  # noqa: E402
+
+try:
+    import doctor  # noqa: E402 - environment preconditions, optional at import time
+except ImportError:  # pragma: no cover - doctor is always shipped alongside
+    doctor = None  # type: ignore[assignment]
 
 # Tool permissions an unattended run needs. Absence does not break yolo; it means the run
 # will stop on a permission prompt, which the user must be told rather than discover.
@@ -54,6 +61,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     p = sub.add_parser("phase", help="may this phase run?")
     p.add_argument("name", choices=state.PHASES)
+    p.add_argument("--skip-env", action="store_true",
+                   help="skip the environment preconditions (state checks only)")
 
     p = sub.add_parser("gate", help="has this gate passed?")
     p.add_argument("name", choices=state.GATES)
@@ -83,11 +92,18 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.command == "phase":
         reasons = state.blockers(current, args.name)
+        advisories: List[str] = []
+        if doctor is not None and not args.skip_env:
+            env_blockers, advisories = doctor.environment_blockers(args.name)
+            reasons = reasons + env_blockers
         if reasons:
             return _refuse(reasons)
-        print(json.dumps({"phase": args.name, "runnable": True,
-                          "pause_after": state.should_pause_after(current, args.name),
-                          "mode": current["mode"]}, indent=2))
+        payload = {"phase": args.name, "runnable": True,
+                   "pause_after": state.should_pause_after(current, args.name),
+                   "mode": current["mode"]}
+        if advisories:
+            payload["advisories"] = advisories
+        print(json.dumps(payload, indent=2))
         return 0
 
     if args.command == "gate":

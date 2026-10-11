@@ -157,3 +157,76 @@ class RenderTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EnvironmentBlockersTest(unittest.TestCase):
+    """Phase-aware environment preconditions. The design point: a phase must not pay for a
+    check it does not need, and a problem that bites later must be surfaced early."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cache = Path(self.tmp.name) / "cache.json"
+        self._saved = doctor.CACHE
+        doctor.CACHE = self.cache
+        self.addCleanup(lambda: setattr(doctor, "CACHE", self._saved))
+        self.addCleanup(self.tmp.cleanup)
+
+    def seed(self, name, ok, detail="d", fix="f", age=0.0):
+        import json as _json, time as _time
+        self.cache.write_text(_json.dumps({
+            "checked_at": _time.time() - age,
+            "checks": [{"name": name, "ok": ok, "required": False,
+                        "detail": detail, "fix": fix}]}))
+
+    def test_early_phases_require_nothing(self):
+        for phase in ("ideate", "proposal", "design"):
+            with self.subTest(phase=phase):
+                self.assertEqual(doctor.PHASE_REQUIREMENTS.get(phase, ()), ())
+
+    def test_handover_requires_the_panel(self):
+        self.assertIn("panel", doctor.PHASE_REQUIREMENTS["handover"])
+
+    def test_build_phases_require_git_identity(self):
+        for phase in ("build", "devops", "launch"):
+            with self.subTest(phase=phase):
+                self.assertIn("git", doctor.PHASE_REQUIREMENTS[phase])
+
+    def test_a_failing_panel_blocks_handover(self):
+        self.seed("Judge panel", ok=False, detail="1/3 seats", fix="add a key")
+        blockers, _ = doctor.environment_blockers("handover")
+        self.assertTrue(blockers)
+        self.assertIn("1/3 seats", blockers[0])
+        self.assertIn("add a key", blockers[0])
+
+    def test_a_passing_panel_does_not_block_handover(self):
+        self.seed("Judge panel", ok=True, detail="3/3 seats")
+        blockers, _ = doctor.environment_blockers("handover")
+        self.assertEqual(blockers, [])
+
+    def test_a_failing_panel_only_advises_during_early_phases(self):
+        self.seed("Judge panel", ok=False, detail="1/3 seats")
+        blockers, advisories = doctor.environment_blockers("ideate")
+        self.assertEqual(blockers, [])
+        self.assertTrue(advisories)
+        self.assertIn("/handover will refuse", advisories[0])
+
+    def test_no_advisory_when_the_panel_is_fine(self):
+        self.seed("Judge panel", ok=True, detail="3/3 seats")
+        _, advisories = doctor.environment_blockers("ideate")
+        self.assertEqual(advisories, [])
+
+    def test_a_stale_cache_is_ignored(self):
+        self.seed("Judge panel", ok=False, detail="stale", age=doctor.CACHE_TTL_SECONDS + 60)
+        _, advisories = doctor.environment_blockers("ideate")
+        self.assertEqual(advisories, [], "a stale cache must not drive an advisory")
+
+    def test_a_corrupt_cache_is_ignored_rather_than_raising(self):
+        self.cache.write_text("{ not json")
+        blockers, advisories = doctor.environment_blockers("ideate")
+        self.assertEqual((blockers, advisories), ([], []))
+
+    def test_cache_write_round_trips(self):
+        doctor.cache_write([doctor.Check("Judge panel", False, "1/3", required=False, fix="x")])
+        _, advisories = doctor.environment_blockers("ideate")
+        self.assertTrue(advisories)
