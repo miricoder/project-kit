@@ -1,0 +1,42 @@
+#!/bin/sh
+# Project Kit launcher. Resolves the Python interpreter and the plugin root so SKILL.md
+# can say `pk gate phase design` on every platform, instead of carrying a shell-specific
+# path preamble and a hardcoded `python3`.
+#
+#   pk state next
+#   pk gate phase design
+#   pk doctor --live
+#
+# Plugin root resolution, in order: $CLAUDE_PLUGIN_ROOT, $PROJECT_KIT_ROOT, this script's
+# own parent directory.
+set -eu
+
+if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
+  ROOT="$CLAUDE_PLUGIN_ROOT"
+elif [ -n "${PROJECT_KIT_ROOT:-}" ]; then
+  ROOT="$PROJECT_KIT_ROOT"
+else
+  ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+fi
+
+PY=""
+for candidate in python3 python py; do
+  command -v "$candidate" >/dev/null 2>&1 || continue
+  if "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info[:2] >= (3, 9) else 1)' 2>/dev/null; then
+    PY="$candidate"; break
+  fi
+done
+[ -n "$PY" ] || { echo "pk: Python 3.9+ not found (tried python3, python, py)" >&2; exit 1; }
+
+[ $# -ge 1 ] || { echo "usage: pk {state|gate|doctor} [args...]" >&2; exit 2; }
+SUB="$1"; shift
+
+case "$SUB" in
+  state)  TARGET="$ROOT/skills/pipeline/scripts/state.py" ;;
+  gate)   TARGET="$ROOT/skills/pipeline/scripts/gate.py" ;;
+  doctor) TARGET="$ROOT/scripts/doctor.py" ;;
+  *) echo "pk: unknown subcommand '$SUB' (expected state, gate or doctor)" >&2; exit 2 ;;
+esac
+
+[ -f "$TARGET" ] || { echo "pk: $TARGET not found; set PROJECT_KIT_ROOT" >&2; exit 2; }
+exec "$PY" "$TARGET" "$@"

@@ -17,28 +17,36 @@ skill. Every other Project Kit skill reads the state this skill writes.
 3. **Record before handing off.** A phase that is not recorded `complete` did not happen, and
    the next skill will refuse.
 
-## Paths
+## Commands
+
+Project Kit ships a launcher that works the same on macOS, Linux and Windows:
 
 ```bash
-PK="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/skills/project-kit}"
-STATE="$PK/skills/pipeline/scripts/state.py"
-GATE="$PK/skills/pipeline/scripts/gate.py"
+pk state -C . next          # read or write pipeline state
+pk gate  -C . phase <name>  # may this phase run? exits non-zero if not
 ```
 
-Each Bash call starts a fresh shell, so set these at the start of every command you run. All
+`-C <dir>` is the project directory; omit it to use the current one.
+
+If `pk` is not on PATH, use the explicit form with whichever Python the machine has
+(`python3`, `python`, or `py -3` on Windows):
+
+```bash
+python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
+```
 commands take `-C <project dir>`; omit it to use the current directory.
 
 ## Step 1: Find or create the project state
 
 ```bash
-python3 "$STATE" -C . show
+pk state -C . show
 ```
 
 If it reports no `pipeline.json`, this is a new project. Ask the user for a short project name
 (kebab-case), then:
 
 ```bash
-python3 "$STATE" -C . init --project <name> --max-usd 25
+pk state -C . init --project <name> --max-usd 25
 ```
 
 Tell the user the budget cap you set and that `/pipeline` can change it.
@@ -46,7 +54,7 @@ Tell the user the budget cap you set and that `/pipeline` can change it.
 ## Step 2: Report where things stand
 
 ```bash
-python3 "$STATE" -C . next
+pk state -C . next
 ```
 
 Report, in this shape:
@@ -61,7 +69,7 @@ Report, in this shape:
 Check first — never skip this:
 
 ```bash
-python3 "$GATE" -C . phase <next phase>
+pk gate -C . phase <next phase>
 ```
 
 - **Exit 1 (refused):** report the reasons verbatim and stop. Do not invoke the next skill.
@@ -80,7 +88,7 @@ The phase-to-skill mapping is one to one: phase `design` is the `design` skill.
 After each skill reports a deliverable:
 
 ```bash
-python3 "$STATE" -C . phase <phase> complete --artifact <path> [--artifact <path>]
+pk state -C . phase <phase> complete --artifact <path> [--artifact <path>]
 ```
 
 Use `in progress` when starting long work and `blocked --reason "<why>"` when you cannot
@@ -91,14 +99,14 @@ Judge rulings are recorded by `/verdict`, not here.
 ## Setting the mode
 
 ```bash
-python3 "$STATE" -C . mode            # report
-python3 "$STATE" -C . mode yolo       # set
+pk state -C . mode            # report
+pk state -C . mode yolo       # set
 ```
 
 When setting `yolo`, **always** also run:
 
 ```bash
-python3 "$GATE" harness
+pk gate harness
 ```
 
 If `unattended_ready` is false, tell the user plainly: Project Kit will not stop, but Claude
@@ -109,9 +117,9 @@ hands-off without checking this.
 ## Budget
 
 ```bash
-python3 "$STATE" -C . budget                 # report
-python3 "$STATE" -C . budget --max 50        # raise the ceiling
-python3 "$STATE" -C . budget --add 1.80      # record spend (the panel does this)
+pk state -C . budget                 # report
+pk state -C . budget --max 50        # raise the ceiling
+pk state -C . budget --add 1.80      # record spend (the panel does this)
 ```
 
 An exceeded budget blocks every phase. It is not a checkpoint and `yolo` does not bypass it:
