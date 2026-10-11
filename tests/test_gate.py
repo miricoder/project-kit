@@ -33,9 +33,14 @@ class GateCliTest(unittest.TestCase):
     def write(self, st):
         state.save(st, self.dir)
 
-    def run_gate(self, *args):
-        return subprocess.run([sys.executable, str(GATE), "-C", str(self.dir), *args],
-                              capture_output=True, text=True, env=self.env)
+    def run_gate(self, *args, skip_env=True):
+        """State-only by default: --skip-env keeps these tests about pipeline state, which
+        is what they assert. Environment preconditions have their own tests, and leaving
+        them on here made the suite depend on the runner having a git identity."""
+        argv = [sys.executable, str(GATE), "-C", str(self.dir), *args]
+        if skip_env and args and args[0] == "phase":
+            argv.append("--skip-env")
+        return subprocess.run(argv, capture_output=True, text=True, env=self.env)
 
     def fresh(self, **kw):
         return state.new_state("demo", **kw)
@@ -93,6 +98,40 @@ class GateCliTest(unittest.TestCase):
     def test_unknown_phase_is_a_usage_error(self):
         self.write(self.fresh())
         self.assertEqual(self.run_gate("phase", "nonsense").returncode, 2)
+
+
+class EnvironmentPreconditionTest(GateCliTest):
+    """The environment precheck is on by default; --skip-env turns it off. The regression
+    this covers: /initiate gained a git-identity requirement, which silently broke a
+    state-only test on a runner with no git identity."""
+
+    def test_early_phases_are_unaffected_by_the_environment(self):
+        self.write(self.fresh())
+        self.assertEqual(self.run_gate("phase", "ideate", skip_env=False).returncode, 0)
+
+    def test_skip_env_isolates_state_checking(self):
+        st = self.fresh()
+        for phase in state.WAVE1:
+            state.set_phase(st, phase, "complete")
+        state.record_ruling(st, "judge", "SOUND", 1)
+        self.write(st)
+        self.assertEqual(self.run_gate("phase", "initiate").returncode, 0,
+                         "state is satisfied, so --skip-env must pass")
+
+    def test_advisories_appear_without_blocking(self):
+        import json as _json, time as _time
+        cache = self.dir / "env-cache.json"
+        cache.write_text(_json.dumps({"checked_at": _time.time(), "checks": [
+            {"name": "Judge panel", "ok": False, "required": False,
+             "detail": "1/3 seats", "fix": "add a key"}]}))
+        env = {**self.env, "PROJECT_KIT_ENV_CACHE": str(cache)}
+        self.write(self.fresh())
+        result = subprocess.run(
+            [sys.executable, str(GATE), "-C", str(self.dir), "phase", "ideate"],
+            capture_output=True, text=True, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("advisories", result.stdout)
+        self.assertIn("/handover will refuse", result.stdout)
 
 
 class AllowlistTest(unittest.TestCase):
