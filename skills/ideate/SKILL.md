@@ -20,23 +20,20 @@ it is, who it is for, what already exists, and what nobody yet knows.
 
 ## Commands
 
-Project Kit ships a launcher that works the same on macOS, Linux and Windows:
+Project Kit ships a launcher. Use it through the plugin root, which Claude Code sets for
+you — this form works on macOS, Linux and Windows, and for every install type:
 
 ```bash
-pk state -C . next          # read or write pipeline state
-pk gate  -C . phase <name>  # may this phase run? exits non-zero if not
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next          # read or write pipeline state
+"$CLAUDE_PLUGIN_ROOT/bin/pk" gate  -C . phase <name>  # may this phase run?
 ```
 
-`-C <dir>` is the project directory; omit it to use the current one.
+`-C <dir>` is the project directory; omit it to use the current one. If `pk` happens to be
+on PATH (a development install, or `setup.sh --fix`), the bare `pk gate …` form is
+equivalent and shorter.
 
-If `pk` is not on PATH, use the explicit form with whichever Python the machine has
-(`python3`, `python`, or `py -3` on Windows):
 
-```bash
-python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
-```
-
-`pk gate phase <name>` checks the **environment** as well as pipeline state. Two outcomes
+The gate command checks the **environment** as well as pipeline state. Two outcomes
 matter:
 
 - **Exit 1** — report every reason verbatim and stop. Environment reasons carry their own
@@ -54,7 +51,7 @@ must leave the directory exactly as it found it.
 ## Step 2: Check the directory, then set up state
 
 ```bash
-pk gate -C . phase ideate
+"$CLAUDE_PLUGIN_ROOT/bin/pk" gate -C . phase ideate
 ```
 
 Three outcomes:
@@ -65,7 +62,7 @@ Three outcomes:
   user do it:
 
   ```bash
-  pk state -C . init
+  "$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . init
   ```
 
   The project name defaults to the directory name.
@@ -76,7 +73,7 @@ Three outcomes:
 
   ```bash
   mkdir -p houseplant-tracker && cd houseplant-tracker
-  pk state -C . init
+  "$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . init
   ```
 
   Say which directory you created and that everything will live there. The shell keeps
@@ -88,7 +85,7 @@ Three outcomes:
 Then:
 
 ```bash
-pk state -C . phase ideate "in progress"
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase ideate "in progress"
 ```
 
 ## Step 3: Understand the idea
@@ -133,8 +130,8 @@ actually wrote. If anything is unmapped, say so plainly and do not claim complet
 ## Step 7: Record and hand off
 
 ```bash
-pk state -C . phase ideate complete --artifact docs/research.md
-pk state -C . next
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase ideate complete --artifact docs/research.md
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next
 ```
 
 Report to the user:

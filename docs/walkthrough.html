@@ -92,7 +92,7 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--grid);
 <div class="wrap">
 <header class="top">
   <h1>Project Kit</h1>
-  <span class="ver">v0.2.0 &middot; generated</span>
+  <span class="ver">v0.3.0 &middot; generated</span>
 </header>
 <nav class="pages"><a href="index.html">Pipeline</a><a href="walkthrough.html" aria-current="page">Walkthrough</a><a href="project_kit_know_how.html">Know-how &amp; projects</a></nav>
 
@@ -100,12 +100,74 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--grid);
 <p>One idea, carried the whole way. Every command is shown exactly as you type it, with what
 gets written and the decision you are asked to make.</p>
 
-<h3>Before you start</h3>
+<h2>Prerequisites</h2>
+<p>Do these first. Every one of them has bitten someone, so each is written out with the
+failure it prevents.</p>
+
+<div class="card" style="margin:14px 0">
+<h3 style="margin:0 0 8px"><span class="muted">Prereq 1</span> &middot; A working Claude Code</h3>
+<pre><code>claude --version</code></pre>
+<p>You need <strong>2.x or newer</strong>. Three things go wrong here:</p>
+<div class="scroll"><table>
+<thead><tr><th>What you see</th><th>Cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr>
+  <td><code>zsh: command not found: claude</code></td>
+  <td>Not installed, or installed but not on this shell's <code>PATH</code></td>
+  <td>If you just changed your shell profile, the fix is simply a <strong>new terminal</strong>
+      (or <code>source ~/.zshrc</code>) &mdash; an already-open shell keeps its old
+      <code>PATH</code>. Otherwise install it:
+      <code>curl -fsSL https://claude.ai/install.sh | bash</code></td>
+</tr>
+<tr>
+  <td>A version below 2.0, or <code>claude plugin</code> printing generic help</td>
+  <td>A build predating plugin support</td>
+  <td>Upgrade. If an old copy lives outside your current npm prefix, <strong>remove it
+      first</strong> &mdash; otherwise it keeps winning the <code>PATH</code> race and you end
+      up with two installs</td>
+</tr>
+<tr>
+  <td><code>Invalid API key &middot; Please run /login</code></td>
+  <td>An old build that predates subscription login, so it demands an API key</td>
+  <td>Upgrade as above. <strong>No API key is needed</strong> &mdash; Claude Code uses your
+      subscription</td>
+</tr>
+</tbody></table></div>
+<p class="muted">Confirm plugin support specifically, not just the version:
+<code>claude plugin list</code> should print plugin output, not the general help page.</p>
+</div>
+
+<div class="card" style="margin:14px 0">
+<h3 style="margin:0 0 8px"><span class="muted">Prereq 2</span> &middot; Python 3.9+</h3>
+<pre><code>python3 --version     # or: python --version, py -3 --version</code></pre>
+<p>The gate and state logic is pure standard library, but it has to run. Windows usually has
+<code>py -3</code> rather than <code>python3</code>; the launcher detects this, so it only
+matters if you call the scripts directly.</p>
+</div>
+
+<div class="card" style="margin:14px 0">
+<h3 style="margin:0 0 8px"><span class="muted">Prereq 3</span> &middot; Install the plugin</h3>
 <pre><code>claude plugin marketplace add miricoder/project-kit
 claude plugin install project-kit</code></pre>
-<p>Then <code>/reload-plugins</code>, or start a new session. Check the environment with
-<code>./setup.sh</code> (<code>.\setup.ps1</code> on Windows) &mdash; it reports what is
-missing and changes nothing unless you pass <code>--fix</code>.</p>
+<p>Then <code>/reload-plugins</code>, or start a new session. Confirm it loaded:</p>
+<pre><code>claude plugin details project-kit</code></pre>
+<p>If a later update seems not to arrive, refresh the marketplace as well as the plugin
+&mdash; <code>claude plugin marketplace update project-kit</code> then
+<code>claude plugin update project-kit</code>.</p>
+</div>
+
+<div class="card" style="margin:14px 0">
+<h3 style="margin:0 0 8px"><span class="muted">Prereq 4</span> &middot; Check everything at once (optional)</h3>
+<p>If you cloned the repository rather than installing from the marketplace, one command
+reports every item above and changes nothing unless you ask:</p>
+<pre><code>./setup.sh            # macOS and Linux
+.\setup.ps1           # Windows PowerShell
+./setup.sh --fix      # apply the safe fixes</code></pre>
+<p class="muted">On Windows, if PowerShell refuses to run the file:
+<code>Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned</code></p>
+</div>
+
+<h2>The run itself</h2>
 
 <div class="card" style="margin:14px 0"><h3 style="margin:0 0 8px"><span class="muted">Step 1</span> &middot; Pick a home for the project</h3>
 <p>Project Kit writes <code>pipeline.json</code> and a <code>docs/</code> folder into the

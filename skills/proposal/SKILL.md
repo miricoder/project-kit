@@ -19,23 +19,20 @@ deliverable — a proposal that says yes to everything is not a proposal.
 
 ## Commands
 
-Project Kit ships a launcher that works the same on macOS, Linux and Windows:
+Project Kit ships a launcher. Use it through the plugin root, which Claude Code sets for
+you — this form works on macOS, Linux and Windows, and for every install type:
 
 ```bash
-pk state -C . next          # read or write pipeline state
-pk gate  -C . phase <name>  # may this phase run? exits non-zero if not
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next          # read or write pipeline state
+"$CLAUDE_PLUGIN_ROOT/bin/pk" gate  -C . phase <name>  # may this phase run?
 ```
 
-`-C <dir>` is the project directory; omit it to use the current one.
+`-C <dir>` is the project directory; omit it to use the current one. If `pk` happens to be
+on PATH (a development install, or `setup.sh --fix`), the bare `pk gate …` form is
+equivalent and shorter.
 
-If `pk` is not on PATH, use the explicit form with whichever Python the machine has
-(`python3`, `python`, or `py -3` on Windows):
 
-```bash
-python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
-```
-
-`pk gate phase <name>` checks the **environment** as well as pipeline state. Two outcomes
+The gate command checks the **environment** as well as pipeline state. Two outcomes
 matter:
 
 - **Exit 1** — report every reason verbatim and stop. Environment reasons carry their own
@@ -46,14 +43,14 @@ matter:
 ## Step 1: Gate
 
 ```bash
-pk gate -C . phase proposal
+"$CLAUDE_PLUGIN_ROOT/bin/pk" gate -C . phase proposal
 ```
 
 Exit 1: report the reasons verbatim and stop. The usual cause is that `/ideate` has not
 completed, which means there is no `docs/research.md` to scope from.
 
 ```bash
-pk state -C . phase proposal "in progress"
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase proposal "in progress"
 ```
 
 ## Step 2: Read the research
@@ -98,8 +95,8 @@ out-of-scope list. Anything unmapped gets said out loud, not quietly dropped.
 ## Step 8: Record and hand off
 
 ```bash
-pk state -C . phase proposal complete --artifact docs/proposal.md
-pk state -C . next
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase proposal complete --artifact docs/proposal.md
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next
 ```
 
 Report:

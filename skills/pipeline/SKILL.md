@@ -19,23 +19,20 @@ skill. Every other Project Kit skill reads the state this skill writes.
 
 ## Commands
 
-Project Kit ships a launcher that works the same on macOS, Linux and Windows:
+Project Kit ships a launcher. Use it through the plugin root, which Claude Code sets for
+you — this form works on macOS, Linux and Windows, and for every install type:
 
 ```bash
-pk state -C . next          # read or write pipeline state
-pk gate  -C . phase <name>  # may this phase run? exits non-zero if not
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next          # read or write pipeline state
+"$CLAUDE_PLUGIN_ROOT/bin/pk" gate  -C . phase <name>  # may this phase run?
 ```
 
-`-C <dir>` is the project directory; omit it to use the current one.
+`-C <dir>` is the project directory; omit it to use the current one. If `pk` happens to be
+on PATH (a development install, or `setup.sh --fix`), the bare `pk gate …` form is
+equivalent and shorter.
 
-If `pk` is not on PATH, use the explicit form with whichever Python the machine has
-(`python3`, `python`, or `py -3` on Windows):
 
-```bash
-python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase <name>
-```
-
-`pk gate phase <name>` checks the **environment** as well as pipeline state. Two outcomes
+The gate command checks the **environment** as well as pipeline state. Two outcomes
 matter:
 
 - **Exit 1** — report every reason verbatim and stop. Environment reasons carry their own
@@ -48,14 +45,14 @@ commands take `-C <project dir>`; omit it to use the current directory.
 ## Step 1: Find or create the project state
 
 ```bash
-pk state -C . show
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . show
 ```
 
 If it reports no `pipeline.json`, this is a new project. Ask the user for a short project name
 (kebab-case), then:
 
 ```bash
-pk state -C . init --project <name> --max-usd 25
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . init --project <name> --max-usd 25
 ```
 
 Tell the user the budget cap you set and that `/pipeline` can change it.
@@ -63,7 +60,7 @@ Tell the user the budget cap you set and that `/pipeline` can change it.
 ## Step 2: Report where things stand
 
 ```bash
-pk state -C . next
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next
 ```
 
 Report, in this shape:
@@ -78,7 +75,7 @@ Report, in this shape:
 Check first — never skip this:
 
 ```bash
-pk gate -C . phase <next phase>
+"$CLAUDE_PLUGIN_ROOT/bin/pk" gate -C . phase <next phase>
 ```
 
 - **Exit 1 (refused):** report the reasons verbatim and stop. Do not invoke the next skill.
@@ -97,7 +94,7 @@ The phase-to-skill mapping is one to one: phase `design` is the `design` skill.
 After each skill reports a deliverable:
 
 ```bash
-pk state -C . phase <phase> complete --artifact <path> [--artifact <path>]
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase <phase> complete --artifact <path> [--artifact <path>]
 ```
 
 Use `in progress` when starting long work and `blocked --reason "<why>"` when you cannot
@@ -108,14 +105,14 @@ Judge rulings are recorded by `/verdict`, not here.
 ## Setting the mode
 
 ```bash
-pk state -C . mode            # report
-pk state -C . mode yolo       # set
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . mode            # report
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . mode yolo       # set
 ```
 
 When setting `yolo`, **always** also run:
 
 ```bash
-pk gate harness
+"$CLAUDE_PLUGIN_ROOT/bin/pk" gate harness
 ```
 
 If `unattended_ready` is false, tell the user plainly: Project Kit will not stop, but Claude
@@ -126,9 +123,9 @@ hands-off without checking this.
 ## Budget
 
 ```bash
-pk state -C . budget                 # report
-pk state -C . budget --max 50        # raise the ceiling
-pk state -C . budget --add 1.80      # record spend (the panel does this)
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . budget                 # report
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . budget --max 50        # raise the ceiling
+"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . budget --add 1.80      # record spend (the panel does this)
 ```
 
 An exceeded budget blocks every phase. It is not a checkpoint and `yolo` does not bypass it:
