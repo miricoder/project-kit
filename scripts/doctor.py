@@ -423,10 +423,14 @@ def collect(dev: bool = False, live: bool = False) -> List[Check]:
     return checks
 
 
-def render(checks: Sequence[Check]) -> str:
+def render(checks: Sequence[Check], title: str = "Project Kit — environment check",
+           success: str = "Run `claude` then `/reload-plugins`, and start with "
+                          "`/ideate <your idea>`.") -> str:
+    """Shared report format. check.py passes its own title and closing line so both
+    commands look the same without duplicating the renderer."""
     mark = {"pass": "[ ok ]", "warn": "[warn]", "FAIL": "[FAIL]"}
     width = max(len(c.name) for c in checks)
-    lines = ["", "Project Kit — environment check", "=" * 34, ""]
+    lines = ["", title, "=" * max(len(title), 20), ""]
     for check in checks:
         lines.append(f"{mark[check.status]}  {check.name:<{width}}  {check.detail}")
         for note in check.notes:
@@ -440,7 +444,8 @@ def render(checks: Sequence[Check]) -> str:
             lines.append(f"\n  {check.name}:\n    {check.fix or 'see notes above'}")
     else:
         lines.append("All required checks passed.")
-        lines.append("Run `claude` then `/reload-plugins`, and start with `/ideate <your idea>`.")
+        if success:
+            lines.append(success)
     if warned:
         lines.append("")
         lines.append("Optional, not blocking:")

@@ -6,6 +6,7 @@
 #   pk state next
 #   pk gate phase design
 #   pk doctor --live
+#   pk check
 #
 # Plugin root resolution, in order: $CLAUDE_PLUGIN_ROOT, $PROJECT_KIT_ROOT, this script's
 # own parent directory.
@@ -35,7 +36,8 @@ case "$SUB" in
   state)  TARGET="$ROOT/skills/pipeline/scripts/state.py" ;;
   gate)   TARGET="$ROOT/skills/pipeline/scripts/gate.py" ;;
   doctor) TARGET="$ROOT/scripts/doctor.py" ;;
-  *) echo "pk: unknown subcommand '$SUB' (expected state, gate or doctor)" >&2; exit 2 ;;
+  check)  TARGET="$ROOT/scripts/check.py" ;;
+  *) echo "pk: unknown subcommand '$SUB' (expected state, gate, doctor or check)" >&2; exit 2 ;;
 esac
 
 [ -f "$TARGET" ] || { echo "pk: $TARGET not found; set PROJECT_KIT_ROOT" >&2; exit 2; }

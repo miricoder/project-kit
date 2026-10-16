@@ -202,7 +202,9 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--grid);
 
 def page(title: str, current: str, version: str, body: str) -> str:
     nav = ""
-    for href, label in (("index.html", "Pipeline"), ("project_kit_know_how.html", "Know-how & projects")):
+    for href, label in (("index.html", "Pipeline"),
+                        ("walkthrough.html", "Walkthrough"),
+                        ("project_kit_know_how.html", "Know-how & projects")):
         mark = ' aria-current="page"' if href == current else ""
         nav += f'<a href="{href}"{mark}>{html.escape(label)}</a>'
     return f"""<!doctype html>
@@ -374,6 +376,123 @@ including <code>yolo</code>.</p>
     return page("Project Kit — pipeline", "index.html", version, body)
 
 
+def build_walkthrough(version: str, skills: Dict[str, str]) -> str:
+    """A worked example, start to finish. Written as what the user types and what they see,
+    because 'run /ideate' without the surrounding detail is what left the first tester
+    staring at a refusal."""
+    built = sorted(skills)
+
+    def step(n, title, body):
+        return (f'<div class="card" style="margin:14px 0">'
+                f'<h3 style="margin:0 0 8px"><span class="muted">Step {n}</span> &middot; '
+                f'{html.escape(title)}</h3>{body}</div>')
+
+    steps = []
+    steps.append(step(1, "Pick a home for the project", """
+<p>Project Kit writes <code>pipeline.json</code> and a <code>docs/</code> folder into the
+directory you run it from. You do not have to create one by hand &mdash; if you are
+somewhere unsuitable, <code>/ideate</code> makes a subdirectory and tells you.</p>
+<pre><code>cd ~/projects        # or anywhere; an empty folder or a git repo is ideal
+claude</code></pre>
+<p class="muted">It refuses to run inside the Project Kit plugin itself, which would write
+your project's files into the tool.</p>"""))
+
+    steps.append(step(2, "Describe the idea", """
+<pre><code>/ideate an app that tracks my houseplants and tells me when to water them</code></pre>
+<p><strong>What happens:</strong> it sets up state, researches prior art, works out who the
+user is and what job they are doing, then writes <code>docs/research.md</code>.</p>
+<p><strong>You will be asked</strong> up to five questions it cannot reasonably infer &mdash;
+platforms, whether it must work offline, what data is stored. Answer briefly; anything you
+leave it marks <code>ASSUMED</code>, and the judges test assumptions later.</p>
+<p><strong>Then it stops.</strong> This is checkpoint 1: confirm it understood the idea
+before more effort is spent on it.</p>
+<p class="muted">A bare <code>/ideate</code> with no idea asks what you want to build and
+writes nothing.</p>"""))
+
+    steps.append(step(3, "Accept the scope", """
+<pre><code>/proposal</code></pre>
+<p><strong>What happens:</strong> it cuts v1 to the smallest thing that does the job end to
+end, lists what it explicitly will <em>not</em> do, phases the rest with acceptance criteria,
+and estimates build effort and running cost &rarr; <code>docs/proposal.md</code>.</p>
+<p><strong>Then it stops.</strong> Checkpoint 2, and the important one: this is the scope and
+money decision. Cut further or add back before continuing &mdash; everything downstream is
+bound by this.</p>"""))
+
+    steps.append(step(4, "Get the technical spec", """
+<pre><code>/design</code></pre>
+<p><strong>What happens:</strong> architecture, data model with migrations, interfaces,
+failure modes, rollback for code <em>and</em> data, plus executable Gherkin &rarr;
+<code>docs/spec.md</code> and <code>docs/acceptance.feature</code>. It also drafts the
+strongest case that its own design is wrong, which the judges are given to test.</p>
+<p><strong>No stop here</strong> &mdash; it flows straight on, because the next phase has its
+own checkpoint before spending anything.</p>"""))
+
+    judge_built = "handover" in built and "verdict" in built
+    steps.append(step(5, "The judge gate" + ("" if judge_built else " — not built yet"), f"""
+<pre><code>/handover</code></pre>
+<p><strong>What happens:</strong> builds the case and brief, sends them to three different
+model families, validates each verdict, and combines them mechanically into a ruling.
+<code>/verdict</code> then ranks the fixes and either opens the gate or sends you back.</p>
+{'' if judge_built else '<p>' + badge("not built", "idle", "\u25cb") + ' These two skills are '
+ 'the next thing being built. Until then the pipeline ends at a technical spec &mdash; which '
+ 'is still a complete, useful artefact to build from.</p>'}
+<p><strong>It stops before sending.</strong> Checkpoint 3 &mdash; this spends real API credit,
+and there is no flag to skip it.</p>"""))
+
+    body = f"""
+<h2>Walkthrough</h2>
+<p>One idea, carried the whole way. Every command is shown exactly as you type it, with what
+gets written and the decision you are asked to make.</p>
+
+<h3>Before you start</h3>
+<pre><code>claude plugin marketplace add miricoder/project-kit
+claude plugin install project-kit</code></pre>
+<p>Then <code>/reload-plugins</code>, or start a new session. Check the environment with
+<code>./setup.sh</code> (<code>.\\setup.ps1</code> on Windows) &mdash; it reports what is
+missing and changes nothing unless you pass <code>--fix</code>.</p>
+
+{''.join(steps)}
+
+<h2>Picking up where you left off</h2>
+<p>State is written after every phase, so a project survives closing the terminal, running out
+of context, or coming back in a week.</p>
+<pre><code>cd ~/projects/houseplant-tracker
+claude
+/pipeline</code></pre>
+<p>It reports the phase, what runs next, and anything blocking. There is never a need to start
+an idea over because a session ended.</p>
+
+<h2>Controlling how much it asks you</h2>
+{modes_table()}
+<pre><code>/pipeline mode manual     # stop after every phase and offer a menu
+/pipeline mode yolo       # no stops (the budget cap still applies)</code></pre>
+<p><code>yolo</code> removes Project Kit's checkpoints, not Claude Code's permission prompts.
+<code>/pipeline mode yolo</code> tells you whether your settings are allowlisted, so it never
+<em>looks</em> unattended while waiting on a prompt.</p>
+
+<h2>What each file is for</h2>
+<div class="scroll"><table>
+<thead><tr><th>File</th><th>Written by</th><th>What it is</th></tr></thead>
+<tbody>
+<tr><td><code>pipeline.json</code></td><td><code>/ideate</code> on first run</td><td>Phase status, gates, mode, budget. The contract every skill reads</td></tr>
+<tr><td><code>docs/research.md</code></td><td><code>/ideate</code></td><td>Prior art, the job, open questions. Claims marked VERIFIED or ASSUMED</td></tr>
+<tr><td><code>docs/proposal.md</code></td><td><code>/proposal</code></td><td>v1 cut, out-of-scope, phases with acceptance criteria, cost</td></tr>
+<tr><td><code>docs/spec.md</code></td><td><code>/design</code></td><td>Architecture, data model, failure modes, rollback, counter-argument</td></tr>
+<tr><td><code>docs/acceptance.feature</code></td><td><code>/design</code></td><td>Gherkin scenarios. What <code>/test</code> will verify against</td></tr>
+</tbody></table></div>
+
+<h2>Verifying your own changes</h2>
+<p>If you fork or edit the plugin, one command runs exactly what CI runs &mdash; same three
+steps, same order &mdash; so you find out before pushing:</p>
+<pre><code>pk check            # unit tests, docs freshness, manifest validation
+pk check --fix      # regenerate stale docs rather than just reporting them</code></pre>
+<p>It exits <code>0</code> when everything required passes and <code>1</code> otherwise, so it
+works as a git hook. A missing Claude Code CLI downgrades the manifest step to a warning
+rather than failing the run.</p>
+"""
+    return page("Project Kit — walkthrough", "walkthrough.html", version, body)
+
+
 def build_knowhow(version: str, phases: List[Dict[str, str]],
                   projects: List[Dict[str, Any]]) -> str:
     order = [p["phase"] for p in phases]
@@ -508,6 +627,7 @@ def render() -> Dict[Path, str]:
     projects = read_registry()
     return {
         DOCS / "index.html": build_index(version, phases, skills),
+        DOCS / "walkthrough.html": build_walkthrough(version, skills),
         DOCS / "project_kit_know_how.html": build_knowhow(version, phases, projects),
     }
 
