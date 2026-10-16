@@ -24,17 +24,27 @@ panel round.
 
 ## Commands
 
-Project Kit ships a launcher. Use it through the plugin root, which Claude Code sets for
-you — this form works on macOS, Linux and Windows, and for every install type:
+Project Kit ships a launcher, `bin/pk`. **Resolve its path once, then use that literal path
+in every later command** — each Bash call is a fresh shell, so no variable survives between
+them, and `$CLAUDE_PLUGIN_ROOT` is *not* exported into the shell environment.
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next          # read or write pipeline state
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate  -C . phase <name>  # may this phase run?
+# If pk is already on PATH (setup.sh --fix puts it there), just use `pk` and skip this.
+command -v pk || ls -d "$HOME"/.claude/plugins/cache/project-kit/project-kit/*/bin/pk \
+                       "$HOME"/.claude/skills/project-kit/bin/pk 2>/dev/null | tail -1
 ```
 
-`-C <dir>` is the project directory; omit it to use the current one. If `pk` happens to be
-on PATH (a development install, or `setup.sh --fix`), the bare `pk gate …` form is
-equivalent and shorter.
+Take the path it prints and substitute it wherever this skill says `pk` below, for example:
+
+```bash
+/Users/you/.claude/plugins/cache/project-kit/project-kit/0.3.1/bin/pk gate -C . phase ideate
+```
+
+If it prints nothing, Project Kit is not installed correctly — tell the user to run
+`claude plugin install project-kit` and stop.
+
+`-C <dir>` is the project directory; omit it to use the current one.
+
 
 
 The gate command checks the **environment** as well as pipeline state. Two outcomes
@@ -48,8 +58,8 @@ matter:
 ## Step 1: Gate
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate -C . phase design
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase design "in progress"
+pk gate -C . phase design
+pk state -C . phase design "in progress"
 ```
 
 Exit 1: report verbatim and stop.
@@ -102,9 +112,9 @@ scenario. Report anything unmapped rather than claiming completion.
 ## Step 9: Record and hand off
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase design complete \
+pk state -C . phase design complete \
   --artifact docs/spec.md --artifact docs/acceptance.feature
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next
+pk state -C . next
 ```
 
 Report:

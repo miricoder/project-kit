@@ -19,17 +19,27 @@ skill. Every other Project Kit skill reads the state this skill writes.
 
 ## Commands
 
-Project Kit ships a launcher. Use it through the plugin root, which Claude Code sets for
-you — this form works on macOS, Linux and Windows, and for every install type:
+Project Kit ships a launcher, `bin/pk`. **Resolve its path once, then use that literal path
+in every later command** — each Bash call is a fresh shell, so no variable survives between
+them, and `$CLAUDE_PLUGIN_ROOT` is *not* exported into the shell environment.
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next          # read or write pipeline state
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate  -C . phase <name>  # may this phase run?
+# If pk is already on PATH (setup.sh --fix puts it there), just use `pk` and skip this.
+command -v pk || ls -d "$HOME"/.claude/plugins/cache/project-kit/project-kit/*/bin/pk \
+                       "$HOME"/.claude/skills/project-kit/bin/pk 2>/dev/null | tail -1
 ```
 
-`-C <dir>` is the project directory; omit it to use the current one. If `pk` happens to be
-on PATH (a development install, or `setup.sh --fix`), the bare `pk gate …` form is
-equivalent and shorter.
+Take the path it prints and substitute it wherever this skill says `pk` below, for example:
+
+```bash
+/Users/you/.claude/plugins/cache/project-kit/project-kit/0.3.1/bin/pk gate -C . phase ideate
+```
+
+If it prints nothing, Project Kit is not installed correctly — tell the user to run
+`claude plugin install project-kit` and stop.
+
+`-C <dir>` is the project directory; omit it to use the current one.
+
 
 
 The gate command checks the **environment** as well as pipeline state. Two outcomes
@@ -45,14 +55,14 @@ commands take `-C <project dir>`; omit it to use the current directory.
 ## Step 1: Find or create the project state
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . show
+pk state -C . show
 ```
 
 If it reports no `pipeline.json`, this is a new project. Ask the user for a short project name
 (kebab-case), then:
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . init --project <name> --max-usd 25
+pk state -C . init --project <name> --max-usd 25
 ```
 
 Tell the user the budget cap you set and that `/pipeline` can change it.
@@ -60,7 +70,7 @@ Tell the user the budget cap you set and that `/pipeline` can change it.
 ## Step 2: Report where things stand
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next
+pk state -C . next
 ```
 
 Report, in this shape:
@@ -75,7 +85,7 @@ Report, in this shape:
 Check first — never skip this:
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate -C . phase <next phase>
+pk gate -C . phase <next phase>
 ```
 
 - **Exit 1 (refused):** report the reasons verbatim and stop. Do not invoke the next skill.
@@ -94,7 +104,7 @@ The phase-to-skill mapping is one to one: phase `design` is the `design` skill.
 After each skill reports a deliverable:
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase <phase> complete --artifact <path> [--artifact <path>]
+pk state -C . phase <phase> complete --artifact <path> [--artifact <path>]
 ```
 
 Use `in progress` when starting long work and `blocked --reason "<why>"` when you cannot
@@ -105,14 +115,14 @@ Judge rulings are recorded by `/verdict`, not here.
 ## Setting the mode
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . mode            # report
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . mode yolo       # set
+pk state -C . mode            # report
+pk state -C . mode yolo       # set
 ```
 
 When setting `yolo`, **always** also run:
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate harness
+pk gate harness
 ```
 
 If `unattended_ready` is false, tell the user plainly: Project Kit will not stop, but Claude
@@ -123,9 +133,9 @@ hands-off without checking this.
 ## Budget
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . budget                 # report
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . budget --max 50        # raise the ceiling
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . budget --add 1.80      # record spend (the panel does this)
+pk state -C . budget                 # report
+pk state -C . budget --max 50        # raise the ceiling
+pk state -C . budget --add 1.80      # record spend (the panel does this)
 ```
 
 An exceeded budget blocks every phase. It is not a checkpoint and `yolo` does not bypass it:
