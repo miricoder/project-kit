@@ -300,17 +300,49 @@ Everything `setup.sh` does, by hand, if you would rather not run a script.
 
 ## Troubleshooting
 
-**`zsh: command not found: claude`.** Either it is not installed, or your shell has a
-stale `PATH`. If you just edited a shell profile, an already-open terminal keeps the old
-`PATH` — open a **new terminal**, or `source ~/.zshrc`. If it is genuinely not installed:
-`curl -fsSL https://claude.ai/install.sh | bash`.
+**`zsh: command not found: claude`.** Find out whether it is missing or just unreachable:
 
-**`Invalid API key · Please run /login`.** An old build that predates subscription login, so
-it demands an API key. Upgrade — **no API key is needed**; Claude Code uses your
-subscription. This is unrelated to the judge panel keys.
+```bash
+ls -l ~/.local/bin/claude /usr/local/bin/claude /opt/homebrew/bin/claude 2>/dev/null
+```
 
-**`claude plugin` prints generic help instead of plugin output.** Your CLI predates plugin
-support. Follow step 2 of manual setup.
+*A path is listed* — it is installed and your shell cannot see it. An already-open terminal
+keeps the `PATH` it started with, so a profile edit never reaches it. Put it where every
+shell looks (`/usr/local/bin` is on the default system `PATH`, no `sudo` needed):
+
+```bash
+ln -sf ~/.local/bin/claude /usr/local/bin/claude
+hash -r && claude --version
+```
+
+*Nothing listed* — install it:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+hash -r && claude --version
+```
+
+**`claude plugin` prints generic help, or the version is below 2.0.** An old build with no
+`plugin` command. Remove it first, or it keeps winning the `PATH` race:
+
+```bash
+which -a claude                                        # every copy on your PATH
+npm uninstall -g @anthropic-ai/claude-code             # if it came from npm
+rm -f /usr/local/bin/claude /opt/homebrew/bin/claude   # stale symlinks
+
+curl -fsSL https://claude.ai/install.sh | bash
+hash -r && claude --version && claude plugin list
+```
+
+**`Invalid API key · Please run /login`.** A build predating subscription login, so it
+demands a key it should not need. **Do not supply an API key** — Claude Code uses your
+subscription, and this is unrelated to the judge panel keys. Apply the upgrade above; if it
+still asks, run `claude` then `/login` once.
+
+**The installer produces no binary.** It downloads to `~/.claude/downloads` and can fail
+quietly. If you have the VS Code extension, point a wrapper at the binary it already ships —
+see [the walkthrough](https://miricoder.github.io/project-kit/walkthrough.html) for the exact
+snippet.
 
 **Two Claude Code installs fighting over PATH.** Common when an old global install sits
 outside your current npm prefix — for example a Homebrew-path install while `npm config get

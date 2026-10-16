@@ -451,34 +451,62 @@ failure it prevents.</p>
 <div class="card" style="margin:14px 0">
 <h3 style="margin:0 0 8px"><span class="muted">Prereq 1</span> &middot; A working Claude Code</h3>
 <pre><code>claude --version</code></pre>
-<p>You need <strong>2.x or newer</strong>. Three things go wrong here:</p>
-<div class="scroll"><table>
-<thead><tr><th>What you see</th><th>Cause</th><th>Fix</th></tr></thead>
-<tbody>
-<tr>
-  <td><code>zsh: command not found: claude</code></td>
-  <td>Not installed, or installed but not on this shell's <code>PATH</code></td>
-  <td>If you just changed your shell profile, the fix is simply a <strong>new terminal</strong>
-      (or <code>source ~/.zshrc</code>) &mdash; an already-open shell keeps its old
-      <code>PATH</code>. Otherwise install it:
-      <code>curl -fsSL https://claude.ai/install.sh | bash</code></td>
-</tr>
-<tr>
-  <td>A version below 2.0, or <code>claude plugin</code> printing generic help</td>
-  <td>A build predating plugin support</td>
-  <td>Upgrade. If an old copy lives outside your current npm prefix, <strong>remove it
-      first</strong> &mdash; otherwise it keeps winning the <code>PATH</code> race and you end
-      up with two installs</td>
-</tr>
-<tr>
-  <td><code>Invalid API key &middot; Please run /login</code></td>
-  <td>An old build that predates subscription login, so it demands an API key</td>
-  <td>Upgrade as above. <strong>No API key is needed</strong> &mdash; Claude Code uses your
-      subscription</td>
-</tr>
-</tbody></table></div>
-<p class="muted">Confirm plugin support specifically, not just the version:
-<code>claude plugin list</code> should print plugin output, not the general help page.</p>
+<p>You need <strong>2.x or newer</strong>. Whatever goes wrong, one of the three recipes below
+fixes it. Run them as written.</p>
+
+<h4 style="margin:18px 0 6px">A. <code>zsh: command not found: claude</code></h4>
+<p>Find out first whether it is missing or merely unreachable:</p>
+<pre><code>ls -l ~/.local/bin/claude /usr/local/bin/claude /opt/homebrew/bin/claude 2&gt;/dev/null</code></pre>
+<p><strong>If a path is listed</strong>, it is installed and your shell simply cannot see it.
+An already-open terminal keeps the <code>PATH</code> it started with, so a profile edit does
+not reach it. Put it somewhere every shell looks &mdash; <code>/usr/local/bin</code> is on the
+default system <code>PATH</code> and needs no <code>sudo</code>:</p>
+<pre><code>ln -sf ~/.local/bin/claude /usr/local/bin/claude
+hash -r
+claude --version</code></pre>
+<p><strong>If nothing is listed</strong>, install it:</p>
+<pre><code>curl -fsSL https://claude.ai/install.sh | bash
+hash -r
+claude --version</code></pre>
+
+<h4 style="margin:18px 0 6px">B. Version below 2.0, or <code>claude plugin</code> prints generic help</h4>
+<p>An old build has no <code>plugin</code> command. Remove it before installing the new one,
+or the old binary keeps winning the <code>PATH</code> race and you end up with two installs:</p>
+<pre><code>which -a claude                              # every copy on your PATH
+npm uninstall -g @anthropic-ai/claude-code   # if it came from npm
+rm -f /usr/local/bin/claude /opt/homebrew/bin/claude   # stale symlinks
+
+curl -fsSL https://claude.ai/install.sh | bash
+hash -r
+claude --version        # expect 2.x
+claude plugin list      # expect plugin output, not the general help page</code></pre>
+<p class="muted">An old copy outside your current npm prefix is the usual culprit: a plain
+<code>npm i -g</code> installs to the prefix, which may lose the <code>PATH</code> race against
+it.</p>
+
+<h4 style="margin:18px 0 6px">C. <code>Invalid API key &middot; Please run /login</code></h4>
+<p>A build predating subscription login, so it demands an API key it should not need.
+<strong>Do not supply an API key</strong> &mdash; Claude Code authenticates with your
+subscription. Apply recipe B, then if it still asks, sign in once:</p>
+<pre><code>claude
+/login</code></pre>
+
+<h4 style="margin:18px 0 6px">If the installer produces nothing</h4>
+<p>It downloads to <code>~/.claude/downloads</code> and can fail silently. If
+<code>claude --version</code> still fails afterwards and you have the VS Code extension
+installed, point a wrapper at the binary it already ships:</p>
+<pre><code>mkdir -p ~/.local/bin
+cat &gt; ~/.local/bin/claude &lt;&lt;'SH'
+#!/bin/sh
+b=$(ls -d "$HOME"/.vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude 2&gt;/dev/null | tail -1)
+if [ ! -x "$b" ]; then echo "claude: no binary found" &gt;&amp;2; exit 127; fi
+exec "$b" "$@"
+SH
+chmod +x ~/.local/bin/claude
+ln -sf ~/.local/bin/claude /usr/local/bin/claude
+claude --version</code></pre>
+<p class="muted">The glob picks the newest extension, so this survives extension upgrades.
+Replace it with a real install whenever the installer cooperates.</p>
 </div>
 
 <div class="card" style="margin:14px 0">
