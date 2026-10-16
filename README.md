@@ -7,6 +7,7 @@ Twelve skills compose into one pipeline. Each skill reads shared state, refuses 
 its preconditions are unmet, does its work, records what it produced, then hands off. Gates
 are enforced by scripts — not by a model asserting that a gate passed.
 
+- 🚶 **[Walkthrough](https://miricoder.github.io/project-kit/walkthrough.html)** — one idea carried the whole way, step by step
 - 📖 **[Pipeline docs](https://miricoder.github.io/project-kit/)** — skill-by-skill detail, the flow, phase interaction
 - 📊 **[Know-how and project tracker](https://miricoder.github.io/project-kit/project_kit_know_how.html)** — install guide and the status of every project you have run through it
 
@@ -337,11 +338,35 @@ tool.
 ```bash
 git clone https://github.com/miricoder/project-kit
 cd project-kit
-./setup.sh --dev                              # symlink into ~/.claude/skills
-python3 -m unittest discover -s tests -t . -v
-claude plugin validate . --strict
-python3 docs/build_docs.py                    # regenerate the docs pages
+./setup.sh --dev     # symlink into ~/.claude/skills so edits load live
+pk check             # everything CI runs, same order
 ```
+
+### Verifying a change before you push
+
+`pk check` runs exactly what CI runs, so you find problems locally instead of after a push:
+
+```
+Project Kit — repository checks (same as CI)
+============================================
+
+[ ok ]  Unit tests        Ran 139 tests in 0.990s
+[ ok ]  Docs up to date   generated pages match their sources
+[ ok ]  Plugin manifests  validate --strict passed
+
+All required checks passed.
+Safe to commit and push.
+```
+
+| | |
+|---|---|
+| `pk check` | Unit tests → docs freshness → manifest validation |
+| `pk check --fix` | Regenerate stale docs rather than only reporting them |
+| Exit code | `0` all required passed, `1` otherwise — usable as a git hook |
+
+A missing Claude Code CLI downgrades the manifest step to a warning rather than failing the
+run, so the command still works on a bare machine. A test pins these steps against
+`.github/workflows/ci.yml`, so the two cannot quietly drift apart.
 
 Release: bump `version` in `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`,
 then `claude plugin tag --push` — it refuses unless both agree.
