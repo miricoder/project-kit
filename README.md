@@ -300,6 +300,15 @@ Everything `setup.sh` does, by hand, if you would rather not run a script.
 
 ## Troubleshooting
 
+**`zsh: command not found: claude`.** Either it is not installed, or your shell has a
+stale `PATH`. If you just edited a shell profile, an already-open terminal keeps the old
+`PATH` — open a **new terminal**, or `source ~/.zshrc`. If it is genuinely not installed:
+`curl -fsSL https://claude.ai/install.sh | bash`.
+
+**`Invalid API key · Please run /login`.** An old build that predates subscription login, so
+it demands an API key. Upgrade — **no API key is needed**; Claude Code uses your
+subscription. This is unrelated to the judge panel keys.
+
 **`claude plugin` prints generic help instead of plugin output.** Your CLI predates plugin
 support. Follow step 2 of manual setup.
 
