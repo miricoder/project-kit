@@ -388,6 +388,41 @@ def check_allowlist() -> Check:
 
 # --------------------------------------------------------------------------- fixes
 
+LOCAL_BIN = Path(os.path.expanduser("~/.local/bin"))
+
+
+def check_pk_on_path(fix: bool = False) -> Check:
+    """`pk` on PATH is what lets skills use the short command form.
+
+    Not required: the skills resolve the launcher by path when it is absent. But when it is
+    present everything is shorter and less fragile, so --fix links it.
+    """
+    found = shutil.which("pk")
+    if found:
+        return Check("pk launcher on PATH", True, found, required=False)
+    source = ROOT / "bin" / "pk"
+    if not source.is_file():
+        return Check("pk launcher on PATH", False, "bin/pk not found in this copy",
+                     required=False)
+    if not fix:
+        return Check("pk launcher on PATH", False, "not on PATH — skills will resolve it by path",
+                     required=False,
+                     fix=f"mkdir -p {LOCAL_BIN} && ln -sf {source} {LOCAL_BIN}/pk\n"
+                         f"  then ensure {LOCAL_BIN} is on your PATH")
+    try:
+        LOCAL_BIN.mkdir(parents=True, exist_ok=True)
+        target = LOCAL_BIN / "pk"
+        if target.is_symlink() or target.exists():
+            target.unlink()
+        target.symlink_to(source)
+    except OSError as exc:
+        return Check("pk launcher on PATH", False, f"could not link: {exc}", required=False)
+    on_path = str(LOCAL_BIN) in os.environ.get("PATH", "").split(os.pathsep)
+    detail = f"linked {target}" + ("" if on_path else f" — add {LOCAL_BIN} to your PATH")
+    return Check("pk launcher on PATH", on_path, detail, required=False,
+                 fix=None if on_path else f'export PATH="{LOCAL_BIN}:$PATH"')
+
+
 def apply_dev_link() -> Check:
     """Symlink this repo into ~/.claude/skills so edits load live as <name>@skills-dir."""
     SKILLS_LINK.parent.mkdir(parents=True, exist_ok=True)
@@ -415,11 +450,11 @@ def apply_git_identity(name: str, email: str) -> Check:
 
 # --------------------------------------------------------------------------- report
 
-def collect(dev: bool = False, live: bool = False) -> List[Check]:
+def collect(dev: bool = False, live: bool = False, fix: bool = False) -> List[Check]:
     python_check, claude_check = find_python(), find_claude()
     checks = [python_check, claude_check, check_git_identity()]
     checks.append(apply_dev_link() if dev else check_plugin_installed(claude_check.ok))
-    checks.extend([check_panel(live=live), check_allowlist()])
+    checks.extend([check_pk_on_path(fix=fix), check_panel(live=live), check_allowlist()])
     return checks
 
 
@@ -560,7 +595,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             if name and email:
                 apply_git_identity(name, email)
 
-    checks = collect(dev=args.dev, live=args.live)
+    checks = collect(dev=args.dev, live=args.live, fix=args.fix)
     cache_write(checks)
     if args.json:
         print(json.dumps({"checks": [

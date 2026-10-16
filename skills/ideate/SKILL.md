@@ -20,17 +20,27 @@ it is, who it is for, what already exists, and what nobody yet knows.
 
 ## Commands
 
-Project Kit ships a launcher. Use it through the plugin root, which Claude Code sets for
-you — this form works on macOS, Linux and Windows, and for every install type:
+Project Kit ships a launcher, `bin/pk`. **Resolve its path once, then use that literal path
+in every later command** — each Bash call is a fresh shell, so no variable survives between
+them, and `$CLAUDE_PLUGIN_ROOT` is *not* exported into the shell environment.
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next          # read or write pipeline state
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate  -C . phase <name>  # may this phase run?
+# If pk is already on PATH (setup.sh --fix puts it there), just use `pk` and skip this.
+command -v pk || ls -d "$HOME"/.claude/plugins/cache/project-kit/project-kit/*/bin/pk \
+                       "$HOME"/.claude/skills/project-kit/bin/pk 2>/dev/null | tail -1
 ```
 
-`-C <dir>` is the project directory; omit it to use the current one. If `pk` happens to be
-on PATH (a development install, or `setup.sh --fix`), the bare `pk gate …` form is
-equivalent and shorter.
+Take the path it prints and substitute it wherever this skill says `pk` below, for example:
+
+```bash
+/Users/you/.claude/plugins/cache/project-kit/project-kit/0.3.1/bin/pk gate -C . phase ideate
+```
+
+If it prints nothing, Project Kit is not installed correctly — tell the user to run
+`claude plugin install project-kit` and stop.
+
+`-C <dir>` is the project directory; omit it to use the current one.
+
 
 
 The gate command checks the **environment** as well as pipeline state. Two outcomes
@@ -51,7 +61,7 @@ must leave the directory exactly as it found it.
 ## Step 2: Check the directory, then set up state
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate -C . phase ideate
+pk gate -C . phase ideate
 ```
 
 Three outcomes:
@@ -62,7 +72,7 @@ Three outcomes:
   user do it:
 
   ```bash
-  "$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . init
+  pk state -C . init
   ```
 
   The project name defaults to the directory name.
@@ -73,7 +83,7 @@ Three outcomes:
 
   ```bash
   mkdir -p houseplant-tracker && cd houseplant-tracker
-  "$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . init
+  pk state -C . init
   ```
 
   Say which directory you created and that everything will live there. The shell keeps
@@ -85,7 +95,7 @@ Three outcomes:
 Then:
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase ideate "in progress"
+pk state -C . phase ideate "in progress"
 ```
 
 ## Step 3: Understand the idea
@@ -130,8 +140,8 @@ actually wrote. If anything is unmapped, say so plainly and do not claim complet
 ## Step 7: Record and hand off
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase ideate complete --artifact docs/research.md
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next
+pk state -C . phase ideate complete --artifact docs/research.md
+pk state -C . next
 ```
 
 Report to the user:

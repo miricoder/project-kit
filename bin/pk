@@ -17,7 +17,18 @@ if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ]; then
 elif [ -n "${PROJECT_KIT_ROOT:-}" ]; then
   ROOT="$PROJECT_KIT_ROOT"
 else
-  ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+  # Follow symlinks before deriving the root: `pk` is commonly linked into ~/.local/bin,
+  # and taking dirname of the link would point at the link's directory, not the plugin.
+  # readlink -f is not portable to older macOS, so resolve the chain by hand.
+  SELF=$0
+  while [ -L "$SELF" ]; do
+    LINK=$(readlink "$SELF")
+    case "$LINK" in
+      /*) SELF="$LINK" ;;
+      *)  SELF="$(dirname -- "$SELF")/$LINK" ;;
+    esac
+  done
+  ROOT=$(CDPATH= cd -- "$(dirname -- "$SELF")/.." && pwd)
 fi
 
 PY=""

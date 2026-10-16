@@ -19,17 +19,27 @@ deliverable — a proposal that says yes to everything is not a proposal.
 
 ## Commands
 
-Project Kit ships a launcher. Use it through the plugin root, which Claude Code sets for
-you — this form works on macOS, Linux and Windows, and for every install type:
+Project Kit ships a launcher, `bin/pk`. **Resolve its path once, then use that literal path
+in every later command** — each Bash call is a fresh shell, so no variable survives between
+them, and `$CLAUDE_PLUGIN_ROOT` is *not* exported into the shell environment.
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next          # read or write pipeline state
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate  -C . phase <name>  # may this phase run?
+# If pk is already on PATH (setup.sh --fix puts it there), just use `pk` and skip this.
+command -v pk || ls -d "$HOME"/.claude/plugins/cache/project-kit/project-kit/*/bin/pk \
+                       "$HOME"/.claude/skills/project-kit/bin/pk 2>/dev/null | tail -1
 ```
 
-`-C <dir>` is the project directory; omit it to use the current one. If `pk` happens to be
-on PATH (a development install, or `setup.sh --fix`), the bare `pk gate …` form is
-equivalent and shorter.
+Take the path it prints and substitute it wherever this skill says `pk` below, for example:
+
+```bash
+/Users/you/.claude/plugins/cache/project-kit/project-kit/0.3.1/bin/pk gate -C . phase ideate
+```
+
+If it prints nothing, Project Kit is not installed correctly — tell the user to run
+`claude plugin install project-kit` and stop.
+
+`-C <dir>` is the project directory; omit it to use the current one.
+
 
 
 The gate command checks the **environment** as well as pipeline state. Two outcomes
@@ -43,14 +53,14 @@ matter:
 ## Step 1: Gate
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" gate -C . phase proposal
+pk gate -C . phase proposal
 ```
 
 Exit 1: report the reasons verbatim and stop. The usual cause is that `/ideate` has not
 completed, which means there is no `docs/research.md` to scope from.
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase proposal "in progress"
+pk state -C . phase proposal "in progress"
 ```
 
 ## Step 2: Read the research
@@ -95,8 +105,8 @@ out-of-scope list. Anything unmapped gets said out loud, not quietly dropped.
 ## Step 8: Record and hand off
 
 ```bash
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . phase proposal complete --artifact docs/proposal.md
-"$CLAUDE_PLUGIN_ROOT/bin/pk" state -C . next
+pk state -C . phase proposal complete --artifact docs/proposal.md
+pk state -C . next
 ```
 
 Report:
