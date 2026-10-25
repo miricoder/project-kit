@@ -704,6 +704,14 @@ cannot judge it.</li>
 <p>A ChatGPT subscription is <strong>not</strong> an OpenAI API key. Using
 <code>api_key</code> for that seat means paying for API usage separately;
 <code>cli</code> avoids it.</p>
+<p>No keys at all? Name three families you will paste for by hand &mdash;
+<code>PROJECT_KIT_PASTE_SEATS=google,moonshot,openai</code> in
+<code>~/.claude/project-kit/.env</code> &mdash; and the panel can sit. Every reply is
+validated against the judge form before it counts, however it arrived.</p>
+<p>Every judge rates the same nine criteria and replies in one fixed format; the three
+verdicts are combined by a fixed rule (the median by severity) into
+<code>docs/ruling.md</code>, which shows every judge's rating on every criterion. The full
+form is <code>skills/handover/references/judge-form.md</code>.</p>
 
 <h2>Where your data lives</h2>
 <div class="scroll"><table>

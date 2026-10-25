@@ -7,6 +7,7 @@
 #   pk gate phase design
 #   pk doctor --live
 #   pk check
+#   pk judge status
 #
 # Plugin root resolution, in order: $CLAUDE_PLUGIN_ROOT, $PROJECT_KIT_ROOT, this script's
 # own parent directory.
@@ -40,7 +41,7 @@ for candidate in python3 python py; do
 done
 [ -n "$PY" ] || { echo "pk: Python 3.9+ not found (tried python3, python, py)" >&2; exit 1; }
 
-[ $# -ge 1 ] || { echo "usage: pk {state|gate|doctor} [args...]" >&2; exit 2; }
+[ $# -ge 1 ] || { echo "usage: pk {state|gate|doctor|check|judge} [args...]" >&2; exit 2; }
 SUB="$1"; shift
 
 case "$SUB" in
@@ -48,7 +49,8 @@ case "$SUB" in
   gate)   TARGET="$ROOT/skills/pipeline/scripts/gate.py" ;;
   doctor) TARGET="$ROOT/scripts/doctor.py" ;;
   check)  TARGET="$ROOT/scripts/check.py" ;;
-  *) echo "pk: unknown subcommand '$SUB' (expected state, gate, doctor or check)" >&2; exit 2 ;;
+  judge)  TARGET="$ROOT/skills/handover/scripts/judge.py" ;;
+  *) echo "pk: unknown subcommand '$SUB' (expected state, gate, doctor, check or judge)" >&2; exit 2 ;;
 esac
 
 [ -f "$TARGET" ] || { echo "pk: $TARGET not found; set PROJECT_KIT_ROOT" >&2; exit 2; }

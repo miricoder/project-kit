@@ -191,8 +191,8 @@ python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase design
 | `/ideate` | RND | Idea research, prior art, user and job framing, open questions | ✅ |
 | `/proposal` | RND | Scope, v1 cut, explicit out-of-scope, cost estimate | ✅ |
 | `/design` | Design | Full-stack design, technical spec, Gherkin acceptance criteria | ✅ |
-| `/handover` | Handover | Builds the judge case and brief, runs the panel, validates verdicts | planned |
-| `/verdict` | Approval | Reads the ruling, ranks fixes, back-propagates, admins rounds | planned |
+| `/handover` | Handover | Builds the judge case and brief, runs the panel, validates verdicts | ✅ |
+| `/verdict` | Approval | Reads the ruling, ranks fixes, back-propagates, admins rounds | ✅ |
 | `/initiate` | Initiation | **Judge-gated.** Approved spec → feature backlog | planned |
 | `/build` | Build | Implements one backlog slice: code plus unit tests | planned |
 | `/devops` | DevOps | Repo, branches, PRs, releases, tags, CHANGELOG, CI, migrations | planned |
@@ -270,11 +270,41 @@ Each seat uses the cheapest transport available:
 | `cli` | A subscription-backed CLI — e.g. `npm i -g @openai/codex` reuses an existing ChatGPT login, no API key and no extra cost |
 | `paste` | Neither. The brief is rendered for you to paste, and the returned JSON is validated before being accepted |
 
+No keys at all? Name three families you will paste for by hand, and the panel can sit:
+
+```bash
+echo 'PROJECT_KIT_PASTE_SEATS=google,moonshot,openai' >> ~/.claude/project-kit/.env
+```
+
+Default models are overridable per family (`PROJECT_KIT_MODEL_OPENAI=<model>`), as are the
+per-token prices the budget estimate uses (`PROJECT_KIT_PRICE_OPENAI=<in>,<out>` in USD per
+million tokens).
+
 > A ChatGPT subscription is **not** an OpenAI API key. Using `api_key` for that seat means
 > paying for API usage separately; `cli` avoids it.
 
 Verify with `./setup.sh --live`, which attempts one tiny generation per seat. A key that
 authenticates can still be out of credit.
+
+### What the judges evaluate
+
+Every judge receives the same generated brief, `judge/round-<n>/brief.md`: the rules, nine
+criteria (job fit, scope, feasibility, failure modes, data and rollback, security and
+privacy, testability, cost, and the design's own counter-argument), the reply format, and
+the whole plan. Each reply is validated against the form before it counts, and the three
+verdicts are combined by a fixed rule (the median by severity) into `docs/ruling.md`, which
+shows every judge's rating on every criterion. The full form is in
+[skills/handover/references/judge-form.md](skills/handover/references/judge-form.md).
+
+| Command | Does |
+|---|---|
+| `pk judge case` | write this round's `case.json` and `brief.md` |
+| `pk judge seats` | which three families sit, how each is reached, the estimated cost |
+| `pk judge run` | call the API and CLI seats; list the paste seats |
+| `pk judge accept --family F --file reply.txt` | validate a reply you pasted by hand |
+| `pk judge status` | each seat's verdict, valid or not, and why |
+| `pk judge combine` | three valid verdicts → `ruling.json` and `docs/ruling.md` |
+| `pk judge record` | re-derive the ruling from the raw replies and record it; refuses a hand-edited ruling or a plan changed since judging |
 
 ## Manual setup
 

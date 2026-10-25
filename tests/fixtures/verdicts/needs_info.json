@@ -1,0 +1,58 @@
+{
+  "form_version": 1,
+  "case_id": "CASE",
+  "verdict": "NEEDS INFO",
+  "summary": "The target platform and currency are unresolved, and both change the design.",
+  "criteria": [
+    {
+      "id": "job_fit",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "scope",
+      "rating": "concern",
+      "note": "Platform choice deferred to design but not made there."
+    },
+    {
+      "id": "feasibility",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "failure_modes",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "data_and_rollback",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "security_privacy",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "testability",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "cost",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "counter_argument",
+      "rating": "pass",
+      "note": ""
+    }
+  ],
+  "findings": [],
+  "questions": [
+    "Which phone platform is v1 built for?",
+    "Is the home currency EUR?"
+  ]
+}

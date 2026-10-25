@@ -123,6 +123,29 @@ class PanelSeatsTest(unittest.TestCase):
         _, _, problems = self.seats({"MOONSHOT_API_KEY": "a"})
         self.assertTrue(any(str(doctor.SEATS_REQUIRED) in p for p in problems))
 
+    def test_paste_seats_fill_the_panel_without_keys(self):
+        families, notes, problems = self.seats({
+            doctor.PASTE_SEATS_KEY: "google, moonshot,openai"})
+        self.assertEqual(sorted(families), ["google", "moonshot", "openai"])
+        self.assertEqual(problems, [])
+        self.assertTrue(any("paste" in n for n in notes))
+
+    def test_a_paste_seat_does_not_duplicate_a_key(self):
+        families, notes, _ = self.seats({
+            "GEMINI_API_KEY": "a", doctor.PASTE_SEATS_KEY: "google"})
+        self.assertEqual(families, ["google"])
+        self.assertTrue(any("duplicates" in n for n in notes))
+
+    def test_anthropic_cannot_be_a_paste_seat(self):
+        families, _, problems = self.seats({
+            doctor.PASTE_SEATS_KEY: "anthropic,google,moonshot"})
+        self.assertNotIn("anthropic", families)
+        self.assertTrue(any("authoring family" in p for p in problems))
+
+    def test_an_unknown_paste_family_is_reported(self):
+        _, _, problems = self.seats({doctor.PASTE_SEATS_KEY: "acme"})
+        self.assertTrue(any("unknown family" in p for p in problems))
+
 
 class CheckStatusTest(unittest.TestCase):
     def test_required_failure_is_fail_and_optional_is_warn(self):
