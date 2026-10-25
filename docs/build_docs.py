@@ -101,7 +101,16 @@ def read_skills() -> Dict[str, str]:
             for p in sorted(SKILLS.glob("*/SKILL.md"))}
 
 
-def read_registry() -> List[Dict[str, Any]]:
+def read_registry(include: bool = False) -> List[Dict[str, Any]]:
+    """Project rows for the tracker.
+
+    Off by default, deliberately. These pages are committed and published, and the
+    registry holds the user's own project names and absolute paths. Embedding it at build
+    time would publish private data and make output differ per machine, which breaks the
+    staleness gate. --with-registry is for a personal copy, not for committing.
+    """
+    if not include:
+        return []
     path = Path(os.path.expanduser(
         os.environ.get("PROJECT_KIT_REGISTRY", "~/.claude/project-kit/registry.json")))
     if not path.exists():
@@ -710,11 +719,11 @@ cannot judge it.</li>
 
 # --------------------------------------------------------------------------- main
 
-def render() -> Dict[Path, str]:
+def render(with_registry: bool = False) -> Dict[Path, str]:
     version = json.loads(PLUGIN.read_text())["version"]
     phases = read_phases()
     skills = read_skills()
-    projects = read_registry()
+    projects = read_registry(include=with_registry)
     return {
         DOCS / "index.html": build_index(version, phases, skills),
         DOCS / "walkthrough.html": build_walkthrough(version, skills),
@@ -727,9 +736,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true",
                         help="exit 1 if the committed pages differ from a fresh render")
+    parser.add_argument("--with-registry", action="store_true",
+                        help="embed your local project registry (personal copy; do not commit)")
     args = parser.parse_args(argv)
 
-    pages = render()
+    pages = render(with_registry=args.with_registry)
     if args.check:
         stale = [p.name for p, text in pages.items()
                  if not p.exists() or p.read_text() != text]

@@ -11,6 +11,10 @@ are enforced by scripts — not by a model asserting that a gate passed.
 - 📖 **[Pipeline docs](https://miricoder.github.io/project-kit/)** — skill-by-skill detail, the flow, phase interaction
 - 📊 **[Know-how and project tracker](https://miricoder.github.io/project-kit/project_kit_know_how.html)** — install guide and the status of every project you have run through it
 
+> **Picking this up on another machine, in the cloud, or on a phone?** Start with
+> [HANDOVER.md](HANDOVER.md) — state of play, decisions already taken, and the traps that
+> have already cost time. [docs/roadmap.md](docs/roadmap.md) has what is built and what is next.
+
 ## Requirements
 
 - **Claude Code 2.x or newer.** Plugin support is required — 0.x and 1.x builds have no
