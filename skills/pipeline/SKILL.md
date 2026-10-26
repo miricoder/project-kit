@@ -99,6 +99,13 @@ pk gate -C . phase <next phase>
 
 The phase-to-skill mapping is one to one: phase `design` is the `design` skill.
 
+**Before `design`, `handover` or `verdict` runs** (and whenever a gate refuses on the judge
+panel), ask for a judge key: follow `references/judge-keys.md`. It asks the user, with the
+AskUserQuestion tool, for at least one non-Anthropic API key and how to fill the remaining
+seats, in every mode including `yolo`. Asking before `design` is what lets the rest of a
+`yolo` run go unattended. A judging round never starts without at least one key, unless
+the user explicitly chose an all-paste panel.
+
 ## Step 4: Record what happened
 
 After each skill reports a deliverable:

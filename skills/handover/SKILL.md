@@ -62,9 +62,12 @@ pk state -C . phase handover "in progress"
 ```
 
 Exit 1 usually means `/design` is not complete, or the panel has fewer than three seats.
-Pass the `Fix:` on. For a user with no API keys, the cheapest fix is paste seats: add
-`PROJECT_KIT_PASTE_SEATS=google,moonshot,openai` (any three non-Anthropic families) to
-`~/.claude/project-kit/.env`, then `pk doctor` to refresh the cached check.
+For a short panel, do not just pass the `Fix:` on: ask for a judge key, following
+`../pipeline/references/judge-keys.md`. The user is asked with the AskUserQuestion tool for
+at least one non-Anthropic API key, which they store themselves with
+`pk keys add <family>`, and the remaining seats become paste seats with
+`pk keys paste-rest`. Then run the gate again. A round does not start without at least one
+key unless the user explicitly asks for an all-paste panel.
 
 ## Step 2: Build the case
 

@@ -398,8 +398,9 @@ def check_panel(live: bool = False) -> Check:
         problems.append(f"{len(families)} of {SEATS_REQUIRED} families usable")
     # Not required: /ideate through /design need no panel at all.
     return Check("Judge panel", not problems, detail, required=False,
-                 fix=(f"add a third family key to {ENV_FILE} (chmod 600), or name a family "
-                      f"you will paste by hand: {PASTE_SEATS_KEY}=google") if problems else None,
+                 fix=("ask the user for a judge key and have them run `pk keys add <family>` "
+                      "(stored in " + str(ENV_FILE) + ", mode 600, never in a repo); fill "
+                      "the seats still empty with `pk keys paste-rest`") if problems else None,
                  notes=notes + problems)
 
 
