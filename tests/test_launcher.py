@@ -62,10 +62,15 @@ class LauncherResolutionTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("backlog", result.stdout)
 
+    def test_keys_subcommand_resolves(self):
+        result = self.run_pk(PK, "keys", "--help")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("paste-rest", result.stdout)
+
     def test_powershell_launcher_knows_every_subcommand(self):
         """The two launchers must agree, or a Windows user hits a ValidateSet error."""
         ps1 = (ROOT / "bin" / "pk.ps1").read_text()
-        for sub in ("state", "gate", "doctor", "check", "judge", "qa"):
+        for sub in ("state", "gate", "doctor", "check", "judge", "qa", "keys"):
             self.assertIn(f"'{sub}'", ps1)
 
     def test_unknown_subcommand_is_a_usage_error(self):

@@ -78,9 +78,12 @@ pk gate -C . phase handover
 pk state -C . phase handover "in progress"
 ```
 
-If the gate refuses on the judge panel, the loop cannot be autonomous: paste seats need a
-person. Report the `Fix:` verbatim (three non-Anthropic API keys, or the codex CLI for one
-seat), run Steps 2 and 3 anyway so everything but judging is green, and stop at Step 5.
+If the gate refuses on the judge panel, ask for a judge key before anything else: follow
+`../pipeline/references/judge-keys.md`. This is the one question this loop asks, and it is
+asked in `yolo` too, because only the user can supply a key. Once `pk keys status` shows
+`ready`, run the gate again and carry on. Paste seats still need the user to carry the brief
+in each round; say so. If the user declines to give any key, run Steps 2 and 3 anyway so
+everything but judging is green, and stop at Step 5.
 
 Tell the user, in one line, the budget (`pk state -C . budget`) and that you will report back
 when everything passes or a stop condition is hit.
@@ -153,7 +156,7 @@ plan that changed after it was judged.
 |---|---|
 | Budget exceeded (`pk judge run` or any phase refuses on budget) | spent vs cap; raising it is their call: `pk state budget --max <usd>` |
 | Round limit reached (`pk judge case` refuses) | rounds run, what is still open |
-| The panel cannot sit (no keys, no CLI) | the `Fix:` from the gate, verbatim |
+| The panel cannot sit: the user was asked for a judge key and gave none | that the judge gate stays shut until a key is stored with `pk keys add <family>` |
 | The same check failing three passes in a row | the problem, the three attempts, why they did not work |
 | A judge reply invalid twice | the validator's problems |
 | Two `REJECT` rulings in a row | the core objection; this needs the user's judgement |

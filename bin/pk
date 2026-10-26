@@ -9,6 +9,7 @@
 #   pk check
 #   pk judge status
 #   pk qa
+#   pk keys status
 #
 # Plugin root resolution, in order: $CLAUDE_PLUGIN_ROOT, $PROJECT_KIT_ROOT, this script's
 # own parent directory.
@@ -42,7 +43,7 @@ for candidate in python3 python py; do
 done
 [ -n "$PY" ] || { echo "pk: Python 3.9+ not found (tried python3, python, py)" >&2; exit 1; }
 
-[ $# -ge 1 ] || { echo "usage: pk {state|gate|doctor|check|judge|qa} [args...]" >&2; exit 2; }
+[ $# -ge 1 ] || { echo "usage: pk {state|gate|doctor|check|judge|qa|keys} [args...]" >&2; exit 2; }
 SUB="$1"; shift
 
 case "$SUB" in
@@ -52,7 +53,8 @@ case "$SUB" in
   check)  TARGET="$ROOT/scripts/check.py" ;;
   judge)  TARGET="$ROOT/skills/handover/scripts/judge.py" ;;
   qa)     TARGET="$ROOT/scripts/qa.py" ;;
-  *) echo "pk: unknown subcommand '$SUB' (expected state, gate, doctor, check, judge or qa)" >&2; exit 2 ;;
+  keys)   TARGET="$ROOT/scripts/keys.py" ;;
+  *) echo "pk: unknown subcommand '$SUB' (expected state, gate, doctor, check, judge, qa or keys)" >&2; exit 2 ;;
 esac
 
 [ -f "$TARGET" ] || { echo "pk: $TARGET not found; set PROJECT_KIT_ROOT" >&2; exit 2; }

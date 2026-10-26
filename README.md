@@ -175,6 +175,7 @@ work identically across the three platforms:
 pk state -C . next            # what phase am I in
 pk gate  -C . phase design    # may /design run? non-zero if not
 pk doctor --live              # re-run the environment check
+pk keys status                # what the judge panel has and what it is missing
 ```
 
 Explicit form, if `pk` is not on PATH:
@@ -252,7 +253,22 @@ enforced mechanically, not left to judgement:
 2. **The authoring family is excluded.** Claude writes the plan, so Anthropic cannot judge
    it. An `ANTHROPIC_API_KEY` is reported as unusable rather than counted.
 
-Put credentials in `~/.claude/project-kit/.env`, mode `600`, never in the repo:
+**A judging round needs at least one key.** Keys are never committed: this repository is
+public, and a key in it is readable, and spendable, by anyone. Before `/design` and again at
+`/handover` (in every mode, `yolo` included), Claude checks the panel and, if it is short,
+**asks you** which provider's key you can give and how to fill the other seats. You store
+the key yourself, in your own terminal, with input hidden:
+
+```bash
+pk keys add openai --live     # or google, moonshot, xai, deepseek, mistral
+pk keys paste-rest            # fill the seats still empty with paste seats
+pk keys status                # ready: true once three families sit
+```
+
+`pk keys` writes `~/.claude/project-kit/.env` with mode `600` in a `700` directory and never
+prints the key. Don't type a key into the chat. In a cloud session, set the variable
+(`OPENAI_API_KEY`, …) as a secret in the environment settings instead; `pk` reads it from the
+process environment. Editing the file by hand still works:
 
 ```bash
 mkdir -p ~/.claude/project-kit
@@ -271,7 +287,8 @@ Each seat uses the cheapest transport available:
 | `cli` | A subscription-backed CLI — e.g. `npm i -g @openai/codex` reuses an existing ChatGPT login, no API key and no extra cost |
 | `paste` | Neither. The brief is rendered for you to paste, and the returned JSON is validated before being accepted |
 
-No keys at all? Name three families you will paste for by hand, and the panel can sit:
+No keys at all, and you want to paste all three judges by hand? Say so when asked, or name
+the families yourself, and the panel can sit:
 
 ```bash
 echo 'PROJECT_KIT_PASTE_SEATS=google,moonshot,openai' >> ~/.claude/project-kit/.env

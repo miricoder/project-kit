@@ -64,6 +64,19 @@ pk state -C . phase design "in progress"
 
 Exit 1: report verbatim and stop.
 
+Then make sure the judges will be able to sit when this design is finished:
+
+```bash
+pk keys status
+```
+
+If `ready` is false, ask for a judge key now, before designing: follow
+`../pipeline/references/judge-keys.md` (the user is asked with the AskUserQuestion tool for
+at least one non-Anthropic API key, stored by them with `pk keys add <family>`, never typed
+into the chat). Asking here, not after the spec is written, is what lets `auto` and `yolo`
+run on to the judges without stopping. If the user declines, design anyway and say that
+judging will wait for a key.
+
 ## Step 2: Read the proposal
 
 Read `docs/proposal.md` and `docs/research.md`. The v1 cut and the out-of-scope list are
