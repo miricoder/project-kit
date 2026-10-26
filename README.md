@@ -12,8 +12,8 @@ Planned with [Project Kit](https://github.com/miricoder/project-kit). Mode: `yol
 |---|---|---|
 | ideate | complete | `docs/research.md` |
 | proposal | complete | `docs/proposal.md` |
-| design | **next** | `docs/spec.md`, `docs/acceptance.feature` (not written yet) |
-| remediate → judge | after design, automatic | `qa/remediation-log.md`, `docs/ruling.md` |
+| design | complete | `docs/spec.md`, `docs/acceptance.feature` |
+| remediate → judge | **next**: lint and a11y pass; judging blocked until three judge seats are configured | `qa/remediation-log.md`, `docs/ruling.md` |
 | initiate | after the judges pass it; asks before starting | `docs/backlog.md` |
 
 UI mockups: `ui/*.dc.html` (canvas: https://claude.ai/artifact/YKwgxHfyNuYxb46JVZHYBL).
