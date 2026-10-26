@@ -13,6 +13,8 @@ what the judges said: the ruling is combined by a script, and `/verdict` explain
 
 1. **Never judge the plan yourself.** Claude wrote it. Anthropic cannot hold a seat, and no
    verdict of yours counts. If the panel cannot sit, say so and stop; do not fill the gap.
+   The user may instead choose to skip the round (`pk state waive judge`, see
+   `../pipeline/SKILL.md`), which records it as waived, not judged.
 2. **Stop before spending.** In every mode except `yolo`, show the seats and the estimated
    cost and wait for the user to agree. This is a checkpoint even in `auto`.
 3. **Never edit a judge's reply.** An invalid reply is sent back to that judge with the

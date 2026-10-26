@@ -205,6 +205,10 @@ python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase design
 Three hard gates: the **judge gate** guards `/initiate`; the **test gate** and **security
 gate** guard `/launch`.
 
+The user may skip the judge round (`pk state waive judge --reason "..."`), for example when
+no judge key works. The gate then opens as `WAIVED`, the reason is kept in `pipeline.json`,
+and `/initiate` labels the backlog as unjudged. The security gate cannot be waived.
+
 ## Run modes
 
 Set once; stored in the project's `pipeline.json` and persists across sessions.

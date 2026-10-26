@@ -14,7 +14,7 @@ one at a time.
 1. **Always ask before starting development — in every mode, `yolo` included.** This is the
    one approval the pipeline never skips. No answer, no backlog.
 2. **The gate decides, not you.** `pk gate phase initiate` refuses unless the judge gate has
-   a recorded pass. Never work around it.
+   a recorded pass, or the user waived it. Never work around it.
 3. **The backlog covers the plan exactly.** Every acceptance scenario lands in a slice;
    nothing outside the proposal's v1 cut is added. `pk qa backlog` checks the first.
 
@@ -64,6 +64,7 @@ Show, then **wait for an explicit yes**:
 
     READY TO BUILD  <project>
     Judge ruling:  <ruling>, round <n>   (docs/ruling.md)
+                   or: WAIVED, not judged (<waived_reason>)
     Checks:        all passed            (qa/report.json)
     v1:            <the proposal's one-sentence v1>
     Slices:        about <n>, from the proposal's phases
@@ -85,6 +86,7 @@ Write `docs/backlog.md`:
 # Backlog: <project>
 
 > From docs/spec.md and docs/acceptance.feature, judged <ruling> in round <n>.
+> (Waived: "not judged: the judge round was skipped at the user's request".)
 > Order is build order. A slice is done when its scenarios pass.
 
 ## Slice 1: <name>
@@ -97,7 +99,7 @@ Write `docs/backlog.md`:
 
 Order by the proposal's phases; inside a phase, the slice the others depend on first. Keep
 each slice to one or two working sessions. Carry the ruling's `recommended` findings into the
-slice they belong to.
+slice they belong to; a waived gate has none.
 
 ## Step 4: Check coverage, fix until it passes
 

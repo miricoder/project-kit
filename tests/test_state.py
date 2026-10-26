@@ -134,6 +134,51 @@ class GateTest(StateTestCase):
             state.record_ruling(self.fresh(), "vibes", "SOUND", 1)
 
 
+class WaiverTest(StateTestCase):
+    def through_design(self):
+        st = self.fresh()
+        for phase in ("ideate", "proposal", "design"):
+            state.set_phase(st, phase, "complete")
+        state.set_phase(st, "handover", "blocked", reason="no credit")
+        return st
+
+    def test_a_waived_judge_gate_opens_initiate(self):
+        st = self.through_design()
+        state.waive_gate(st, "judge", "user skipped judging")
+        self.assertTrue(state.gate_passed(st, "judge"))
+        self.assertEqual(state.blockers(st, "initiate"), [])
+
+    def test_the_waiver_is_recorded_as_waived_not_as_a_ruling(self):
+        st = self.through_design()
+        state.waive_gate(st, "judge", "user skipped judging")
+        gate = st["gates"]["judge"]
+        self.assertEqual(gate["ruling"], state.WAIVED)
+        self.assertEqual(gate["waived_reason"], "user skipped judging")
+        self.assertEqual(st["rounds"][-1]["ruling"], state.WAIVED)
+
+    def test_handover_and_verdict_are_marked_skipped(self):
+        st = self.through_design()
+        state.waive_gate(st, "judge", "user skipped judging")
+        for phase in ("handover", "verdict"):
+            entry = st["phases"][phase]
+            self.assertEqual(entry["status"], "complete")
+            self.assertIn("user skipped judging", entry["skipped"])
+            self.assertNotIn("blocked_reason", entry)
+
+    def test_a_waiver_needs_a_reason(self):
+        with self.assertRaises(state.StateError):
+            state.waive_gate(self.through_design(), "judge", "  ")
+
+    def test_the_security_gate_cannot_be_waived(self):
+        with self.assertRaises(state.StateError):
+            state.waive_gate(self.fresh(), "security", "in a hurry")
+
+    def test_a_waived_ruling_on_another_gate_does_not_pass(self):
+        st = self.fresh()
+        state.record_ruling(st, "security", state.WAIVED, 1)
+        self.assertFalse(state.gate_passed(st, "security"))
+
+
 class BlockersTest(StateTestCase):
     def complete_through(self, st, last):
         for phase in state.PHASES[: state.PHASES.index(last) + 1]:
