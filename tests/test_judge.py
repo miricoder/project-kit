@@ -516,6 +516,19 @@ class RecordTest(ProjectCase):
         self.assertEqual(code, 1)
         self.assertIn("allow-extra-round", err)
 
+    def test_the_round_limit_can_be_raised_but_not_past_the_ceiling(self):
+        st = self.state()
+        for n in range(1, judge.MAX_ROUNDS + 1):
+            state.record_ruling(st, "judge", "REJECT", n, [])
+        state.save(st, self.project)
+        code, out, _ = self.pk("rounds", "5")
+        self.assertEqual((code, out["max_rounds"], out["rounds_left"]), (0, 5, 2))
+        code, _, err = self.pk("case")
+        self.assertNotIn("allow-extra-round", err)
+        code, _, err = self.pk("rounds", str(judge.HARD_MAX_ROUNDS + 1))
+        self.assertEqual(code, 1)
+        self.assertIn("must be 1..", err)
+
     def test_combine_needs_three_valid_verdicts(self):
         self.pk("case")
         code, _, err = self.pk("combine")

@@ -31,9 +31,16 @@ combination rule and the record checks are in
 Still open here: the live transports are untested by design, and the default model names
 in `judge.API_SPECS` need refreshing as providers rename them.
 
+### The yolo loop (shipped in 0.5.0)
+
+`/remediate` and `pk qa`: check, fix, re-check and re-judge without supervision until every
+check passes and the judge gate is open, then `/initiate` asks to start development. A
+PostToolUse hook re-scans UI mockups for accessibility on every write.
+
 ### P2 — from approved spec to code
 
-`/initiate` (judge-gated: spec → backlog) and `/build` (implement a slice with tests).
+`/initiate` shipped in 0.5.0 (judge-gated, asks first: spec → backlog). Next: `/build`
+(implement a slice with tests).
 
 Honest caveat: plain Claude Code already implements well from a spec. These add slice
 discipline and gate enforcement, not core capability.

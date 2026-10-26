@@ -129,7 +129,8 @@ Report:
 
 Then:
 
-- **`manual`** — stop and offer `/handover`.
+- **`manual`** — stop and offer `/handover`, or `/remediate` to loop to green unattended.
 - **`auto`** — `design` is **not** a checkpoint. Invoke `handover` via the Skill tool. It
   has its own checkpoint before spending anything.
-- **`yolo`** — invoke `handover`.
+- **`yolo`** — invoke `remediate`: it checks, fixes, judges and re-judges until everything
+  passes, then hands over to `/initiate`.

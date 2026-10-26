@@ -49,6 +49,9 @@ CASE_VERSION = 1
 # Rounds of judging before /verdict must stop and ask. The judges have no memory, so an
 # unbounded REJECT -> revise -> REJECT loop burns credit without converging.
 MAX_ROUNDS = 3
+# The most a project may raise its limit to (`pk judge rounds <n>`, used by /remediate).
+# The budget cap still applies on top; this stops a loop that is not converging.
+HARD_MAX_ROUNDS = 10
 
 DOCUMENTS: Tuple[Tuple[str, str], ...] = (
     ("research", "docs/research.md"),
@@ -101,6 +104,11 @@ def judge_rounds(st: Dict[str, Any]) -> List[int]:
 def current_round(st: Dict[str, Any]) -> int:
     """The round being judged: one past the last recorded ruling."""
     return max(judge_rounds(st), default=0) + 1
+
+
+def max_rounds(st: Dict[str, Any]) -> int:
+    """This project's round limit: MAX_ROUNDS unless the user raised it."""
+    return int(st.get("judge_max_rounds", MAX_ROUNDS))
 
 
 def round_dir(project: Path, round_no: int) -> Path:
@@ -655,6 +663,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--file", required=True)
     p.add_argument("--model", default="", help="the model you pasted into, for the record")
     sub.add_parser("status", help="each seat's verdict this round")
+    p = sub.add_parser("rounds", help="show or set this project's round limit")
+    p.add_argument("value", nargs="?", type=int,
+                   help=f"new limit, 1..{HARD_MAX_ROUNDS}; only when the user has said so")
     p = sub.add_parser("combine", help="three valid verdicts -> ruling")
     p.add_argument("--tier", default="standard", choices=form.TIERS)
     p = sub.add_parser("record", help="verify the ruling and record it in pipeline.json")
@@ -683,9 +694,19 @@ def main(argv: Optional[List[str]] = None) -> int:
             _emit(payload)
             return 0
 
+        if args.command == "rounds":
+            if args.value is not None:
+                if not 1 <= args.value <= HARD_MAX_ROUNDS:
+                    return _refuse([f"the round limit must be 1..{HARD_MAX_ROUNDS}"])
+                st["judge_max_rounds"] = args.value
+                state.save(st, project)
+            _emit({"max_rounds": max_rounds(st), "judged": len(judge_rounds(st)),
+                   "rounds_left": max(max_rounds(st) - len(judge_rounds(st)), 0)})
+            return 0
+
         if args.command == "case":
-            if round_no > MAX_ROUNDS and not args.allow_extra_round:
-                return _refuse([f"{MAX_ROUNDS} rounds have been judged; ask the user, then "
+            if round_no > max_rounds(st) and not args.allow_extra_round:
+                return _refuse([f"{max_rounds(st)} rounds have been judged; ask the user, then "
                                 "pass --allow-extra-round"])
             case = write_case(project, st)
             stale = [r["family"] for r in seat_records(rdir, case["case_id"])
@@ -792,8 +813,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0
 
         if args.command == "record":
-            if round_no > MAX_ROUNDS and not args.allow_extra_round:
-                return _refuse([f"round {round_no} is past the limit of {MAX_ROUNDS}; ask the "
+            if round_no > max_rounds(st) and not args.allow_extra_round:
+                return _refuse([f"round {round_no} is past the limit of {max_rounds(st)}; ask the "
                                 "user, then pass --allow-extra-round"])
             path = rdir / "ruling.json"
             if not path.is_file():
@@ -820,7 +841,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             _emit({"round": round_no, "ruling": fresh["ruling"],
                    "passed": state.gate_passed(st, "judge"),
                    "open_fixes": st["gates"]["judge"]["open_fixes"],
-                   "rounds_left": max(MAX_ROUNDS - round_no, 0),
+                   "rounds_left": max(max_rounds(st) - round_no, 0),
                    "next": state.describe_next(st)})
             return 0
     except (JudgeError, form.FormError) as exc:

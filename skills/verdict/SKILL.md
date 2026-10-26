@@ -111,8 +111,12 @@ pk state -C . next
 ```
 
 The gate check must exit 0. Mention the recommended and minor findings: they do not hold the
-gate, and are worth carrying into the build. Then follow the mode — `manual` and `auto`
-stop here (`verdict` is a checkpoint); `yolo` continues to `initiate` if it is installed.
+gate, and are worth carrying into the build. Then invoke `initiate` via the Skill tool in
+every mode: its first step asks the user whether to start development, so nothing starts
+without their yes.
+
+If the user would rather not fix and re-judge round by round, `/remediate` runs the whole
+fix → re-check → re-judge loop unattended.
 
 ## Step 5b: Not passed — checkpoint
 

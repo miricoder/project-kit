@@ -19,8 +19,8 @@ whole design premise.
 | | |
 |---|---|
 | Version | see `.claude-plugin/plugin.json` |
-| Skills built | `/pipeline`, `/ideate`, `/proposal`, `/design`, `/handover`, `/verdict` — idea → independently judged spec |
-| Skills remaining | 6, see [docs/roadmap.md](docs/roadmap.md) |
+| Skills built | `/pipeline`, `/ideate`, `/proposal`, `/design`, `/handover`, `/verdict`, `/remediate`, `/initiate` — idea → judged spec → backlog |
+| Skills remaining | 5, see [docs/roadmap.md](docs/roadmap.md) |
 | Tests | `pk check` runs exactly what CI runs |
 | Docs | <https://miricoder.github.io/project-kit/> — generated, never hand-edited |
 
@@ -29,7 +29,15 @@ Gherkin acceptance criteria → a three-family judge panel and a recorded ruling
 holds the gate. Everything up to the spec needs no credentials; the panel needs three seats,
 which can be paste seats (`PROJECT_KIT_PASTE_SEATS`) if there are no keys.
 
-**What does not:** everything after the judge gate. `/initiate` and `/build` are next.
+**What does not:** building. `/build` is next; until it ships, `/initiate` ends by offering to
+build slice 1 directly.
+
+**The yolo loop:** `/remediate` drives `pk qa` (`scripts/qa.py`: plan lint, accessibility,
+judge gate) and the judge panel in a fix → re-check → re-judge loop until everything passes,
+then invokes `/initiate`, which always asks before development starts. `hooks/hooks.json`
+re-scans UI mockups on every write. The browser scan (`scripts/a11y_scan.js`) needs Node and
+Playwright and is not run in CI; everything that decides pass or fail is pure Python and
+tested.
 
 **The judge panel, in one paragraph:** `skills/handover/scripts/form.py` is the form (criteria,
 verdicts, validation, the combination rule) and is pure. `judge.py` is the CLI behind
