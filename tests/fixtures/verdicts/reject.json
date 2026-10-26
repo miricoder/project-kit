@@ -1,0 +1,64 @@
+{
+  "form_version": 1,
+  "case_id": "CASE",
+  "verdict": "REJECT",
+  "summary": "The core promise depends on 90% unattended filing accuracy that nothing in the plan shows is reachable.",
+  "criteria": [
+    {
+      "id": "job_fit",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "scope",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "feasibility",
+      "rating": "fail",
+      "note": "No evidence the accuracy target is reachable."
+    },
+    {
+      "id": "failure_modes",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "data_and_rollback",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "security_privacy",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "testability",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "cost",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "counter_argument",
+      "rating": "fail",
+      "note": "The author's own counter-argument is not answered."
+    }
+  ],
+  "findings": [
+    {
+      "criterion": "feasibility",
+      "severity": "blocker",
+      "confidence": "SPECULATING",
+      "claim": "Filing accuracy may plateau well below 90% for mixed captures.",
+      "evidence": "proposal.md, Biggest uncertainty",
+      "fix": "Run Phase 0 before committing to the rest of the plan."
+    }
+  ],
+  "questions": []
+}

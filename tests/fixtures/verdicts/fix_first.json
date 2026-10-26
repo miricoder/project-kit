@@ -1,0 +1,72 @@
+{
+  "form_version": 1,
+  "case_id": "CASE",
+  "verdict": "FIX FIRST",
+  "summary": "Sound direction, but data lives on one device with no backup while the spec claims offline sync.",
+  "criteria": [
+    {
+      "id": "job_fit",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "scope",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "feasibility",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "failure_modes",
+      "rating": "concern",
+      "note": "Reminder delivery when the OS kills the app is not covered."
+    },
+    {
+      "id": "data_and_rollback",
+      "rating": "fail",
+      "note": "No reverse migration for the local store."
+    },
+    {
+      "id": "security_privacy",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "testability",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "cost",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "counter_argument",
+      "rating": "pass",
+      "note": ""
+    }
+  ],
+  "findings": [
+    {
+      "criterion": "data_and_rollback",
+      "severity": "blocker",
+      "confidence": "CITED",
+      "claim": "The schema migration is one-way, so a bad release cannot be rolled back without data loss.",
+      "evidence": "spec.md, Rollback: 'Data: none needed'",
+      "fix": "Add a reverse migration and a scenario that downgrades v2 to v1 with data intact."
+    },
+    {
+      "criterion": "failure_modes",
+      "severity": "major",
+      "confidence": "REASONED",
+      "claim": "Background reminder delivery after the OS terminates the app has no scenario.",
+      "evidence": "acceptance.feature has no scenario for a killed app",
+      "fix": "Add a scenario: reminder fires after the app was force-closed."
+    }
+  ],
+  "questions": []
+}

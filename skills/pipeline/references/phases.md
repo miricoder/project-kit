@@ -7,8 +7,8 @@ Order is pipeline order. `next` returns the first phase that is not `complete`.
 | 1 | ideate | `/ideate` | the user's idea | `docs/research.md` | — |
 | 2 | proposal | `/proposal` | `research.md` | `docs/proposal.md` | — |
 | 3 | design | `/design` | `proposal.md` | `docs/spec.md`, `docs/acceptance.feature` | — |
-| 4 | handover | `/handover` | `spec.md` | `judge/<run>/case.json`, `brief.md`, verdicts | — |
-| 5 | verdict | `/verdict` | verdicts | `docs/ruling.md`, recorded judge ruling | — |
+| 4 | handover | `/handover` | `spec.md` | `judge/round-<n>/case.json`, `brief.md`, verdicts, `docs/ruling.md` | — |
+| 5 | verdict | `/verdict` | `docs/ruling.md` | recorded judge ruling, `docs/changes.md` on revision | — |
 | 6 | initiate | `/initiate` | `spec.md`, ruling | `docs/backlog.md` | **judge** |
 | 7 | build | `/build` | backlog slice | code + unit tests | — |
 | 8 | devops | `/devops` | the working tree | branches, PRs, releases, tags | — |

@@ -149,6 +149,10 @@ lost.
 
 ## Phases
 
-See `references/phases.md` for each phase, its owner skill, inputs, outputs and gate. Wave 1
-(`ideate` → `verdict`) is implemented; `initiate` onward are declared in state and will refuse
-with "not implemented" until their skills ship.
+See `references/phases.md` for each phase, its owner skill, inputs, outputs and gate.
+`ideate` → `initiate` are implemented; `build` onward are declared in state and have no skill
+yet.
+
+`/remediate` is not a phase: it drives `handover` and `verdict` in a loop, fixing what
+`pk qa` and the judges find, until everything passes. In `yolo` mode `/design` hands over to
+it. It ends by invoking `/initiate`, which always asks before development starts.

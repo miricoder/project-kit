@@ -9,6 +9,8 @@
     pk gate phase design
     pk doctor -Live
     pk check
+    pk judge status
+    pk qa
 
   Plugin root resolution, in order: $env:CLAUDE_PLUGIN_ROOT, $env:PROJECT_KIT_ROOT, this
   script's own parent directory.
@@ -16,7 +18,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $true, Position = 0)]
-  [ValidateSet('state', 'gate', 'doctor', 'check')]
+  [ValidateSet('state', 'gate', 'doctor', 'check', 'judge', 'qa')]
   [string]$Subcommand,
 
   [Parameter(ValueFromRemainingArguments = $true)]
@@ -34,6 +36,8 @@ $target = switch ($Subcommand) {
   'gate'   { Join-Path $root 'skills/pipeline/scripts/gate.py' }
   'doctor' { Join-Path $root 'scripts/doctor.py' }
   'check'  { Join-Path $root 'scripts/check.py' }
+  'judge'  { Join-Path $root 'skills/handover/scripts/judge.py' }
+  'qa'     { Join-Path $root 'scripts/qa.py' }
 }
 if (-not (Test-Path $target)) {
   Write-Error "pk: $target not found; set PROJECT_KIT_ROOT"

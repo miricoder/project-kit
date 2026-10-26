@@ -55,6 +55,9 @@ FAMILY_BY_KEY: Dict[str, str] = {
 # shares its priors. Recorded here, enforced by the panel.
 EXCLUDED_FAMILY = "anthropic"
 SEATS_REQUIRED = 3
+# Families filled by hand: the brief is pasted into that family's chat and the reply is
+# validated before it counts. Comma-separated, e.g. PROJECT_KIT_PASTE_SEATS=google,moonshot
+PASTE_SEATS_KEY = "PROJECT_KIT_PASTE_SEATS"
 
 ENV_FILE = Path(os.path.expanduser(
     os.environ.get("PROJECT_KIT_ENV", "~/.claude/project-kit/.env")))
@@ -216,11 +219,37 @@ def check_plugin_installed(cli_ok: bool = True) -> Check:
                      f"claude plugin install {PLUGIN_NAME}")
 
 
+def paste_families(env: Dict[str, str]) -> List[str]:
+    return [f.strip().lower() for f in env.get(PASTE_SEATS_KEY, "").split(",") if f.strip()]
+
+
+def codex_logged_in() -> bool:
+    if not shutil.which("codex"):
+        return False
+    code, out = run(["codex", "login", "status"])
+    return code == 0 and "logged in" in out.lower()
+
+
+def load_panel_env() -> Dict[str, str]:
+    """Judge credentials: the .env file, then the process environment for anything it
+    does not set. One loader, so the doctor and the panel never disagree about seats."""
+    env: Dict[str, str] = {}
+    if ENV_FILE.exists():
+        env.update(parse_env_file(ENV_FILE.read_text()))
+    for key, value in os.environ.items():
+        if value and (key in FAMILY_BY_KEY or key == PASTE_SEATS_KEY
+                      or key.startswith("PROJECT_KIT_MODEL_")
+                      or key.startswith("PROJECT_KIT_PRICE_")):
+            env.setdefault(key, value)
+    return env
+
+
 def panel_seats(env: Dict[str, str]) -> Tuple[List[str], List[str], List[str]]:
     """Return (families filled, notes, problems) for the judge panel.
 
     A CLI-backed seat counts without a key: a logged-in codex means the OpenAI seat is
-    filled by subscription, no API key and no extra cost.
+    filled by subscription, no API key and no extra cost. A paste seat counts too: the
+    reply is validated against the form before it is accepted, whoever carried it.
     """
     families: List[str] = []
     notes: List[str] = []
@@ -241,14 +270,25 @@ def panel_seats(env: Dict[str, str]) -> Tuple[List[str], List[str], List[str]]:
         families.append(family)
         notes.append(f"{family}: {key}")
 
-    if shutil.which("codex"):
-        code, out = run(["codex", "login", "status"])
-        if code == 0 and "logged in" in out.lower():
-            if "openai" in families:
-                notes.append("codex CLI also covers the openai seat (no key needed)")
-            else:
-                families.append("openai")
-                notes.append("openai: codex CLI (subscription, no key)")
+    if codex_logged_in():
+        if "openai" in families:
+            notes.append("codex CLI also covers the openai seat (no key needed)")
+        else:
+            families.append("openai")
+            notes.append("openai: codex CLI (subscription, no key)")
+
+    known = set(FAMILY_BY_KEY.values())
+    for family in paste_families(env):
+        if family == EXCLUDED_FAMILY:
+            problems.append(f"{PASTE_SEATS_KEY} names {EXCLUDED_FAMILY}, the authoring "
+                            "family — it cannot hold a judge seat and is not counted")
+        elif family not in known:
+            problems.append(f"{PASTE_SEATS_KEY} names unknown family {family!r}")
+        elif family in families:
+            notes.append(f"{family} paste seat duplicates a seat already filled")
+        else:
+            families.append(family)
+            notes.append(f"{family}: paste (you paste the brief and the reply by hand)")
 
     if len(families) < SEATS_REQUIRED:
         problems.append(
@@ -335,12 +375,7 @@ def probe_seat(family: str, env: Dict[str, str], timeout: float = 30.0,
 
 
 def check_panel(live: bool = False) -> Check:
-    env: Dict[str, str] = {}
-    if ENV_FILE.exists():
-        env.update(parse_env_file(ENV_FILE.read_text()))
-    for key in FAMILY_BY_KEY:
-        if os.environ.get(key):
-            env.setdefault(key, os.environ[key])
+    env = load_panel_env()
 
     families, notes, problems = panel_seats(env)
     if live:
@@ -363,7 +398,8 @@ def check_panel(live: bool = False) -> Check:
         problems.append(f"{len(families)} of {SEATS_REQUIRED} families usable")
     # Not required: /ideate through /design need no panel at all.
     return Check("Judge panel", not problems, detail, required=False,
-                 fix=f"add a third family key to {ENV_FILE} (chmod 600)" if problems else None,
+                 fix=(f"add a third family key to {ENV_FILE} (chmod 600), or name a family "
+                      f"you will paste by hand: {PASTE_SEATS_KEY}=google") if problems else None,
                  notes=notes + problems)
 
 

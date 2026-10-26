@@ -1,0 +1,64 @@
+{
+  "form_version": 1,
+  "case_id": "CASE",
+  "verdict": "SOUND",
+  "summary": "The v1 cut is tight and the spec stays inside it. Failure modes are covered by scenarios.",
+  "criteria": [
+    {
+      "id": "job_fit",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "scope",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "feasibility",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "failure_modes",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "data_and_rollback",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "security_privacy",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "testability",
+      "rating": "pass",
+      "note": ""
+    },
+    {
+      "id": "cost",
+      "rating": "concern",
+      "note": "Model cost per capture is an estimate with no measured baseline yet."
+    },
+    {
+      "id": "counter_argument",
+      "rating": "pass",
+      "note": ""
+    }
+  ],
+  "findings": [
+    {
+      "criterion": "cost",
+      "severity": "minor",
+      "confidence": "REASONED",
+      "claim": "The per-capture cost range spans 10x, so the budget is loosely bounded.",
+      "evidence": "proposal.md, Cost: '≈ €0.001–0.01 per capture'",
+      "fix": ""
+    }
+  ],
+  "questions": []
+}

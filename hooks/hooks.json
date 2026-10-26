@@ -1,0 +1,17 @@
+{
+  "description": "Re-scan a UI mockup for accessibility whenever Claude writes or edits one inside a Project Kit project, and hand any failures straight back so they are fixed before moving on.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/pk\" qa hook",
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}

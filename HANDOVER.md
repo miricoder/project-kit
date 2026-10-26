@@ -19,16 +19,33 @@ whole design premise.
 | | |
 |---|---|
 | Version | see `.claude-plugin/plugin.json` |
-| Skills built | `/pipeline`, `/ideate`, `/proposal`, `/design` — idea → technical spec |
-| Skills remaining | 8, see [docs/roadmap.md](docs/roadmap.md) |
+| Skills built | `/pipeline`, `/ideate`, `/proposal`, `/design`, `/handover`, `/verdict`, `/remediate`, `/initiate` — idea → judged spec → backlog |
+| Skills remaining | 5, see [docs/roadmap.md](docs/roadmap.md) |
 | Tests | `pk check` runs exactly what CI runs |
 | Docs | <https://miricoder.github.io/project-kit/> — generated, never hand-edited |
 
 **What works today:** idea → researched brief → scoped proposal → technical spec with
-Gherkin acceptance criteria. No credentials needed for any of it.
+Gherkin acceptance criteria → a three-family judge panel and a recorded ruling that opens or
+holds the gate. Everything up to the spec needs no credentials; the panel needs three seats,
+which can be paste seats (`PROJECT_KIT_PASTE_SEATS`) if there are no keys.
 
-**What does not:** the judge gate and everything after. `/handover` and `/verdict` are the
-next thing to build.
+**What does not:** building. `/build` is next; until it ships, `/initiate` ends by offering to
+build slice 1 directly.
+
+**The yolo loop:** `/remediate` drives `pk qa` (`scripts/qa.py`: plan lint, accessibility,
+judge gate) and the judge panel in a fix → re-check → re-judge loop until everything passes,
+then invokes `/initiate`, which always asks before development starts. `hooks/hooks.json`
+re-scans UI mockups on every write. The browser scan (`scripts/a11y_scan.js`) needs Node and
+Playwright and is not run in CI; everything that decides pass or fail is pure Python and
+tested.
+
+**The judge panel, in one paragraph:** `skills/handover/scripts/form.py` is the form (criteria,
+verdicts, validation, the combination rule) and is pure. `judge.py` is the CLI behind
+`pk judge`: it builds the case, seats the panel, calls or collects each judge, combines, and
+records. `record` re-derives everything from disk, so a hand-edited ruling or a plan changed
+after judging is refused. The live transports (`call_api`, `call_cli`) are the only part not
+covered by tests, which run against `tests/fixtures/verdicts/`. The default model names in
+`judge.API_SPECS` will go stale; they are overridable per family and should be refreshed.
 
 ## Decisions already made — do not relitigate without reason
 
