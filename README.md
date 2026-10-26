@@ -32,5 +32,7 @@ first if you want a different v1. In yolo mode `/design` hands to `/remediate` (
 re-check → judge → fix → re-judge until `pk qa` passes), which hands to `/initiate`, which
 asks before any development starts.
 
-Judging unattended needs three judge API keys from three non-Anthropic families in
-`~/.claude/project-kit/.env`, e.g. `OPENAI_API_KEY`, `GEMINI_API_KEY`, `MOONSHOT_API_KEY`.
+Judging needs at least one judge API key from a non-Anthropic provider (OpenAI, Gemini, Kimi, …).
+Keys are never committed. If the panel is short, the pipeline asks which key you can give; you
+store it yourself with `pk keys add <family>` (Project Kit 0.6.0+), or, in a cloud session, as
+an environment secret such as `OPENAI_API_KEY`. The other seats can be pasted by hand.
