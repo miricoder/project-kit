@@ -119,6 +119,20 @@ proceed — a blocked phase is reported by `next` instead of being silently skip
 
 Judge rulings are recorded by `/verdict`, not here.
 
+## Skipping the judge round
+
+The user may skip judging, for example when no judge key works or they accept the risk of
+an unjudged plan. Only on their explicit request, never on your own initiative and never as
+a way round a failing ruling you were not asked to drop:
+
+```bash
+pk state -C . waive judge --reason "<the user's reason, in their words>"
+```
+
+This records the judge gate as `WAIVED` with that reason, marks `handover` and `verdict`
+complete with a `skipped` note, and lets `/initiate` run. Say plainly that the plan goes
+into development unjudged. Only the judge gate can be waived; the security gate cannot.
+
 ## Setting the mode
 
 ```bash

@@ -26,8 +26,9 @@ judging round, and only the user can supply one.
 
 1. **"Judging needs an API key from at least one AI provider other than Anthropic. Which
    one can you provide?"** (header `Judge key`). Options, from `addable` in the status
-   output: `OpenAI (Recommended)`, `Google Gemini`, `Moonshot (Kimi)`. xAI, DeepSeek and
-   Mistral are accepted through "Other". If `key_seats` is already non-empty, ask for an
+   output: `OpenAI (Recommended)`, `Google Gemini`, `Moonshot (Kimi)`, and `Skip judging`
+   (the plan goes into development unjudged, step 5). xAI, DeepSeek and Mistral are
+   accepted through "Other". If `key_seats` is already non-empty, ask for an
    *additional* key instead and say which families already sit.
 2. **"How should the remaining seats be filled?"** (header `Other seats`). Options:
    `Paste them by hand (Recommended)`: you paste the brief into those providers' chats
@@ -75,7 +76,11 @@ paste for, and that `/handover` will hand them the brief.
 
 ## 5. If they decline
 
-No key at all: say that the judge gate stays shut and development cannot start, then
+If they chose `Skip judging`, or ask at any point to skip the round, waive the gate as
+`../SKILL.md` describes under "Skipping the judge round" and carry on to `/initiate`.
+
+No key at all and no request to skip: say that the judge gate stays shut and development
+cannot start, and that they can skip judging if they accept an unjudged plan, then
 stop. Do not seat three paste judges on your own initiative, and never judge the plan
 yourself. If the user *asks* for an all-paste panel, run `pk keys paste-rest` and carry
 on.

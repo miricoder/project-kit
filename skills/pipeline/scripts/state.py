@@ -50,6 +50,14 @@ AUTO_CHECKPOINTS: tuple[str, ...] = ("ideate", "proposal", "handover", "verdict"
 RULINGS_PASSING = ("SOUND",)
 RULINGS_CONDITIONAL = ("FIX FIRST",)
 
+# A user may skip the judge round. The gate then opens on a WAIVED record that names the
+# reason, so a skipped round is never mistaken for a passing one. Only the judge gate:
+# nothing waives security.
+WAIVED = "WAIVED"
+WAIVABLE_GATES = ("judge",)
+# The phases a judge waiver skips.
+WAIVER_SKIPS: Dict[str, tuple[str, ...]] = {"judge": ("handover", "verdict")}
+
 
 class StateError(RuntimeError):
     """A state or gate precondition was not met."""
@@ -196,8 +204,42 @@ def record_ruling(state: Dict[str, Any], gate: str, ruling: str, round_no: int,
     return state
 
 
+def waive_gate(state: Dict[str, Any], gate: str, reason: str) -> Dict[str, Any]:
+    """Open a gate without a ruling because the user chose to skip it.
+
+    The phases the waiver skips are marked complete with `skipped` set, and the waiver is
+    appended to the round history like any ruling.
+    """
+    if gate not in WAIVABLE_GATES:
+        raise StateError(f"the {gate} gate cannot be waived; only {', '.join(WAIVABLE_GATES)}")
+    reason = (reason or "").strip()
+    if not reason:
+        raise StateError("a waiver needs a reason: say why the round is being skipped")
+    state["gates"][gate] = {
+        "status": "complete",
+        "ruling": WAIVED,
+        "round": state["gates"][gate].get("round", 0),
+        "open_fixes": [],
+        "decided_at": _now(),
+        "waived_reason": reason,
+    }
+    for phase in WAIVER_SKIPS.get(gate, ()):
+        entry = state["phases"][phase]
+        if entry["status"] != "complete":
+            entry["status"] = "complete"
+            entry["completed_at"] = _now()
+            entry["skipped"] = f"{gate} gate waived: {reason}"
+            entry.pop("blocked_reason", None)
+    state["rounds"].append({"gate": gate, "round": state["gates"][gate]["round"],
+                            "ruling": WAIVED, "open_fixes": [], "reason": reason,
+                            "at": _now()})
+    state["resume_point"] = describe_next(state)
+    return state
+
+
 def gate_passed(state: Dict[str, Any], gate: str) -> bool:
-    """A gate passes only on a recorded ruling: SOUND, or FIX FIRST with no fix left open."""
+    """A gate passes only on a recorded ruling: SOUND, or FIX FIRST with no fix left open.
+    A waivable gate also opens on a user's waiver."""
     if gate not in GATES:
         raise StateError(f"unknown gate {gate!r}")
     record = state["gates"][gate]
@@ -206,6 +248,8 @@ def gate_passed(state: Dict[str, Any], gate: str) -> bool:
     ruling = record.get("ruling")
     if ruling in RULINGS_PASSING:
         return True
+    if ruling == WAIVED:
+        return gate in WAIVABLE_GATES
     return ruling in RULINGS_CONDITIONAL and not record.get("open_fixes")
 
 
@@ -340,6 +384,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--round", type=int, default=1)
     p.add_argument("--open-fix", action="append", default=[])
 
+    p = sub.add_parser("waive", help="skip a gate at the user's request (judge only)")
+    p.add_argument("gate", choices=WAIVABLE_GATES)
+    p.add_argument("--reason", required=True)
+
     p = sub.add_parser("budget", help="inspect or adjust the budget")
     p.add_argument("--add", type=float)
     p.add_argument("--max", type=float)
@@ -401,6 +449,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             save(state, args.dir)
             registry_upsert(state, args.dir)
             _emit({"gate": args.gate, "passed": gate_passed(state, args.gate),
+                   "next": describe_next(state)})
+            return 0
+        if args.command == "waive":
+            waive_gate(state, args.gate, args.reason)
+            save(state, args.dir)
+            registry_upsert(state, args.dir)
+            _emit({"gate": args.gate, "ruling": WAIVED, "passed": gate_passed(state, args.gate),
+                   "skipped": [p for p in WAIVER_SKIPS.get(args.gate, ())
+                               if state["phases"][p].get("skipped")],
                    "next": describe_next(state)})
             return 0
         if args.command == "budget":
