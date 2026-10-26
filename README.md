@@ -20,13 +20,14 @@ UI mockups: `ui/*.dc.html` (canvas: https://claude.ai/artifact/YKwgxHfyNuYxb46JV
 They pass the accessibility scan (`pk qa a11y`); see `docs/accessibility/`.
 Developer handoff spec: `docs/handoff.md`.
 
-## Start here (new Claude Code session with this repo)
+## Start here
 
-```
-/project-kit:design
-```
+This project lives on the `dumpit` branch of `miricoder/project-kit`, with its own history
+and no plugin code. In a new session with that repo selected, say:
 
-Running `/design` accepts the scope in `docs/proposal.md` as written; change the proposal
+> check out the dumpit branch and run /project-kit:pipeline
+
+Running the pipeline (it starts with `/design`) accepts the scope in `docs/proposal.md` as written; change the proposal
 first if you want a different v1. In yolo mode `/design` hands to `/remediate` (check → fix →
 re-check → judge → fix → re-judge until `pk qa` passes), which hands to `/initiate`, which
 asks before any development starts.
