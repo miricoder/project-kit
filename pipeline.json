@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "dumpit",
   "created_at": "2026-10-25T20:48:19+00:00",
-  "updated_at": "2026-10-26T14:31:07+00:00",
+  "updated_at": "2026-10-26T15:19:30+00:00",
   "mode": "yolo",
   "budget": {
     "max_usd": 25.0,
@@ -34,7 +34,7 @@
     "handover": {
       "status": "blocked",
       "artifacts": [],
-      "blocked_reason": "openai seat: network policy blocks api.openai.com (proxy 403); google and moonshot paste replies pending"
+      "blocked_reason": "openai seat: account has no credit (OpenAI 429 insufficient_quota / credit_balance_exhausted); google and moonshot paste replies pending"
     },
     "verdict": {
       "status": "not started",
@@ -89,6 +89,6 @@
     }
   },
   "rounds": [],
-  "resume_point": "blocked before /handover: handover is blocked: openai seat: network policy blocks api.openai.com (proxy 403); google and moonshot paste replies pending",
+  "resume_point": "blocked before /handover: handover is blocked: openai seat: account has no credit (OpenAI 429 insufficient_quota / credit_balance_exhausted); google and moonshot paste replies pending",
   "judge_max_rounds": 10
 }
