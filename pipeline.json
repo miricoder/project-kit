@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "dumpit",
   "created_at": "2026-10-25T20:48:19+00:00",
-  "updated_at": "2026-10-26T15:19:30+00:00",
+  "updated_at": "2026-10-26T15:28:14+00:00",
   "mode": "yolo",
   "budget": {
     "max_usd": 25.0,
@@ -32,13 +32,16 @@
       "completed_at": "2026-10-26T13:46:07+00:00"
     },
     "handover": {
-      "status": "blocked",
+      "status": "complete",
       "artifacts": [],
-      "blocked_reason": "openai seat: account has no credit (OpenAI 429 insufficient_quota / credit_balance_exhausted); google and moonshot paste replies pending"
+      "completed_at": "2026-10-26T15:28:14+00:00",
+      "skipped": "judge gate waived: user chose to skip judging: OpenAI judge account has no credit"
     },
     "verdict": {
-      "status": "not started",
-      "artifacts": []
+      "status": "complete",
+      "artifacts": [],
+      "completed_at": "2026-10-26T15:28:14+00:00",
+      "skipped": "judge gate waived: user chose to skip judging: OpenAI judge account has no credit"
     },
     "initiate": {
       "status": "not started",
@@ -67,11 +70,12 @@
   },
   "gates": {
     "judge": {
-      "status": "not started",
-      "ruling": null,
+      "status": "complete",
+      "ruling": "WAIVED",
       "round": 0,
       "open_fixes": [],
-      "decided_at": null
+      "decided_at": "2026-10-26T15:28:14+00:00",
+      "waived_reason": "user chose to skip judging: OpenAI judge account has no credit"
     },
     "test": {
       "status": "not started",
@@ -88,7 +92,16 @@
       "decided_at": null
     }
   },
-  "rounds": [],
-  "resume_point": "blocked before /handover: handover is blocked: openai seat: account has no credit (OpenAI 429 insufficient_quota / credit_balance_exhausted); google and moonshot paste replies pending",
+  "rounds": [
+    {
+      "gate": "judge",
+      "round": 0,
+      "ruling": "WAIVED",
+      "open_fixes": [],
+      "reason": "user chose to skip judging: OpenAI judge account has no credit",
+      "at": "2026-10-26T15:28:14+00:00"
+    }
+  ],
+  "resume_point": "run /initiate",
   "judge_max_rounds": 10
 }

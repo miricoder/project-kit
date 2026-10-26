@@ -13,8 +13,8 @@ Planned with [Project Kit](https://github.com/miricoder/project-kit). Mode: `yol
 | ideate | complete | `docs/research.md` |
 | proposal | complete | `docs/proposal.md` |
 | design | complete | `docs/spec.md`, `docs/acceptance.feature` |
-| remediate → judge | **next**: lint and a11y pass; judging blocked until three judge seats are configured | `qa/remediation-log.md`, `docs/ruling.md` |
-| initiate | after the judges pass it; asks before starting | `docs/backlog.md` |
+| remediate → judge | lint and a11y pass; **judge round skipped by the user** (gate `WAIVED`: OpenAI judge account has no credit), so the plan is unjudged | `qa/remediation-log.md` |
+| initiate | **next**: asks before starting | `docs/backlog.md` |
 
 UI mockups: `ui/*.dc.html` (canvas: https://claude.ai/artifact/YKwgxHfyNuYxb46JVZHYBL).
 They pass the accessibility scan (`pk qa a11y`); see `docs/accessibility/`.
