@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pasted notes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6A86}a:hover{color:#154C60}
+[style*="flex-grow: 1"],.item > span{min-width:0;overflow-wrap:anywhere}
+.act{max-width:100%;white-space:normal}
+:focus-visible{outline:3px solid #1E6A86;outline-offset:2px}
+.plain{list-style:none;margin:0;padding:0}
+.tag{font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border-radius:6px;padding:3px 6px;flex-shrink:0}
+.item{width:100%;display:flex;align-items:center;gap:8px;min-height:52px;padding:4px 0;border:none;background:transparent;font:inherit;color:#15181C;text-align:left;cursor:pointer}
+.chev{flex-shrink:0;margin-left:auto}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; padding: 20px 20px 16px; display: flex; flex-direction: column; gap: 12px; background: #F5F6F4; font-family: Manrope, system-ui, sans-serif; color: #15181C">
+<div style="display: flex; align-items: center; gap: 8px; padding-top: 8px">
+<a href="Main.dc.html" aria-label="Back to dashboard" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; margin-left: -10px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15181C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+</a>
+<h1 style="margin: 0; font-size: 20px; font-weight: 700">Your pasted note</h1>
+</div>
+
+<figure style="margin: 0">
+<figcaption style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">The note you pasted</figcaption>
+<pre style="margin: 0; background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 12px; padding: 12px 14px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.5; color: #3E454C; white-space: pre-wrap">lisbon - flights booked 148 (check bags?)
+airbnb deposit 66, rest due 6 mar
+need adapter??
+tell sam re cat feeding 12-16
+also pharmacy 12.40 yesterday</pre>
+</figure>
+
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h2 id="filed-h" style="margin: 0; font-size: 15px; font-weight: 700">Filed 6 items</h2>
+<button type="button" aria-label="Undo all 6 items from this note" style="min-height: 44px; padding: 0 8px; border: none; background: transparent; color: {{accent}}; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; border-radius: 10px">Undo all</button>
+</div>
+
+<ul class="plain" aria-labelledby="filed-h" style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 12px; padding: 0 12px">
+<li><button type="button" class="item" aria-label="Flights · €148.00, Lisbon, Travel. Edit">
+<span class="tag" style="color: #2F6B4F; background: #E5F1EA">Spent</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">Flights · €148.00</span><span style="font-size: 12px; color: #5B636B">Lisbon · Travel</span></span>
+<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button></li>
+<li style="border-top: 1px solid #EEF0EE"><button type="button" class="item" aria-label="Stay deposit · €66.00, Lisbon, Accommodation. Edit">
+<span class="tag" style="color: #2F6B4F; background: #E5F1EA">Spent</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">Stay deposit · €66.00</span><span style="font-size: 12px; color: #5B636B">Lisbon · Accommodation</span></span>
+<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button></li>
+<li style="border-top: 1px solid #EEF0EE"><button type="button" class="item" aria-label="Pay stay balance, due 6 Mar, Lisbon. Edit">
+<span class="tag" style="color: #15181C; background: #EEF0EE">Task</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">Pay stay balance</span><span style="font-size: 12px; color: #5B636B">Due 6 Mar · Lisbon</span></span>
+<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button></li>
+<li style="border-top: 1px solid #EEF0EE"><button type="button" class="item" aria-label="Buy travel adapter, by 10 Mar, Lisbon. Edit">
+<span class="tag" style="color: #15181C; background: #EEF0EE">Task</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">Buy travel adapter</span><span style="font-size: 12px; color: #5B636B">By 10 Mar · Lisbon</span></span>
+<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button></li>
+<li style="border-top: 1px solid #EEF0EE"><button type="button" class="item" aria-label="Ask Sam about cat feeding, 12–16 Mar, by 5 Mar, Lisbon. Edit">
+<span class="tag" style="color: #15181C; background: #EEF0EE">Task</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">Ask Sam about cat feeding, 12–16 Mar</span><span style="font-size: 12px; color: #5B636B">By 5 Mar · Lisbon</span></span>
+<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button></li>
+<li style="border-top: 1px solid #EEF0EE"><button type="button" class="item" aria-label="Pharmacy · €12.40, yesterday, Health. Edit">
+<span class="tag" style="color: #2F6B4F; background: #E5F1EA">Spent</span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">Pharmacy · €12.40</span><span style="font-size: 12px; color: #5B636B">Yesterday · Health · February budget</span></span>
+<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</button></li>
+</ul>
+
+<p style="margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: #5B636B; padding: 0 2px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01"></path><path d="M11 12h1v4h1"></path></svg>
+<span>Tap an item to change it, or just say what’s wrong.</span>
+</p>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1E6A86","options":["#1E6A86","#3D5A80","#2F6B4F","#8A4B2D"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#1E6A86' };
+}
+}
+</script>
+</body>
+</html>

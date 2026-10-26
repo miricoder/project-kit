@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "project-kit": {
+      "source": { "source": "github", "repo": "miricoder/project-kit" }
+    }
+  },
+  "enabledPlugins": {
+    "project-kit@project-kit": true
+  }
+}

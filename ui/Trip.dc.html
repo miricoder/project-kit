@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trip: Lisbon</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6A86}a:hover{color:#154C60}
+:focus-visible{outline:3px solid #1E6A86;outline-offset:2px}
+.plain{list-style:none;margin:0;padding:0}
+.chk{appearance:none;-webkit-appearance:none;width:20px;height:20px;margin:0;border:2px solid #858E95;border-radius:6px;background:#FFFFFF;display:grid;place-content:center;flex-shrink:0;cursor:pointer}
+.chk.warn{border-color:#A84B0C}
+.chk:checked{background:#1E6A86;border-color:#1E6A86}
+.chk:checked::after{content:"";width:10px;height:5px;border-left:2.5px solid #FFFFFF;border-bottom:2.5px solid #FFFFFF;transform:rotate(-45deg) translate(1px,-1px)}
+.chk:checked + .t{text-decoration:line-through;color:#5B636B;font-weight:400}
+.todo{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; padding: 20px 20px 16px; display: flex; flex-direction: column; gap: 12px; background: #F5F6F4; font-family: Manrope, system-ui, sans-serif; color: #15181C">
+<div style="display: flex; align-items: center; gap: 8px; padding-top: 8px">
+<a href="Main.dc.html" aria-label="Back to dashboard" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; margin-left: -10px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15181C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+</a>
+<div style="display: flex; flex-direction: column">
+<h1 style="margin: 0; font-size: 20px; font-weight: 700">Lisbon</h1>
+<span style="font-size: 13px; color: #5B636B">Fri 13 – Mon 16 March · in 16 days</span>
+</div>
+</div>
+
+<section aria-label="Trip budget" style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<dl style="margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="display: flex; flex-direction: column"><dt style="font-size: 12px; color: #5B636B">Budget</dt><dd style="margin: 0; font-size: 20px; font-weight: 700">€600</dd></div>
+<div style="display: flex; flex-direction: column"><dt style="font-size: 12px; color: #5B636B">Spent</dt><dd style="margin: 0; font-size: 20px; font-weight: 700">€214</dd></div>
+<div style="display: flex; flex-direction: column"><dt style="font-size: 12px; color: #5B636B">Left</dt><dd style="margin: 0; font-size: 20px; font-weight: 700; color: {{accent}}">€386</dd></div>
+</dl>
+<div aria-hidden="true" style="height: 8px; border-radius: 4px; background: #E3E6E3; overflow: hidden"><div style="width: 36%; height: 8px; background: {{accent}}; border-radius: 4px"></div></div>
+</section>
+
+<section aria-labelledby="todo-h" style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 16px; padding: 12px 16px 6px; display: flex; flex-direction: column">
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 2px">
+<h2 id="todo-h" style="margin: 0; font-size: 15px; font-weight: 700">To-dos</h2>
+<span style="font-size: 12px; color: #5B636B">scheduled back from 13 Mar</span>
+</div>
+<ul class="plain">
+<li><label class="todo"><input type="checkbox" class="chk" defaultChecked="{{ true }}"><span class="t" style="font-size: 14px; font-weight: 600; flex-grow: 1">Book flights</span><span style="font-size: 12px; color: #5B636B">Done</span></label></li>
+<li><label class="todo"><input type="checkbox" class="chk warn"><span class="t" style="font-size: 14px; font-weight: 600; flex-grow: 1">Check passport expiry</span><span style="font-size: 12px; font-weight: 700; color: #A84B0C">Due today</span></label></li>
+<li><label class="todo"><input type="checkbox" class="chk"><span class="t" style="font-size: 14px; font-weight: 600; flex-grow: 1">Ask Sam about cat feeding</span><span style="font-size: 12px; color: #5B636B">By 5 Mar</span></label></li>
+<li><label class="todo"><input type="checkbox" class="chk"><span class="t" style="font-size: 14px; font-weight: 600; flex-grow: 1">Pay stay balance</span><span style="font-size: 12px; color: #5B636B">By 6 Mar</span></label></li>
+<li><label class="todo"><input type="checkbox" class="chk"><span class="t" style="font-size: 14px; font-weight: 600; flex-grow: 1">Buy travel adapter</span><span style="font-size: 12px; color: #5B636B">By 10 Mar</span></label></li>
+<li><label class="todo"><input type="checkbox" class="chk"><span class="t" style="font-size: 14px; font-weight: 600; flex-grow: 1">Pack</span><span style="font-size: 12px; color: #5B636B">By 12 Mar</span></label></li>
+</ul>
+</section>
+
+<section aria-labelledby="spend-h" style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 16px; padding: 12px 16px; display: flex; flex-direction: column; gap: 2px">
+<h2 id="spend-h" style="margin: 0 0 4px; font-size: 15px; font-weight: 700">Spending</h2>
+<ul class="plain">
+<li style="display: flex; justify-content: space-between; min-height: 32px; align-items: center; font-size: 14px"><span>Flights</span><span style="font-weight: 700">€148.00</span></li>
+<li style="display: flex; justify-content: space-between; min-height: 32px; align-items: center; font-size: 14px; border-top: 1px solid #EEF0EE"><span>Stay deposit</span><span style="font-weight: 700">€66.00</span></li>
+</ul>
+</section>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1E6A86","options":["#1E6A86","#3D5A80","#2F6B4F","#8A4B2D"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#1E6A86' };
+}
+}
+</script>
+</body>
+</html>

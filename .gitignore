@@ -1,0 +1,4 @@
+# Raw judge replies and generated QA output are reproducible; the ruling and logs are kept.
+qa/report.json
+node_modules/
+.DS_Store

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error and edge states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6A86}a:hover{color:#154C60}
+[style*="flex-grow: 1"],.item > span{min-width:0;overflow-wrap:anywhere}
+.act{max-width:100%;white-space:normal}
+:focus-visible{outline:3px solid #1E6A86;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.plain{list-style:none;margin:0;padding:0}
+.tag{font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border-radius:6px;padding:3px 6px;flex-shrink:0}
+.act{min-height:44px;padding:0 12px;border-radius:12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.label{margin:0;font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#5B636B}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; padding: 20px 20px 16px; display: flex; flex-direction: column; gap: 10px; background: #F5F6F4; font-family: Manrope, system-ui, sans-serif; color: #15181C">
+<h1 style="margin: 0; padding-top: 8px; font-size: 20px; font-weight: 700">When something goes wrong</h1>
+
+<h2 class="label">Filing failed</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; align-self: flex-end; max-width: 80%; background: #E4EFF3; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 15px"><span class="sr">You said: </span>gym membership 35 monthly</p>
+<div role="alert" style="background: #FFFFFF; border: 2px solid #A84B0C; border-radius: 12px; padding: 10px 6px 10px 12px; display: flex; align-items: center; gap: 10px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A84B0C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6"></path><path d="M12 16.5h.01"></path></svg>
+<span style="flex-grow: 1; font-size: 14px"><strong>Couldn’t file this.</strong> Your words are saved; nothing was lost.</span>
+<button type="button" class="act" aria-label="Retry filing: gym membership 35 monthly" style="border: none; background: transparent; color: {{accent}}">Retry</button>
+</div>
+</div>
+
+<h2 class="label">Not sure what you meant</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; align-self: flex-end; max-width: 80%; background: #E4EFF3; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 15px"><span class="sr">You said: </span>sam 20</p>
+<div style="background: #FFFFFF; border: 1px solid #858E95; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+<p style="margin: 0; font-size: 14px"><strong>Saved as a note.</strong> Is it one of these?</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" class="act" style="border: 1px solid #858E95; background: #FFFFFF; color: #15181C">It’s an expense, €20</button>
+<button type="button" class="act" style="border: 1px solid #858E95; background: #FFFFFF; color: #15181C">Make it a task</button>
+<button type="button" class="act" style="border: none; background: transparent; color: {{accent}}">Leave as a note</button>
+</div>
+</div>
+</div>
+
+<h2 class="label">Undone, with Redo kept</h2>
+<div style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 12px; padding: 0 4px 0 12px; display: flex; align-items: center; gap: 8px; min-height: 48px">
+<span class="tag" style="color: #2F6B4F; background: #E5F1EA">Spent</span>
+<span style="font-size: 14px; flex-grow: 1; color: #5B636B"><s>€42.00 · Groceries</s> · Undone</span>
+<button type="button" class="act" aria-label="Redo expense €42 groceries" style="border: none; background: transparent; color: {{accent}}">Redo</button>
+</div>
+
+<h2 class="label">Over budget</h2>
+<section aria-labelledby="over-h" style="background: #FFFFFF; border: 2px solid #A84B0C; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h3 id="over-h" style="margin: 0; font-size: 15px; font-weight: 700">March budget</h3>
+<span style="font-size: 12px; font-weight: 600; color: #5B636B">€1,400</span>
+</div>
+<div style="display: flex; align-items: baseline; gap: 6px">
+<span style="font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: #A84B0C">€63 over</span>
+<span style="font-size: 13px; color: #5B636B">€1,463 spent</span>
+</div>
+<div aria-hidden="true" style="height: 8px; border-radius: 4px; background: #A84B0C"></div>
+</section>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1E6A86","options":["#1E6A86","#3D5A80","#2F6B4F","#8A4B2D"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#1E6A86' };
+}
+}
+</script>
+</body>
+</html>

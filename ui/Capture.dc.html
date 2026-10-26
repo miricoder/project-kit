@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Capture and undo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1E6A86}a:hover{color:#154C60}
+[style*="flex-grow: 1"],.item > span{min-width:0;overflow-wrap:anywhere}
+.act{max-width:100%;white-space:normal}
+:focus-visible{outline:3px solid #1E6A86;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.plain{list-style:none;margin:0;padding:0}
+.cap{border:1px solid #858E95}
+.cap:focus-within{border-color:#1E6A86;box-shadow:0 0 0 2px #1E6A86}
+.cap input{outline:none}
+.tag{font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;border-radius:6px;padding:3px 6px;flex-shrink:0}
+.undo{min-width:64px;min-height:44px;border:none;background:transparent;color:#1E6A86;font:inherit;font-size:14px;font-weight:700;cursor:pointer;border-radius:10px}
+</style>
+</helmet>
+<main style="width: 390px; height: 844px; box-sizing: border-box; padding: 20px 20px 16px; display: flex; flex-direction: column; gap: 12px; background: #F5F6F4; font-family: Manrope, system-ui, sans-serif; color: #15181C">
+<div style="display: flex; align-items: center; gap: 8px; padding-top: 8px">
+<a href="Main.dc.html" aria-label="Back to dashboard" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; margin-left: -10px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15181C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+</a>
+<h1 style="margin: 0; font-size: 20px; font-weight: 700">What you told me</h1>
+</div>
+
+<div role="log" aria-live="polite" aria-label="What you told me and what was filed">
+<ol class="plain" style="display: flex; flex-direction: column; gap: 12px">
+<li style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; align-self: flex-end; max-width: 80%; background: #E4EFF3; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 15px"><span class="sr">You said: </span>taxi 18 from the airport</p>
+<p style="margin: 0; display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px dashed #858E95; border-radius: 12px; padding: 10px 12px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B636B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+<span style="font-size: 13px; color: #5B636B">Saved. Waiting to file · you were offline</span>
+</p>
+</li>
+
+<li style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; align-self: flex-end; max-width: 80%; background: #E4EFF3; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 15px"><span class="sr">You said: </span>I’m going to Lisbon for a long weekend 13–16 March, about 600 all in</p>
+<ul class="plain" aria-label="Filed" style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 12px; padding: 0 12px">
+<li style="display: flex; align-items: center; gap: 8px; min-height: 44px">
+<span class="tag" style="color: #1E6A86; background: #E4EFF3">Trip</span>
+<span style="font-size: 14px; flex-grow: 1">Lisbon · 13–16 Mar · €600 budget</span>
+</li>
+<li style="display: flex; align-items: center; gap: 8px; min-height: 44px; border-top: 1px solid #EEF0EE">
+<span class="tag" style="color: #15181C; background: #EEF0EE">Tasks</span>
+<span style="font-size: 14px; flex-grow: 1">6 to-dos scheduled before 13 Mar</span>
+</li>
+</ul>
+</li>
+
+<li style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; align-self: flex-end; max-width: 80%; background: #E4EFF3; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 15px"><span class="sr">You said: </span>paid 42 for groceries and move the dentist to Friday</p>
+<ul class="plain" aria-label="Filed" style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 12px; padding: 0 4px 0 12px">
+<li style="display: flex; align-items: center; gap: 8px; min-height: 48px">
+<span class="tag" style="color: #2F6B4F; background: #E5F1EA">Spent</span>
+<span style="font-size: 14px; flex-grow: 1">€42.00 · Groceries · today</span>
+<button type="button" class="undo" aria-label="Undo expense €42 groceries">Undo</button>
+</li>
+<li style="display: flex; align-items: center; gap: 8px; min-height: 48px; border-top: 1px solid #EEF0EE">
+<span class="tag" style="color: #15181C; background: #EEF0EE">Moved</span>
+<span style="font-size: 14px; flex-grow: 1">Dentist → Fri 27 Feb, 15:00</span>
+<button type="button" class="undo" aria-label="Undo moving the dentist to Friday">Undo</button>
+</li>
+</ul>
+</li>
+
+<li style="display: flex; flex-direction: column; gap: 6px">
+<p style="margin: 0; align-self: flex-end; max-width: 80%; background: #E4EFF3; border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 15px"><span class="sr">You said: </span>that was 24 not 42</p>
+<ul class="plain" aria-label="Changed" style="background: #FFFFFF; border: 1px solid #E3E6E3; border-radius: 12px; padding: 0 4px 0 12px">
+<li style="display: flex; align-items: center; gap: 8px; min-height: 48px">
+<span class="tag" style="color: #2F6B4F; background: #E5F1EA">Fixed</span>
+<span style="font-size: 14px; flex-grow: 1">Groceries €42.00 → €24.00</span>
+<button type="button" class="undo" aria-label="Undo the change from €42 to €24">Undo</button>
+</li>
+</ul>
+</li>
+</ol>
+</div>
+
+<form class="cap" style="margin-top: auto; background: #FFFFFF; border-radius: 22px; padding: 6px 6px 6px 16px; display: flex; align-items: center; gap: 6px">
+<label for="cap2" class="sr">Tell it anything</label>
+<input id="cap2" value="book the car service for next week" style="flex-grow: 1; min-width: 0; height: 44px; border: none; font: inherit; font-size: 15px; color: #15181C; background: transparent">
+<button type="submit" aria-label="Send" style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; border: none; background: {{accent}}; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg>
+</button>
+</form>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1E6A86","options":["#1E6A86","#3D5A80","#2F6B4F","#8A4B2D"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#1E6A86' };
+}
+}
+</script>
+</body>
+</html>
