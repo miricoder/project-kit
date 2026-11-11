@@ -11,7 +11,7 @@
 ## Architecture
 
 ```
- ┌──────────────────────── Android phone (all user data lives here) ───────────────────────┐
+ ┌────────────────── iPhone or Android phone (all user data lives here) ───────────────────┐
  │                                                                                         │
  │  Screens (Dashboard · Capture · Paste · Trip)  ── read ──►  Store (SQLite, versioned)   │
  │        │ text + source                                         ▲         ▲              │
@@ -20,7 +20,7 @@
  │        │ oldest pending, one at a time                         │         │              │
  │        ▼                                                       │         │              │
  │  FilingClient ── HTTPS ──┐          Validator ──► Filer ───────┘    Reminders           │
- │        ▲  ops JSON       │              ▲            │              (AlarmManager via   │
+ │        ▲  ops JSON       │              ▲            │              (OS scheduler via   │
  │        └─────────────────┼──────────────┘            └─► UndoLog     local notifications)│
  └──────────────────────────┼──────────────────────────────────────────────────────────────┘
                             ▼
@@ -40,7 +40,7 @@ applies them deterministically. The model never writes to the store directly.
 | Validator | Rejecting any operation that breaks the schema or the safety limits (below) before it reaches the store | Ops schema, Store (to resolve refs) |
 | Filer | Applying a validated batch in one SQLite transaction; trip linking; trip to-do generation; writing the inverse operations | Store, UndoLog, Reminders |
 | UndoLog | Inverse operations per batch and per item; undo and redo; conflict detection | Store |
-| Reminders | Scheduling, cancelling and rescheduling task notifications; exact-alarm permission state; time-zone change handling | OS alarm and notification APIs |
+| Reminders | Scheduling, cancelling and rescheduling task notifications; notification permission state (and Android's exact-alarm permission); keeping within iOS's limit on pending notifications; time-zone change handling | OS notification APIs (expo-notifications) |
 | Store | SQLite database, schema version, migrations, pre-migration backup | Device storage |
 | Filing service | Install tokens, per-install rate limit, global daily spend cap, prompt and model version, calling the LLM, schema-checking its output | LLM provider API |
 | Eval harness (Phase 0) | The filing test set and the scorer that runs it against the filing service | Filing service, Validator (shared package) |
@@ -51,8 +51,8 @@ Each decision names what lost and why. A decision with no rejected alternative w
 
 | Decision | Chosen | Rejected | Why |
 |---|---|---|---|
-| Phone platform for v1 | **Android** (min API 29, target current) | iOS | Larger share of phones in the EU (the assumed market); €25 one-off store fee vs €99/year; the builder's existing work (exp101) is web/React, not Swift, so neither platform has a native head start. Cost: exact-alarm permission handling (see Failure modes). |
-| App framework | **React Native with Expo** (TypeScript), Android build only | Native Kotlin; Flutter | Reuses the React skills shown in exp101/frontend; Expo gives SQLite, secure storage, local notifications and background tasks as maintained modules; keeps iOS reachable later without a rewrite. Kotlin is the better Android fit but is a new language for the builder. |
+| Phone platform for v1 | **iPhone and Android from one codebase, iPhone first** (iOS 16+; Android min API 29). Every slice is built and tested on the user's iPhone first; Android is built from the same code and checked on an emulator. | Android only; iPhone only | The user's own test phone is an iPhone and they want the app on both platforms (decided by the user after /design). One codebase keeps the cost of the second platform low. Costs: the Apple Developer Program (~€99/year) is needed to install a build on the iPhone outside Expo Go (TestFlight); iOS caps pending local notifications at 64 and gives no timing guarantee for background work (see Failure modes). |
+| App framework | **React Native with Expo** (TypeScript), iOS and Android builds via EAS | Native Swift + Kotlin; Flutter | Reuses the React skills shown in exp101/frontend; Expo gives SQLite, secure storage, local notifications and background tasks as maintained modules on both platforms; early slices run on the iPhone in Expo Go with no Apple account. Two native apps would double the build effort. |
 | Where filing intelligence runs | **Hosted LLM behind a thin service**, structured JSON output | On-device small model; rule-based parser | The proposal's central risk is reaching ≥ 90 % fully-correct filing on mixed sentences and messy pastes; current on-device models and regex parsers are well below that on mixed input (ASSUMED, Phase 0 measures it). The service exists only so the API key is not on the phone. |
 | Model | **Smallest current Claude model (Haiku tier)**, one call per capture, temperature 0, tool/JSON-schema output | A larger model by default; several calls per capture (classify then extract) | Per-capture cost target is €0.001–0.01 (proposal). One call with the whole schema keeps cost and latency down. Phase 0 decides: if the small model scores < 90 % after prompt work, step up one tier and record the new per-capture cost. |
 | Who applies changes | **The phone, from a validated op list** | Model returns the new full state; server applies | Ops are small, auditable and invertible (undo needs exact inverses). A model returning full state could silently drop items. The server never sees the database, so it cannot be its writer. |
@@ -63,10 +63,10 @@ Each decision names what lost and why. A decision with no rejected alternative w
 | Money representation | **Integer euro cents** | Floating-point euros | Trip spent total must equal the sum of its expenses exactly (criterion 2(c)). |
 | Task times | **Floating local wall-clock time** (date + optional time, no zone), rescheduled on time-zone change | Absolute UTC instants | "Dentist Thursday 3pm" means 3pm wherever the phone is. Travel is a core scenario. |
 | Offline capture | **Capture saved locally first, filed later; relative dates resolved against the capture time** | Block sending while offline; resolve at filing time | Proposal: capture works offline. "Tomorrow" said on Monday and filed on Tuesday must still mean Tuesday. |
-| Reconnect trigger | **Connectivity listener while the app is alive + Android background task with a network constraint** | Polling; push from the server | The listener meets the 30 s criterion while the app is open or recently backgrounded; the background task covers the rest without a server that knows the device. |
+| Reconnect trigger | **Connectivity listener while the app is alive + an OS background task** (expo-background-task: BGTaskScheduler on iOS, WorkManager with a network constraint on Android) | Polling; push from the server | The listener meets the 30 s criterion while the app is open or recently backgrounded; the background task covers the rest without a server that knows the device. iOS decides when background tasks run, so with the app closed, filing may wait until the next app open. |
 | Filing service host | **One small container (FastAPI, Python) on Google Cloud Run**, scale to zero, one region in the EU | Cloudflare Worker; calling the LLM from the phone | FastAPI is the pattern the builder already runs (exp101/backend/main.py). Scale-to-zero keeps hosting near €0 (proposal: €0–20/month). EU region for GDPR. The phone-direct option leaks the key. |
-| Service auth without accounts | **Anonymous per-install token** issued on first launch, kept in Android Keystore-backed secure storage, plus per-token and global limits | No auth; Play Integrity attestation | No auth lets anyone spend the budget. Attestation is the stronger option but adds a Google dependency and setup for a one-user proof; revisit before any public release. |
-| Android backup | **Auto Backup off** (`allowBackup=false`) | Android Auto Backup to Google Drive | Proposal: no cloud copy in v1; financial and travel data stays on the phone. The cost (lost phone = lost data) is an accepted proposal risk. |
+| Service auth without accounts | **Anonymous per-install token** issued on first launch, kept in platform secure storage (iOS Keychain, Android Keystore, via expo-secure-store), plus per-token and global limits | No auth; App Attest / Play Integrity attestation | No auth lets anyone spend the budget. Attestation is the stronger option but adds an Apple and a Google dependency and setup for a one-user proof; revisit before any public release. |
+| Device backup | **Excluded from cloud backup on both platforms**: the database file is marked excluded from iCloud and device backup on iOS (`NSURLIsExcludedFromBackupKey`, via a small config plugin); Auto Backup off on Android (`allowBackup=false`) | iCloud backup; Android Auto Backup to Google Drive | Proposal: no cloud copy in v1; financial and travel data stays on the phone. The cost (lost or replaced phone = lost data) is an accepted proposal risk, fixed by Phase 4 sync. |
 | Pastes | **Create-only**: a paste may not edit, delete or set the budget | Pastes treated like typed captures | Pasted text is often someone else's words (a forwarded message, a web page). Limiting what it can do caps the damage of a misread or an injected instruction. |
 | Undo window | **No time limit; Redo stays until the next capture** (handoff, WCAG 2.2.1) | Snackbar with a 5 s timeout | Mistakes are noticed later, on the dashboard; undo has to still be there. |
 
@@ -94,7 +94,7 @@ service stores no user data.
 | `note` | `id`, `capture_id`, `text`, `suggestions` (JSON, ≤ 3) | Phone SQLite |
 | `setting` | `key`, `value` — `monthly_budget_cents`, `home_currency` (EUR), `install_token_set` | Phone SQLite |
 | `schema_meta` | `schema_version`, `min_reader_version`, `migrated_at` | Phone SQLite |
-| install token | opaque 256-bit token | Phone secure storage (Keystore); server keeps only its SHA-256 and a daily counter |
+| install token | opaque 256-bit token | Phone secure storage (Keychain / Keystore); server keeps only its SHA-256 and a daily counter |
 
 Relationships: `expense.trip_id → trip`, `task.trip_id → trip` (trip to-dos are tasks with a
 `template_key`), `batch.capture_id → capture`, `undo_entry.batch_id → batch`. Deletes are soft
@@ -202,7 +202,8 @@ equal after Validator normalisation), mean cost per capture, and writes `eval/re
 | Pasted text contains edits, deletions or instructions | Paste is create-only; any update/delete op rejects the batch to a note | pasted notes cannot change or delete existing items |
 | One capture tries to change many existing items | More than 5 update/delete/complete ops rejects the batch to a note | one capture cannot change more than five existing items |
 | Undo of an item that a later capture changed | Undo refused for that item with "changed since — say the correction instead"; other items in the batch undo normally | undo of an item changed since is refused |
-| Exact-alarm permission not granted (Android 12+) | Reminders still scheduled inexactly; a banner on the Dashboard explains and links to the setting | reminders without exact alarm permission warn the user |
+| Notifications not allowed (iOS asks on the first reminder; Android 13+ likewise), or Android's exact-alarm permission not granted | Task still filed; a banner on the Dashboard says reminders are off or may be late and links to the setting | reminders without notification permission warn the user |
+| More than 60 future reminders (iOS keeps at most 64 pending local notifications per app) | Only the 60 soonest are scheduled; the rest are scheduled as earlier ones fire or on the next app open | only the soonest 60 reminders are scheduled at once |
 | Phone changes time zone (travel) | All future reminders rescheduled to the same wall-clock time in the new zone | reminder keeps its wall-clock time after a time zone change |
 | Paste or typed text over 4,000 characters | Send disabled; the text stays in the box with a count and a message | capture over 4,000 characters is not sent |
 | Trip departs sooner than the template offsets | To-dos that would be in the past are due today; none is after departure | to-dos for a trip departing soon are due no later than departure |
@@ -215,15 +216,15 @@ equal after Validator normalisation), mean cost per capture, and writes `eval/re
 
 | Layer | How | Tested by |
 |---|---|---|
-| Code | **App:** Play does not allow downgrades, so a bad release is rolled back by rebuilding the previous git tag with a higher `versionCode` and releasing it (staged rollout at 20 % first so a bad build can be halted). **Filing service:** redeploy the previous container image tag on Cloud Run (traffic switch, under a minute); prompt and model are pinned in that image, so the previous filing behaviour comes back with it. | CI rollback drill: build tag N and tag N−1-as-higher-versionCode, install N on an emulator, add data, install the rebuild, run the smoke scenarios. Service: deploy N, then N−1, call `/v1/health` and the 20-case eval smoke set. |
+| Code | **App:** neither the App Store nor Play allows downgrades, so a bad release is rolled back by rebuilding the previous git tag with a higher build number (`buildNumber` on iOS, `versionCode` on Android) and releasing it. Every build goes to TestFlight (iPhone) before release; releases use phased release on the App Store and a 20 % staged rollout on Play, so a bad build can be halted. **Filing service:** redeploy the previous container image tag on Cloud Run (traffic switch, under a minute); prompt and model are pinned in that image, so the previous filing behaviour comes back with it. | CI rollback drill: build tag N and tag N−1-as-higher-build-number, install N on an iOS simulator and an Android emulator, add data, install the rebuild, run the smoke scenarios. Service: deploy N, then N−1, call `/v1/health` and the 20-case eval smoke set. |
 | Data | **Phone:** no down-migrations. v1 migrations are additive only, so the rolled-back build reads newer data (`min_reader_version`); a failed upgrade rolls back its own transaction; the last two pre-migration `.bak` copies are kept for the case where a future non-additive change has to be reversed. **Service:** holds no user data; nothing to roll back beyond install-token hashes, which are append-only. **User-level:** undo/redo per capture. | Scenarios "failed database upgrade leaves data unchanged" and "rolled-back app version opens data written by the newer version", run in the same CI drill. |
 
 ## Security and privacy
 
 | Concern | Handling |
 |---|---|
-| Sensitive data | Spending, appointments and travel dates/places. Stored only on the phone in app-private storage, covered by Android file-based encryption; Auto Backup off. Each capture's text plus a context snapshot (titles, amounts, dates of recent items) is sent over TLS to the filing service and the LLM provider for that one request. Neither the service nor the provider (commercial API terms: no training on API data) keeps it beyond the request, except the provider's own abuse-monitoring retention, which the privacy notice states. |
-| Secrets | LLM API key: Cloud Run secret (Secret Manager), never in the app or the repo. Install token: Keystore-backed secure storage on the phone; server stores only `sha256(token)`. No other secrets in v1. |
+| Sensitive data | Spending, appointments and travel dates/places. Stored only on the phone in app-private storage, covered by iOS Data Protection and Android file-based encryption; excluded from cloud backup. Each capture's text plus a context snapshot (titles, amounts, dates of recent items) is sent over TLS to the filing service and the LLM provider for that one request. Neither the service nor the provider (commercial API terms: no training on API data) keeps it beyond the request, except the provider's own abuse-monitoring retention, which the privacy notice states. |
+| Secrets | LLM API key: Cloud Run secret (Secret Manager), never in the app or the repo. Install token: Keychain / Keystore-backed secure storage on the phone; server stores only `sha256(token)`. No other secrets in v1. |
 | What gets logged | Service: request id, install-token hash prefix (8 chars), status code, latency, token counts, op kinds and counts, prompt version. **Never** capture text, context, amounts or model output. Phone: no analytics SDK; crash reports off by default in v1. |
 | Abuse and cost | Per-install 200 captures/day; 4,000-char input cap; global daily spend cap (default €2/day) after which the service returns 503. |
 | Prompt injection | The model can only propose ops on the user's own data; the Validator enforces the op schema, ref existence, amount/date ranges, the 5-change limit and create-only pastes. Worst case is a wrong but visible filing with Undo. |
@@ -235,7 +236,7 @@ Carried from the proposal so no reader assumes it was covered: day-by-day itiner
 generation; bank or card connection; receipt photos and image/file drop (paste of text only);
 calendar integration (edits change the app's own tasks only); accounts, cloud sync, backup or a
 second device; sharing, shared trips and split costs; multiple currencies (EUR only, no
-conversion); iOS, tablet and web (Android phone only); home-screen widget, watch app and daily
+conversion); tablet and web (phones only: iPhone and Android); home-screen widget, watch app and daily
 summary push; recurring items and per-category budgets; any assistant that books, buys, emails
 or calls; chat or free-form questions about the data. Also not built in v1, decided here: dark
 mode (tokens allow it later), Play Integrity attestation, crash reporting, a custom voice
@@ -256,10 +257,11 @@ no cheap lever: a bigger model breaks the cost envelope, extra clarifying questi
 "no forms" rule, and the context snapshot (≤ 50 tasks, 30 days of expenses) means corrections to
 older items silently fail to match.
 
-Three further weak points a judge should press. (1) **Android background limits:** the 30 s
+Three further weak points a judge should press. (1) **Background limits on both phones:** the 30 s
 reconnect promise holds while the app is alive; if the OS has killed it, filing waits for the
-next background task window (often 15 minutes or more) or the next app open, and
-manufacturer battery savers (Samsung, Xiaomi) can delay reminders too. (2) **Single device, no
+next background task window (iOS runs these when it chooses, Android often 15 minutes or
+more) or the next app open, and manufacturer battery savers (Samsung, Xiaomi) can delay
+Android reminders too. (2) **Single device, no
 backup:** for an app whose pitch is "trust it with everything", a dropped phone erasing a
 month of spending and a booked trip's to-dos may lose the one tester the 14-day criterion
 needs. (3) **The proposal's own recommended concierge test has not been run**; building the

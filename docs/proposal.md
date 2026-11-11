@@ -56,8 +56,8 @@ backward-scheduled to-dos, all visible on one glanceable dashboard.
 - **No sharing.** No shared trips, split costs or household budgets.
 - **No multiple currencies.** One home currency (assumed EUR). Spending in another
   currency must be entered in the home currency.
-- **One phone platform only** (iOS or Android, chosen in /design). The other platform,
-  tablets and web come later.
+- **Phones only: iPhone first, Android from the same code.** Every slice is tested on the
+  user's iPhone; tablets and web come later.
 - **No home-screen widget, watch app or daily summary push.** The dashboard is a screen
   in the app. (Phase 3 for the widget.)
 - **No recurring items** (rent every month, a weekly bin reminder) and **no
@@ -86,7 +86,7 @@ Acceptance criteria are observable conditions, not activities.
 | Build effort, Phases 3–4 | 14–24 further sessions | Sync and sharing (Phase 4) carry most of the spread. |
 | Running cost, model calls | **≈ €0.001–0.01 per capture** → for one heavy user (~20 captures/day, ~600/month) **€0.60–6 per user per month**; for the builder alone during v1, under €10/month. | Size of model needed to hit 90%, length of pasted notes (a long paste can cost 10–20× a sentence), and whether each capture needs one call or several. |
 | Running cost, hosting | **€0–20/month** in v1 (at most a small service so the model key is not on the phone); Phase 4 sync adds roughly €10–50/month at small scale. | Whether v1 calls the model directly or through a minimal server; storage and sync volume later. |
-| Store fees | Apple developer programme ~€99/year, or Google Play one-off ~€25. | Platform choice. |
+| Store fees | Apple Developer Program ~€99/year (needed to put a build on the iPhone through TestFlight); Google Play one-off ~€25 when the Android build ships. | Both platforms in v1. |
 
 **Biggest uncertainty:** whether a small, cheap model can file mixed captures at ≥ 90%
 fully correct. If it needs a large model or several calls per capture, per-user cost rises

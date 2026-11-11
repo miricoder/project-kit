@@ -5,8 +5,8 @@
 >
 > **Status of this spec.** Values marked *measured* are taken from the mockup. Everything marked
 > *proposed* (most states, motion, dark mode, error copy) was not drawn and is a recommendation
-> to confirm with design before build. The phone platform (iOS or Android) is still undecided,
-> so components are described by behaviour, not by framework.
+> to confirm with design before build. The app is built for iPhone first and Android from the
+> same React Native code, so components are described by behaviour, not by framework.
 
 ---
 
@@ -162,7 +162,7 @@ Use the platform's equivalent set at 18–22pt.
 
 ### Responsive Behavior
 
-Phone only in v1 (proposal: one phone platform, no tablet or web).
+Phone only in v1: iPhone first, Android from the same code (no tablet or web).
 
 | Breakpoint | Changes |
 |---|---|
@@ -233,5 +233,5 @@ movement with a 150ms fade.
 1. Dark mode is not drawn. (Error states, Redo and over-budget are now drawn on the "Error & edge states" artboard.) Needed for v1? (Tokens are set up to make it a palette swap.)
 2. Edit sheet, full task list and first-launch empty state are proposed here but not drawn.
 3. Monthly budget setup flow isn't drawn (assumed: said in the capture bar).
-4. Platform choice (iOS/Android) changes navigation, haptics and notification styling.
+4. Both platforms ship: follow each platform's navigation, haptics and notification conventions (iOS first).
 5. Remove the "Day-by-day plan · not in v1" placeholder card before build, or keep as a teaser?

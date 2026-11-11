@@ -3,6 +3,7 @@
 Tell it your life admin in passing — "paid 42 for groceries", "move the dentist to Friday",
 "Lisbon for a long weekend in March, about 600 all in" — and it files tasks, spending and
 trips for you, with a dashboard you can glance at.
+Runs on iPhone and Android from one codebase; built and tested on iPhone first.
 
 Planned with [Project Kit](https://github.com/miricoder/project-kit). Mode: `yolo`.
 

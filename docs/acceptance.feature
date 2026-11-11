@@ -236,11 +236,17 @@ Feature: Offline and service failures
 
 Feature: Reminders
 
-  Scenario: reminders without exact alarm permission warn the user
-    Given the app does not have the exact alarm permission
+  Scenario: reminders without notification permission warn the user
+    Given the user has not allowed notifications for the app
     When the user sends "dentist Thursday 3pm"
-    Then the task is filed and a reminder is scheduled
-    And the Dashboard shows a banner "Reminders may be a few minutes late" with a button to the setting
+    Then the task is filed
+    And the Dashboard shows a banner "Reminders are off" with a button to the setting
+
+  Scenario: only the soonest 60 reminders are scheduled at once
+    Given 70 open tasks with due times in the future
+    When the reminders are synced
+    Then exactly 60 reminders are scheduled, for the 60 soonest tasks
+    And when the soonest reminder fires the 61st task's reminder is scheduled
 
   Scenario: reminder keeps its wall-clock time after a time zone change
     Given a task "Dentist" due Thursday 26 February 2026 at 15:00 created in Europe/Lisbon

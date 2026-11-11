@@ -81,7 +81,7 @@ adding structured trackers, a trip app adding general tasks) close it from one s
 
 | Dimension | Answer | Evidence |
 |---|---|---|
-| Platforms | Phone first (iOS and/or Android, not yet decided); a glanceable widget or home-screen surface likely matters | ASSUMED from "a phone app" |
+| Platforms | Phone first: iPhone and Android from one codebase, iPhone first; a glanceable widget or home-screen surface likely matters | DECIDED by the user after /design (was ASSUMED from "a phone app") |
 | Offline | Nice-to-have: capture should work offline and sync later (abroad on a trip with poor data is a core scenario); structuring may need a connection | ASSUMED |
 | Data stored | Personal finances (amounts, merchants, possibly receipts), calendar-like appointments, travel plans and dates, free-text notes. **High sensitivity**: financial plus location/travel patterns | ASSUMED |
 | Accounts / auth | Likely needed so data survives a lost phone and syncs across devices; not necessarily needed for a single-device v1 | ASSUMED |

@@ -31,8 +31,8 @@ Proposal Phases 0–2 are v1. Phase 0 settles the biggest risk (can a small mode
   `eval/BASELINE.md`; `pk qa -C .` still passes
 
 ## Slice 3: Phone store, capture queue and Filer
-- **Delivers:** the Expo/React Native Android app with a capture bar that files tasks,
-  expenses and the monthly budget, one capture at a time, with a log line per item
+- **Delivers:** the Expo/React Native app, running on your iPhone (Expo Go) and on Android,
+  with a capture bar that files tasks, expenses and the monthly budget, one capture at a time, with a log line per item
 - **Proposal phase:** 1
 - **Scenarios:** a typed expense is filed against the month; one sentence becomes two items;
   an expense without a date is filed as today; the monthly budget is set by saying it;
@@ -56,11 +56,12 @@ Proposal Phases 0–2 are v1. Phase 0 settles the biggest risk (can a small mode
 - **Delivers:** task notifications at the stated wall-clock time, even with the phone locked
 - **Proposal phase:** 1
 - **Scenarios:** a task with a day and time is filed with a reminder; a reminder fires with the
-  phone locked; reminders without exact alarm permission warn the user; reminder keeps its
-  wall-clock time after a time zone change; ticking a task done cancels its reminder
-- **Touches:** Reminders (expo-notifications, exact-alarm permission state, time-zone change
-  handler), Dashboard banner
-- **Done when:** its scenarios pass as automated tests (the locked-phone one on an emulator);
+  phone locked; reminders without notification permission warn the user; only the soonest 60 reminders are
+  scheduled at once; reminder keeps its wall-clock time after a time zone change; ticking a task
+  done cancels its reminder
+- **Touches:** Reminders (expo-notifications, notification and exact-alarm permission state,
+  iOS 64-pending limit, time-zone change handler), Dashboard banner
+- **Done when:** its scenarios pass as automated tests (the locked-phone one on your iPhone, then an Android emulator);
   `pk qa -C .` still passes
 
 ## Slice 6: Edit by saying so
