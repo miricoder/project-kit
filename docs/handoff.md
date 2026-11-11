@@ -5,8 +5,8 @@
 >
 > **Status of this spec.** Values marked *measured* are taken from the mockup. Everything marked
 > *proposed* (most states, motion, dark mode, error copy) was not drawn and is a recommendation
-> to confirm with design before build. The app is built for iPhone first and Android from the
-> same React Native code, so components are described by behaviour, not by framework.
+> to confirm with design before build. The app is a web app (React) installed to the iPhone's Home
+> Screen and opened in a browser on the computer, so components are described by behaviour.
 
 ---
 
@@ -118,7 +118,7 @@ figure rows wrap and stack the 3-column grids into one column.
 
 | Component | Variants | Props | Notes |
 |---|---|---|---|
-| **CaptureBar** | `idle`, `focused` (driven by the field's real focus, never drawn statically) | `value`, `placeholder`, `onSend`, `onPaste`, `onDictate` | Idle: 1pt `color-border-strong` + shadow; paste button (neutral) + mic button (accent, a **button**, not a link). Focused: `color-accent` border plus a 2pt accent ring on the whole bar (the field's own outline may be hidden only because the bar shows this), and a **Send** arrow replaces paste+mic once there is text. Placeholder: "Tell me anything… “paid 42 for groceries”". Multi-line: grows to 5 lines, then scrolls inside. |
+| **CaptureBar** | `idle`, `focused` (driven by the field's real focus, never drawn statically) | `value`, `placeholder`, `onSend`, `onPaste`, `onDictate` | Idle: 1pt `color-border-strong` + shadow; paste button (neutral) + mic button (accent, a **button**, not a link; in the web app it focuses the field so the keyboard's own dictation key can be used, *proposed*). Focused: `color-accent` border plus a 2pt accent ring on the whole bar (the field's own outline may be hidden only because the bar shows this), and a **Send** arrow replaces paste+mic once there is text. Placeholder: "Tell me anything… “paid 42 for groceries”". Multi-line: grows to 5 lines, then scrolls inside. |
 | **Card** | default, `link` (Trip card) | `title`, `meta`, `children`, `href?` | Link variant is one tap target for the whole card. |
 | **TaskRow** | `idle`, `due-today`/`overdue`, `done` | `title`, `meta`, `state`, `onToggle` | A **real checkbox** (native control) with the whole row as its label, so its name is title + due date. Due/overdue: checkbox outline and meta in `color-warn`, meta bold. Done: filled accent check with white tick, title muted + strikethrough. |
 | **BudgetSummary** | `month`, `trip-card`, `trip-header` | `budget`, `spent`, `currency` | "left" = budget − spent. Bar fill = spent ÷ budget, clamped to 100%. Month shows top 3 categories by spend. |
@@ -147,7 +147,7 @@ Use the platform's equivalent set at 18–22pt.
 | Capture bar | Filing failed (server/model error) | Row with a 2pt `color-warn` border, alert icon and text "Couldn't file this. Your words are saved; nothing was lost." + **Retry**. Announced as an alert. Drawn on "Error & edge states". |
 | Capture bar | Not understood | "Saved as a note. Is it one of these?" + **It's an expense, €20** / **Make it a task** / **Leave as a note**. The one place a choice is offered, and only after the fact. Drawn on "Error & edge states". |
 | Mic button | Tap | Starts OS dictation into the input (v1 uses the keyboard's dictation, no custom recorder). |
-| Paste button | Tap | Pastes clipboard into the input and opens the Pasted notes view on send. Empty clipboard: button disabled (40% opacity). |
+| Paste button | Tap | Opens the Pasted notes screen with an empty text box and the keyboard up; the user pastes with the system Paste. Send is disabled (40% opacity) while the box is empty. (A web app cannot read the clipboard without asking, so the button is never disabled itself.) |
 | Undo | Tap | Reverts that one item; the row text becomes struck through + "Undone" and Undo becomes **Redo**, which stays until the next capture (no time limit, WCAG 2.2.1). Drawn on the "Error & edge states" artboard. |
 | Undo all (Paste) | Tap | Reverts every item from that paste; same Redo window. |
 | FiledRow / pasted item | Tap | *proposed*: opens an inline edit sheet with the item's fields (amount, date, category, trip). Typing a correction in the capture bar is the primary way; the sheet is the fallback. |
@@ -162,7 +162,9 @@ Use the platform's equivalent set at 18–22pt.
 
 ### Responsive Behavior
 
-Phone only in v1: iPhone first, Android from the same code (no tablet or web).
+Phone first: the layout is designed for the iPhone (Home Screen web app, full screen, safe
+areas respected). On a computer or tablet the same screens sit in a centred column at most
+480 px wide (*proposed*); a wider two-column layout is not in v1.
 
 | Breakpoint | Changes |
 |---|---|
@@ -233,5 +235,5 @@ movement with a 150ms fade.
 1. Dark mode is not drawn. (Error states, Redo and over-budget are now drawn on the "Error & edge states" artboard.) Needed for v1? (Tokens are set up to make it a palette swap.)
 2. Edit sheet, full task list and first-launch empty state are proposed here but not drawn.
 3. Monthly budget setup flow isn't drawn (assumed: said in the capture bar).
-4. Both platforms ship: follow each platform's navigation, haptics and notification conventions (iOS first).
+4. Web app: no haptics; follow iOS conventions for the Home Screen app (bottom capture bar above the home indicator), and add a Settings → Devices list for signing out a device (*proposed*, not drawn).
 5. Remove the "Day-by-day plan · not in v1" placeholder card before build, or keep as a teaser?

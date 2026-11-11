@@ -1,7 +1,8 @@
 # Acceptance criteria for Dumpit v1 (proposal Phases 0–2).
 # Contract for /test. Scenario names that appear in docs/spec.md "Failure modes" must match exactly.
 # Unless a scenario says otherwise: today is Monday 23 February 2026, 09:00, time zone
-# Europe/Lisbon, home currency EUR, the phone is online, and the store is empty.
+# Europe/Lisbon, home currency EUR; the user is signed in on their iPhone, where the web app is
+# on the Home Screen with notifications allowed; the phone is online; and they have no items.
 
 Feature: Filing test set (Phase 0)
 
@@ -35,7 +36,7 @@ Feature: Capture and filing
   Scenario: a task with a day and time is filed with a reminder
     When the user sends "dentist Thursday 3pm"
     Then a task "Dentist" due Thursday 26 February 2026 at 15:00 exists
-    And a reminder notification is scheduled for 26 February 2026 at 15:00
+    And a reminder is due to be sent on 26 February 2026 at 15:00
 
   Scenario: a reminder fires with the phone locked
     Given a task "Dentist" due Thursday 26 February 2026 at 15:00
@@ -175,22 +176,22 @@ Feature: Pasted notes
       renew gym
       """
     And a trip "Lisbon" from 13 to 16 March 2026 exists
-    When the user taps Paste and then Send
+    When the user pastes it on the Pasted notes screen and taps Send
     Then 4 items are filed: an expense of €38.20, a task "Dentist" due 26 February at 15:00, an expense of €120.00 linked to "Lisbon", and a task "Renew gym"
     And the Pasted notes screen shows "Filed 4 items" with an "Undo all" button
 
   Scenario: pasted notes cannot change or delete existing items
     Given a task "Dentist" due Thursday 26 February 2026 at 15:00
     And the clipboard holds "cancel the dentist. groceries 12"
-    When the user taps Paste and then Send
+    When the user pastes it on the Pasted notes screen and taps Send
     Then the task "Dentist" is still due 26 February 2026 at 15:00
     And no expense is created
     And the capture is kept as a note
 
-  Scenario: the paste button is disabled with an empty clipboard
-    Given the clipboard is empty
-    When the Dashboard is shown
-    Then the Paste button is disabled
+  Scenario: the paste screen's Send button is disabled while the box is empty
+    Given the Pasted notes screen is open
+    When its text box is empty
+    Then the Send button is disabled
 
 
 Feature: Offline and service failures
@@ -210,8 +211,8 @@ Feature: Offline and service failures
 
   Scenario: app closed mid-filing files the capture exactly once
     Given the user sent "paid 42 for groceries"
-    And the app was closed after the filing service replied but before the result was saved
-    When the app is opened again
+    And the app was closed after the server filed it but before the app heard back
+    When the app is opened again and resends the capture
     Then exactly one expense of €42.00 exists
 
   Scenario: filing service error keeps the words and offers retry
@@ -237,26 +238,26 @@ Feature: Offline and service failures
 Feature: Reminders
 
   Scenario: reminders without notification permission warn the user
-    Given the user has not allowed notifications for the app
+    Given notifications are not allowed for the app on this device
     When the user sends "dentist Thursday 3pm"
     Then the task is filed
-    And the Dashboard shows a banner "Reminders are off" with a button to the setting
+    And the Dashboard shows the banner "Reminders are off on this device" with the steps to turn them on
 
-  Scenario: only the soonest 60 reminders are scheduled at once
-    Given 70 open tasks with due times in the future
-    When the reminders are synced
-    Then exactly 60 reminders are scheduled, for the 60 soonest tasks
-    And when the soonest reminder fires the 61st task's reminder is scheduled
+  Scenario: an expired push subscription is removed and not retried
+    Given a device whose push subscription the push service now answers with "gone"
+    When a reminder is sent
+    Then that subscription is deleted
+    And no further reminder is sent to it
 
   Scenario: reminder keeps its wall-clock time after a time zone change
     Given a task "Dentist" due Thursday 26 February 2026 at 15:00 created in Europe/Lisbon
-    When the phone's time zone changes to Europe/Berlin
-    Then the reminder is scheduled for 26 February 2026 at 15:00 Europe/Berlin
+    When the app is opened on a device whose time zone is Europe/Berlin
+    Then the reminder is sent on 26 February 2026 at 15:00 Europe/Berlin
 
   Scenario: ticking a task done cancels its reminder
     Given a task "Dentist" due Thursday 26 February 2026 at 15:00
     When the user ticks the task's checkbox
-    Then no reminder for "Dentist" is scheduled
+    Then no reminder for "Dentist" is sent
 
 
 Feature: Monthly budget and dashboard
@@ -343,15 +344,62 @@ Feature: Trips
 Feature: Data safety on upgrade and rollback
 
   Scenario: failed database upgrade leaves data unchanged
-    Given a store at schema 1 with 50 expenses and 10 tasks
+    Given a database at schema 1 with 50 expenses and 10 tasks
     And a migration to schema 2 that fails partway
-    When the app is updated and opened
-    Then the store is still at schema 1 with 50 expenses and 10 tasks
-    And a copy named "dumpit.v1.bak" exists
-    And the app shows "Couldn't finish updating your data. Nothing was lost."
+    When the new service version is deployed
+    Then the database is still at schema 1 with 50 expenses and 10 tasks
+    And the previous service version keeps serving
 
-  Scenario: rolled-back app version opens data written by the newer version
-    Given app build N wrote a store at schema 2 with min_reader_version 1 holding 50 expenses
-    When build N−1, rebuilt with a higher version code, is installed over it
+  Scenario: rolled-back service version reads data written by the newer version
+    Given service version N added a column in schema 2 and wrote 50 expenses
+    When service version N−1 is redeployed
     Then the Dashboard opens without error
     And all 50 expenses are listed with their amounts unchanged
+
+
+Feature: Sign-in and the same data on every device
+
+  Scenario: an item captured on the phone shows on the computer
+    Given the user is signed in on their iPhone and in a browser on their computer
+    When the user sends "paid 42 for groceries" on the iPhone
+    And then brings the computer's browser tab to the front
+    Then within 5 seconds the computer's Dashboard shows €42 spent in February
+
+  Scenario: signing in on a new device shows all data
+    Given the user has 50 expenses, 10 tasks and 1 trip
+    When they sign in with an emailed link in a browser they have never used
+    Then the Dashboard shows the same month, due tasks and trip as on their iPhone
+
+  Scenario: two devices capturing at once never lose an item
+    Given the user sends "coffee 3.50" on the iPhone and "lunch 12" on the computer at the same moment
+    When both are filed
+    Then exactly two expenses exist, of €3.50 and €12.00
+
+  Scenario: an old sign-in link does not sign anyone in
+    Given a sign-in link sent 16 minutes ago
+    When it is opened
+    Then no session is created
+    And the page offers to send a new link
+
+  Scenario: signing out a lost device ends its access
+    Given the user is signed in on two devices
+    When they sign out the other device from Settings on this one
+    Then the other device's next request is refused as not signed in
+    And it shows the sign-in screen
+
+  Scenario: data is visible only to the signed-in user
+    Given two users, each with their own expenses
+    When the second user asks for their changes, dashboard and trips
+    Then nothing belonging to the first user is returned
+
+  Scenario: a sign-in link is only sent to the user's own email
+    Given the allowed email is the user's own
+    When a sign-in link is requested for "someone@example.com"
+    Then the request is answered the same way as for the user's email
+    And no email is sent
+
+  Scenario: cleared website data comes back on the next sign-in
+    Given the user has 50 expenses, 10 tasks and 1 trip
+    And the iPhone has cleared the web app's stored data
+    When the user opens the app and signs in again
+    Then the Dashboard shows all 50 expenses' month total, the 10 tasks and the trip

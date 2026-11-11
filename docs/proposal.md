@@ -2,12 +2,16 @@
 
 > Phase 2 of the Project Kit pipeline. Scope and cost. No architecture — that is /design.
 > Built from `docs/research.md`. Assumptions inherited from research (Euro/UK user,
-> single person, phone first) still stand until the user corrects them.
+> single person) still stand until the user corrects them.
+>
+> **Revised after /initiate at the user's request (2026-11):** v1 is a web app installed to
+> the iPhone's Home Screen and also opened on the computer, with the same data on both
+> through a sign-in and cloud storage. Account and sync move from Phase 4 into v1.
 
 ## v1 in one sentence
 
-One person types, dictates or pastes life admin into a single box on their phone, and the
-app files it, correctly and without being checked, as tasks with reminders, expenses
+One person types, dictates or pastes life admin into a single box on their phone or
+computer, and the app files it, correctly and without being checked, as tasks with reminders, expenses
 against a monthly budget, and trips with a budget, a spent-so-far total and
 backward-scheduled to-dos, all visible on one glanceable dashboard.
 
@@ -38,6 +42,9 @@ backward-scheduled to-dos, all visible on one glanceable dashboard.
   trip(s) with spent vs budget and next to-dos.
 - **Capture works offline.** Anything entered without a connection is kept and filed when
   the connection returns; the user sees it as "waiting to file".
+- **Same data on every device.** Sign in with an emailed link on the iPhone (the app is
+  added to the Home Screen from Safari) and in a browser on the computer; both show the same
+  items. Data is kept in the cloud, so a lost phone loses nothing.
 
 ## What v1 explicitly does not do
 
@@ -51,13 +58,12 @@ backward-scheduled to-dos, all visible on one glanceable dashboard.
   brief is limited to paste.
 - **No calendar integration.** "Move the dentist to Friday" moves the app's own task, not
   an event in Google/Apple Calendar, and nobody gets phoned.
-- **No accounts, cloud sync or second device.** Data lives on the one phone. Losing the
-  phone loses the data; v1 is for one person proving the idea. (Phase 4.)
+- **One person only.** The sign-in admits one email address; no other users.
 - **No sharing.** No shared trips, split costs or household budgets.
 - **No multiple currencies.** One home currency (assumed EUR). Spending in another
   currency must be entered in the home currency.
-- **Phones only: iPhone first, Android from the same code.** Every slice is tested on the
-  user's iPhone; tablets and web come later.
+- **No App Store or Play Store app.** v1 is a web app installed from the browser (no Apple
+  Developer Program needed). A store app can wrap the same code later.
 - **No home-screen widget, watch app or daily summary push.** The dashboard is a screen
   in the app. (Phase 3 for the widget.)
 - **No recurring items** (rent every month, a weekly bin reminder) and **no
@@ -71,10 +77,10 @@ backward-scheduled to-dos, all visible on one glanceable dashboard.
 | Phase | Delivers | Acceptance criteria | Effort |
 |---|---|---|---|
 | 0 | **Foundation: the filing test set.** A written collection of at least 200 realistic captures (single sentences, mixed sentences, edits, three pasted messy notes) with the correct filed result for each, and a way to score the filing against it. | The set exists, covers all three item kinds plus edits and pastes, and a single run prints the share of captures filed fully correctly (kind, amount, date, category, trip link). A first baseline score is recorded. | 2–4 sessions |
-| 1 | **Capture, tasks, expenses, dashboard.** Capture box, task and expense filing, edit-by-saying, monthly budget, after-capture line with undo, reminders, offline queue, dashboard. | (a) ≥ 90% of the Phase 0 set's task and expense captures are filed fully correctly. (b) A task captured as "dentist Thursday 3pm" raises a notification at that time with the phone locked. (c) A capture entered in airplane mode appears as "waiting to file" and is filed within 30 s of reconnecting. (d) Undo restores the previous state in one tap. (e) "That was 24 not 42" changes the most recent matching expense, verified on 20 test edits with ≥ 18 correct. | 6–10 sessions |
+| 1 | **Capture, tasks, expenses, dashboard, on every device.** Sign-in and cloud storage, the web app on the iPhone's Home Screen and the computer, capture box, task and expense filing, edit-by-saying, monthly budget, after-capture line with undo, reminders, offline queue, dashboard. | (a) ≥ 90% of the Phase 0 set's task and expense captures are filed fully correctly. (b) A task captured as "dentist Thursday 3pm" raises a notification at that time with the phone locked. (c) A capture entered in airplane mode appears as "waiting to file" and is filed within 30 s of reconnecting. (d) Undo restores the previous state in one tap. (e) "That was 24 not 42" changes the most recent matching expense, verified on 20 test edits with ≥ 18 correct. (f) An expense captured on the iPhone shows on the computer within 5 s of bringing its tab to the front. | 12–18 sessions |
 | 2 | **Trips.** Trip creation from a sentence, backward-scheduled to-dos, trip budget vs spent vs remaining, trip expenses counting in both trip and month. **End of v1.** | (a) "Lisbon long weekend 13–16 March, about 600 all in" creates a trip with those dates and €600 budget, and at least five to-dos each with a due date before 13 March. (b) An expense captured with "Lisbon" or during the trip dates is linked to the trip in ≥ 90% of the Phase 0 trip cases. (c) The trip view's spent total equals the sum of its linked expenses. (d) The whole Phase 0 set scores ≥ 90% fully correct. (e) One person uses it as their only dumpit tool for 14 days and opens a fix/undo on fewer than 1 in 10 captures. | 4–7 sessions |
 | 3 | **Planning and glance.** Day-by-day itinerary for a trip (generated, then editable by saying), home-screen widget, ask-a-question ("how much on food this month?"), recurring items. | A generated Lisbon plan has one entry per day for the trip dates and stays within the stated budget estimate; the widget shows next task and month remaining without opening the app; 18/20 test questions answered with the right figure. | 6–10 sessions |
-| 4 | **Keep it safe and share it.** Account, backup and sync, second device, shared trips with cost split, multiple currencies. | Data entered on phone A appears on phone B within a minute; a reinstall restores all data after sign-in; a shared trip shows each person's spend and who owes whom. | 8–14 sessions |
+| 4 | **Share it and go native.** Shared trips with cost split, multiple currencies, more than one user, App Store / Play Store apps wrapping the same code. (Account and sync moved into Phase 1.) | A shared trip shows each person's spend and who owes whom; the store app installs from TestFlight and shows the same data. | 6–10 sessions |
 
 Acceptance criteria are observable conditions, not activities.
 
@@ -82,11 +88,11 @@ Acceptance criteria are observable conditions, not activities.
 
 | Kind | Estimate | Driven by |
 |---|---|---|
-| Build effort, v1 (Phases 0–2) | **12–21 working sessions** | How quickly filing reaches 90%: prompt/rule iteration against the Phase 0 set is the unknown part; screens and reminders are predictable. |
-| Build effort, Phases 3–4 | 14–24 further sessions | Sync and sharing (Phase 4) carry most of the spread. |
+| Build effort, v1 (Phases 0–2) | **18–29 working sessions** (was 12–21 before sign-in and sync moved into v1) | How quickly filing reaches 90%: prompt/rule iteration against the Phase 0 set is the unknown part; sign-in, sync and screens are predictable. |
+| Build effort, Phases 3–4 | 12–20 further sessions | Sharing and the store apps (Phase 4). |
 | Running cost, model calls | **≈ €0.001–0.01 per capture** → for one heavy user (~20 captures/day, ~600/month) **€0.60–6 per user per month**; for the builder alone during v1, under €10/month. | Size of model needed to hit 90%, length of pasted notes (a long paste can cost 10–20× a sentence), and whether each capture needs one call or several. |
-| Running cost, hosting | **€0–20/month** in v1 (at most a small service so the model key is not on the phone); Phase 4 sync adds roughly €10–50/month at small scale. | Whether v1 calls the model directly or through a minimal server; storage and sync volume later. |
-| Store fees | Apple Developer Program ~€99/year (needed to put a build on the iPhone through TestFlight); Google Play one-off ~€25 when the Android build ships. | Both platforms in v1. |
+| Running cost, hosting | **€0–15/month** in v1: one scale-to-zero service, a free-tier managed database and a free-tier email provider for sign-in links. | Database and email free-tier limits; one user stays well inside them. |
+| Store fees | **None in v1** (installed from the browser). Apple Developer Program ~€99/year and Google Play ~€25 only if Phase 4's store apps are built. | Phase 4. |
 
 **Biggest uncertainty:** whether a small, cheap model can file mixed captures at ≥ 90%
 fully correct. If it needs a large model or several calls per capture, per-user cost rises
@@ -100,7 +106,7 @@ Phase 0 exists to find this out before the rest is built.
 | Filing accuracy stalls below the level where people stop checking (research Q1). | The product becomes another app to maintain: the core promise fails. | Only building and measuring settles it; Phase 0–1 criteria make it visible early. |
 | People don't narrate mixed life admin to one app (research Q3). | Usage dries up after the novelty; the single capture box has no advantage over Todoist + a budget app. | Recommended concierge test (below) is cheap but needs real participants; not run yet. |
 | Spoken/typed spending misses too many purchases (research Q4). | Budgets look wrong, trust falls, bank data becomes necessary (cost, regulation). | v1 deliberately excludes bank data; Phase 2's 14-day use will show how much goes unlogged. |
-| Data loss: single-device, no backup in v1. | A lost or reset phone wipes everything; a tester abandons it. | Accepted for a one-person proof; fixed in Phase 4. |
+| Cloud copy of personal data (replaces the earlier single-phone data-loss risk). | An access-control bug or leaked credential exposes spending, appointments and travel plans. | Accepted with v1's controls (one-user sign-in allowlist, per-user query scoping tested, EU region, no content in logs); the price of the same data on every device. |
 | Users expect "move the dentist" to change their real calendar (research Q5). | Confusion and duplicated appointments. | Calendar integration excluded from v1; revisit after the 14-day use. |
 | Pricing unknown (research Q6). | Per-user model cost exceeds what people will pay. | No users yet; Phase 0 gives the real per-capture cost to price against. |
 | Target market and currency unconfirmed (research Q7). | Wrong currency default, wrong privacy rules. | Assumed EUR/GDPR; needs the user's answer. |

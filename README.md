@@ -3,7 +3,8 @@
 Tell it your life admin in passing — "paid 42 for groceries", "move the dentist to Friday",
 "Lisbon for a long weekend in March, about 600 all in" — and it files tasks, spending and
 trips for you, with a dashboard you can glance at.
-Runs on iPhone and Android from one codebase; built and tested on iPhone first.
+A web app you add to your iPhone's Home Screen and also open on your computer, with the same
+data on both (sign-in with an emailed link; data stored in the EU).
 
 Planned with [Project Kit](https://github.com/miricoder/project-kit). Mode: `yolo`.
 
@@ -13,9 +14,9 @@ Planned with [Project Kit](https://github.com/miricoder/project-kit). Mode: `yol
 |---|---|---|
 | ideate | complete | `docs/research.md` |
 | proposal | complete | `docs/proposal.md` |
-| design | complete | `docs/spec.md`, `docs/acceptance.feature` |
+| design | complete; **revised after initiate** for the web app and sign-in with sync | `docs/spec.md`, `docs/acceptance.feature` |
 | remediate → judge | lint and a11y pass; **judge round skipped by the user** (gate `WAIVED`: OpenAI judge account has no credit), so the plan is unjudged | `qa/remediation-log.md` |
-| initiate | complete: 13 slices, all 52 scenarios covered | `docs/backlog.md` |
+| initiate | complete: 14 slices, all 60 scenarios covered (rebuilt after the platform change) | `docs/backlog.md` |
 | build | slice 1 done (op schema, Validator, filing service; 50 tests, `pytest`); next: slice 2, the filing test set | `dumpit_ops/`, `service/`, `tests/` |
 
 UI mockups: `ui/*.dc.html` (canvas: https://claude.ai/artifact/YKwgxHfyNuYxb46JVZHYBL).
