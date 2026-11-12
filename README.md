@@ -17,7 +17,7 @@ Planned with [Project Kit](https://github.com/miricoder/project-kit). Mode: `yol
 | design | complete; **revised after initiate** for the web app and sign-in with sync | `docs/spec.md`, `docs/acceptance.feature` |
 | remediate → judge | lint and a11y pass; **judge round skipped by the user** (gate `WAIVED`: OpenAI judge account has no credit), so the plan is unjudged | `qa/remediation-log.md` |
 | initiate | complete: 14 slices, all 60 scenarios covered (rebuilt after the platform change) | `docs/backlog.md` |
-| build | slice 1 done (op schema, Validator, filing service; 50 tests, `pytest`); next: slice 2, the filing test set | `dumpit_ops/`, `service/`, `tests/` |
+| build | slice 1 done (op schema, Validator, filing service). **Slice 2 in progress:** scorer and 150 builder captures done (212 tests, `pytest`); still needs 50 captures by others and the first baseline run, which needs `ANTHROPIC_API_KEY` (`eval/BASELINE.md`) | `dumpit_ops/`, `service/`, `eval/`, `tests/` |
 
 UI mockups: `ui/*.dc.html` (canvas: https://claude.ai/artifact/YKwgxHfyNuYxb46JVZHYBL).
 They pass the accessibility scan (`pk qa a11y`); see `docs/accessibility/`.
