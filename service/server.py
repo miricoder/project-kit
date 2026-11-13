@@ -381,6 +381,29 @@ def create_server(database_url: str, *, model: Optional[Model] = None,
                                             source=row["source"], captured_at=row["captured_at"],
                                             tz=row["tz"]))
 
+    @app.post("/v1/tasks/{task_id}/done")
+    async def task_done(request: Request, task_id: int) -> Response:
+        try:
+            raw = await request.body()
+            done = bool(json.loads(raw).get("done", True)) if raw else True
+        except (json.JSONDecodeError, AttributeError):
+            return _error(400, "malformed request")
+        with conn() as c:
+            user, err = guard(request, c, write=True)
+            if err:
+                return err
+            mine = c.execute("SELECT id FROM task WHERE id = %s AND user_id = %s "
+                             "AND deleted_at IS NULL", (task_id, user["id"])).fetchone()
+            if mine is None:
+                return _error(404, "no such task")
+            with c.transaction():
+                seq = c.execute("UPDATE app_user SET seq = seq + 1 WHERE id = %s RETURNING seq",
+                                (user["id"],)).fetchone()["seq"]
+                c.execute("UPDATE task SET done_at = CASE WHEN %s THEN coalesce(done_at, now()) "
+                          "END, rev = rev + 1, updated_seq = %s WHERE id = %s AND user_id = %s",
+                          (done, seq, task_id, user["id"]))
+        return JSONResponse({"seq": seq})
+
     @app.get("/v1/changes")
     def changes(request: Request, since: int = 0) -> Response:
         with conn() as c:

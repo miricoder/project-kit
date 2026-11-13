@@ -17,11 +17,36 @@ Planned with [Project Kit](https://github.com/miricoder/project-kit). Mode: `yol
 | design | complete; **revised after initiate** for the web app and sign-in with sync | `docs/spec.md`, `docs/acceptance.feature` |
 | remediate → judge | lint and a11y pass; **judge round skipped by the user** (gate `WAIVED`: OpenAI judge account has no credit), so the plan is unjudged | `qa/remediation-log.md` |
 | initiate | complete: 14 slices, all 60 scenarios covered (rebuilt after the platform change) | `docs/backlog.md` |
-| build | slice 1 done (op schema, Validator, filing service). **Slice 2 in progress:** scorer and 150 builder captures done (212 tests, `pytest`); still needs 50 captures by others and the first baseline run, which needs `ANTHROPIC_API_KEY` (`eval/BASELINE.md`) | `dumpit_ops/`, `service/`, `eval/`, `tests/` |
+| build | slices 1, 3 and 4 done: filing service, sign-in with the server store (Postgres), and the web app for iPhone and computer; slice 2 blocked on `ANTHROPIC_API_KEY` and 50 captures by others (`eval/BASELINE.md`); slices 5–14 to go (`pk slice list`) | `dumpit_ops/`, `service/`, `web/`, `eval/`, `tests/` |
 
 UI mockups: `ui/*.dc.html` (canvas: https://claude.ai/artifact/YKwgxHfyNuYxb46JVZHYBL).
 They pass the accessibility scan (`pk qa a11y`); see `docs/accessibility/`.
 Developer handoff spec: `docs/handoff.md`.
+
+## Run it
+
+You need Python 3.11+, Node 22 and Postgres 14+.
+
+```bash
+pip install -r requirements.txt
+(cd web && npm ci && npm run build)
+
+export DUMPIT_DATABASE_URL=postgresql://localhost/dumpit   # an empty database; migrated on start
+export DUMPIT_ALLOWED_EMAIL=you@example.com                 # the one email that may sign in
+export ANTHROPIC_API_KEY=...                                # the real filer (Claude Haiku 5.5)
+uvicorn service.server:app --port 8080
+```
+
+Open http://localhost:8080, ask for a sign-in link, and open it. Without an email provider
+the link is only logged; set `DUMPIT_SMTP_URL` (for example
+`smtps://user:password@smtp.example.com:465`) and `DUMPIT_MAIL_FROM` to email it, or
+`DUMPIT_DEV=1` to get a "Dev: open the sign-in link" button on a local machine. Without an
+API key, `DUMPIT_MODEL=demo` files a few simple sentence shapes so you can try the app; it
+labels itself as the demo filer.
+
+**On your iPhone:** open the app's https address in Safari → Share → Add to Home Screen.
+**Tests:** `sh scripts/test.sh` (Python against a throwaway Postgres, the web app's unit
+tests, and the browser tests). **Deploy:** the `Dockerfile` builds one image for Cloud Run.
 
 ## Start here
 
