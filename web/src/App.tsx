@@ -182,7 +182,7 @@ function Dashboard({ client, today, onSend, onDevices }: { client: Client; today
 
           {trip && (
             <section className="card" aria-labelledby="trip-h">
-              <p className="tag trip">Trip</p>
+              <p className="tag tag-trip">Trip</p>
               <h2 id="trip-h" className="heading">{trip.name} · {tripSpan(trip)}</h2>
               {trip.budget_cents ? (
                 <>
@@ -241,7 +241,7 @@ function LogItem({ entry, onRetry }: { entry: LogEntry; onRetry: () => void }) {
         <ul className="filed">
           {entry.lines?.map((line, i) => (
             <li key={i} className="filed-row">
-              <span className={`tag ${line.tag.toLowerCase()}`}>{line.tag}</span>
+              <span className={`tag tag-${line.tag.toLowerCase()}`}>{line.tag}</span>
               <span className="row-text">{line.text}</span>
               {line.undo && (
                 <button className="undo" type="button" aria-disabled="true" title="Undo arrives with slice 8"

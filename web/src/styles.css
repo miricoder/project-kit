@@ -90,8 +90,8 @@ button, input, textarea { font: inherit; color: inherit; }
 
 .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 6px; padding: 2px 7px;
   background: var(--color-divider); color: var(--color-text); margin: 0; width: max-content; flex: none; align-self: center; }
-.tag.trip { background: var(--color-accent-soft); color: var(--color-accent); }
-.tag.spent, .tag.fixed, .tag.budget { background: var(--color-spent-soft); color: var(--color-spent); }
+.tag-trip { background: var(--color-accent-soft); color: var(--color-accent); }
+.tag-spent, .tag-fixed, .tag-budget { background: var(--color-spent-soft); color: var(--color-spent); }
 
 .empty { display: flex; flex-direction: column; gap: 12px; margin-top: auto; }
 .empty p { margin: 0; color: var(--color-text-muted); }
