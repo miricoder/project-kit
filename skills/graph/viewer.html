@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project Kit Graph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a graph-browser workspace — query bar, canvas left, node inspector right; stacks on phones. */
+:root {
+  --bg: #eef0f3; --panel: #ffffff; --canvas: #f7f8fa; --dot: #d9dde3;
+  --fg: #1d2330; --muted: #5d6676; --line: #9aa3b2; --rule: #e1e4ea;
+  --accent: #0b6bcb; --code-bg: #f1f3f6; --danger: #c0392b; --ok: #2e8b57;
+  --n-project: #f5c35b; --n-phase: #74b3f0; --n-skill: #7fd1a0; --n-gate: #f39c7a;
+  --n-artifact: #c4a7f0; --n-slice: #7fd6d0; --n-text: #17202e;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101318; --panel: #171b22; --canvas: #12161c; --dot: #262c36;
+    --fg: #e6e9ef; --muted: #9aa3b2; --line: #6b7586; --rule: #262c36;
+    --accent: #5aa9f5; --code-bg: #1d222b; --danger: #f07167; --ok: #5cc98a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101318; --panel: #171b22; --canvas: #12161c; --dot: #262c36;
+  --fg: #e6e9ef; --muted: #9aa3b2; --line: #6b7586; --rule: #262c36;
+  --accent: #5aa9f5; --code-bg: #1d222b; --danger: #f07167; --ok: #5cc98a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: max(16px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-bottom, 0px));
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 1.45rem; margin: 0; text-wrap: balance; }
+.meta { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.meta b { color: var(--fg); font-weight: 600; }
+.query { font-family: var(--font-mono); font-size: .82rem; background: var(--panel); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: pre; color: var(--muted); }
+.query .kw { color: var(--accent); font-weight: 500; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 .78rem var(--font-body); border-radius: 999px; padding: 3px 10px 3px 8px; border: 1px solid var(--rule);
+  background: var(--panel); color: var(--fg); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.chip[aria-pressed="false"] { opacity: .45; }
+.chip:focus-visible, .btn:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.missing { background: transparent; border: 1.5px dashed var(--danger); }
+.count { color: var(--muted); font-variant-numeric: tabular-nums; }
+select { font: 500 .8rem var(--font-body); background: var(--panel); color: var(--fg); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 4px 8px; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.stage { position: relative; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; min-height: 420px; height: 70vh;
+  background-color: var(--canvas); background-image: radial-gradient(var(--dot) 1px, transparent 1px); background-size: 18px 18px; }
+@media (max-width: 900px) { .stage { height: 62vh; } }
+svg#g { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+svg#g.panning { cursor: grabbing; }
+.edge line { stroke: var(--line); stroke-width: 1.3; }
+.edge text { font: 500 8.5px var(--font-mono); fill: var(--muted); letter-spacing: .04em; paint-order: stroke; stroke: var(--canvas); stroke-width: 3px; }
+.edge.gap line { stroke: var(--danger); stroke-dasharray: 5 4; stroke-width: 1.6; }
+.edge.gap text { fill: var(--danger); }
+.edge.dim { opacity: .14; }
+.node { cursor: pointer; }
+.node circle.body { stroke: var(--canvas); stroke-width: 2; }
+.node text { font: 600 9.5px var(--font-body); fill: var(--n-text); text-anchor: middle; pointer-events: none; }
+.node.missing circle.body { fill: var(--canvas); stroke: var(--danger); stroke-width: 2; stroke-dasharray: 5 3; }
+.node.missing text { fill: var(--danger); }
+.node.pending circle.body { fill-opacity: .42; }
+.node .ring { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 6 5; }
+@media (prefers-reduced-motion: no-preference) { .node .ring { animation: spin 6s linear infinite; transform-box: fill-box; transform-origin: center; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.node circle.halo { fill: none; stroke: none; }
+.node.sel circle.halo { stroke: var(--accent); stroke-width: 6; stroke-opacity: .3; }
+.node:focus-visible circle.halo { stroke: var(--accent); stroke-width: 3; }
+.node.dim { opacity: .2; }
+.tools { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; }
+.btn { font: 500 .78rem var(--font-body); background: var(--panel); color: var(--fg); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.hint { position: absolute; left: 10px; bottom: 8px; font-size: .74rem; color: var(--muted); }
+.empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; }
+aside { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.insp-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.label-pill { font: 600 .72rem var(--font-body); border-radius: 999px; padding: 2px 9px; color: var(--n-text); letter-spacing: .02em; }
+.label-pill.missing { background: transparent; color: var(--danger); border: 1px dashed var(--danger); }
+.insp-name { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.status { font: 600 .72rem var(--font-body); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.status.complete, .status.available { color: var(--ok); } .status.progress { color: var(--accent); }
+.status.missing, .status.waived, .status.blocked { color: var(--danger); }
+table.props { width: 100%; border-collapse: collapse; font-size: .8rem; }
+table.props td { padding: 5px 0; border-top: 1px solid var(--rule); vertical-align: top; }
+table.props td:first-child { font-family: var(--font-mono); color: var(--muted); padding-right: 10px; white-space: nowrap; width: 1%; }
+table.props td:last-child { overflow-wrap: anywhere; }
+.rels { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .8rem; }
+.rels button { all: unset; cursor: pointer; color: var(--accent); }
+.rels button:focus-visible { outline: 2px solid var(--accent); }
+.rels code { font-family: var(--font-mono); font-size: .74rem; color: var(--muted); }
+h2 { font: 600 .72rem var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
+.note { font-size: .82rem; margin: 0; }
+.note code { font-family: var(--font-mono); font-size: .78rem; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Project Kit graph</h1>
+    <div class="meta" id="meta">Loading…</div>
+  </header>
+  <div class="query" aria-label="Query this graph shows"><span class="kw">MATCH</span> (n:PkNode)-[r]-&gt;(m:PkNode) <span class="kw">RETURN</span> n, r, m</div>
+  <div class="bar">
+    <div class="chips" id="chips" role="group" aria-label="Show or hide node labels"></div>
+    <label class="meta" id="project-pick" hidden>Project <select id="project"></select></label>
+  </div>
+  <div class="main">
+    <div class="stage">
+      <svg id="g" role="img" aria-label="Graph of Project Kit skills and project pipelines">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--line)"></path></marker>
+          <marker id="arrow-gap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"></path></marker>
+        </defs>
+        <g id="viewport"><g id="edges"></g><g id="nodes"></g></g>
+      </svg>
+      <div class="empty" id="empty" hidden></div>
+      <div class="tools">
+        <button class="btn" id="refresh" type="button" hidden>Refresh</button>
+        <button class="btn" id="fit" type="button">Fit</button>
+        <button class="btn" id="relayout" type="button">Re-layout</button>
+      </div>
+      <div class="hint">Drag nodes · drag the canvas to pan · scroll or pinch to zoom · click a node to inspect it</div>
+    </div>
+    <aside id="inspector" aria-live="polite"></aside>
+  </div>
+</div>
+<script>
+const EMBEDDED = /*GRAPH_DATA*/null;
+(() => {
+  const LABELS = {
+    Project: { color: "var(--n-project)", r: 34 }, Phase: { color: "var(--n-phase)", r: 30 },
+    Skill: { color: "var(--n-skill)", r: 27 }, Gate: { color: "var(--n-gate)", r: 27 },
+    Artifact: { color: "var(--n-artifact)", r: 25 }, Slice: { color: "var(--n-slice)", r: 25 },
+  };
+  const FALLBACK = { color: "var(--n-artifact)", r: 25 };
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("g");
+  const gEdges = document.getElementById("edges"), gNodes = document.getElementById("nodes");
+  const insp = document.getElementById("inspector"), chips = document.getElementById("chips");
+  const projectSel = document.getElementById("project");
+  let nodes = [], edges = [], byId = {}, selected = null, synced = null;
+  const hiddenLabels = new Set();
+  let project = "";
+
+  const el = (tag, attrs = {}, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const wrap = (text, max) => {
+    const lines = []; let cur = "";
+    for (const w of String(text).split(/\s+/)) {
+      if (cur && (cur + " " + w).length > max) { lines.push(cur); cur = w; } else cur = cur ? cur + " " + w : w;
+    }
+    if (cur) lines.push(cur);
+    return lines.slice(0, 3);
+  };
+  const statusClass = s => ({ "complete": "complete", "available": "available", "in progress": "progress",
+    "missing": "missing", "waived": "waived", "blocked": "blocked" }[s] || "");
+  const visible = n => !hiddenLabels.has(n.label) && (!project || !n.props.project || n.props.project === project);
+
+  function load(data) {
+    synced = data.synced_at;
+    nodes = data.nodes.map(n => ({ ...n, sx0: n.sx, sy0: n.sy }));
+    edges = data.edges.filter(e => e.s !== e.t);
+    byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+    edges = edges.filter(e => byId[e.s] && byId[e.t]);
+    const projects = [...new Set(nodes.filter(n => n.label === "Project").map(n => n.caption))].sort();
+    document.getElementById("project-pick").hidden = projects.length < 2;
+    projectSel.innerHTML = `<option value="">All projects</option>` +
+      projects.map(p => `<option${p === project ? " selected" : ""}>${esc(p)}</option>`).join("");
+    if (project && !projects.includes(project)) project = "";
+    const missing = nodes.filter(n => n.missing).length;
+    document.getElementById("meta").innerHTML =
+      `<b>${nodes.length}</b> nodes · <b>${edges.length}</b> relationships · <b>${projects.length}</b> project${projects.length === 1 ? "" : "s"}` +
+      (missing ? ` · <b>${missing}</b> skill${missing === 1 ? "" : "s"} missing` : "") +
+      (synced ? ` · synced ${esc(synced.replace("T", " ").replace("+00:00", " UTC"))}` : "");
+    render();
+  }
+
+  function render() {
+    gEdges.textContent = ""; gNodes.textContent = "";
+    const empty = document.getElementById("empty");
+    empty.hidden = nodes.length > 0;
+    if (!nodes.length) empty.textContent = "No graph yet. Run pk graph sync in a Project Kit project.";
+    edges.forEach(e => {
+      e.g = el("g", { class: "edge" + (e.gap ? " gap" : "") }, gEdges);
+      e.line = el("line", { "marker-end": e.gap ? "url(#arrow-gap)" : "url(#arrow)" }, e.g);
+      e.text = el("text", { "text-anchor": "middle", dy: "-3" }, e.g);
+      e.text.textContent = e.type;
+    });
+    nodes.forEach(n => {
+      const L = LABELS[n.label] || FALLBACK;
+      n.r = L.r;
+      const pending = n.status === "not started";
+      n.g = el("g", { class: "node" + (n.missing ? " missing" : "") + (pending ? " pending" : ""),
+        tabindex: "0", role: "button", "aria-label": `${n.label} ${n.caption}, ${n.status || ""}` }, gNodes);
+      el("circle", { class: "halo", r: n.r + 5 }, n.g);
+      el("circle", { class: "body", r: n.r, fill: L.color }, n.g);
+      if (n.status === "in progress") el("circle", { class: "ring", r: n.r + 4 }, n.g);
+      const lines = wrap(n.caption, n.r > 28 ? 12 : 10), t = el("text", {}, n.g);
+      lines.forEach((ln, i) => {
+        const ts = el("tspan", { x: 0, dy: i === 0 ? `${(-(lines.length - 1) * 1.1) / 2 + 0.35}em` : "1.1em" }, t);
+        ts.textContent = ln;
+      });
+    });
+    renderChips(); applyFilter(); layout(false); draw(); fit();
+    select(selected && byId[selected] ? selected : (nodes.find(n => n.missing && n.props.phase === nextPhase()) || {}).id || null);
+  }
+  const nextPhase = () => { const p = nodes.find(n => n.label === "Project"); return p ? p.props.next_phase : null; };
+
+  // ---- force layout, seeded so each pipeline reads left to right ----
+  function layout(jitter) {
+    nodes.forEach(n => {
+      n.x = n.sx + (jitter ? (Math.random() - .5) * 120 : 0);
+      n.y = n.sy + (jitter ? (Math.random() - .5) * 120 : 0);
+      n.vx = 0; n.vy = 0;
+    });
+    for (let tick = 0; tick < 300; tick++) step(1 - tick / 300);
+  }
+  function step(alpha) {
+    const act = nodes.filter(visible);
+    for (let i = 0; i < act.length; i++) {
+      const a = act[i];
+      for (let j = i + 1; j < act.length; j++) {
+        const b = act[j];
+        let dx = b.x - a.x, dy = b.y - a.y; const d2 = dx * dx + dy * dy || 1, d = Math.sqrt(d2), min = a.r + b.r + 26;
+        let f = 2600 / d2; if (d < min) f += (min - d) * 0.5 / d;
+        dx *= f / d * alpha; dy *= f / d * alpha;
+        if (!a.fixed) { a.vx -= dx; a.vy -= dy; } if (!b.fixed) { b.vx += dx; b.vy += dy; }
+      }
+    }
+    edges.forEach(e => {
+      const a = byId[e.s], b = byId[e.t]; if (!visible(a) || !visible(b)) return;
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, k = (d - 140) * 0.012 * alpha;
+      if (!a.fixed) { a.vx += dx / d * k; a.vy += dy / d * k; } if (!b.fixed) { b.vx -= dx / d * k; b.vy -= dy / d * k; }
+    });
+    act.forEach(n => {
+      if (n.fixed) { n.vx = n.vy = 0; return; }
+      n.vx += (n.sx - n.x) * 0.03 * alpha; n.vy += (n.sy - n.y) * 0.03 * alpha;
+      n.vx *= 0.6; n.vy *= 0.6; n.x += n.vx; n.y += n.vy;
+    });
+  }
+  function draw() {
+    nodes.forEach(n => n.g.setAttribute("transform", `translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`));
+    edges.forEach(e => {
+      const a = byId[e.s], b = byId[e.t];
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+      const x1 = a.x + dx / d * a.r, y1 = a.y + dy / d * a.r, x2 = b.x - dx / d * (b.r + 3), y2 = b.y - dy / d * (b.r + 3);
+      e.line.setAttribute("x1", x1); e.line.setAttribute("y1", y1); e.line.setAttribute("x2", x2); e.line.setAttribute("y2", y2);
+      let ang = Math.atan2(dy, dx) * 180 / Math.PI; if (ang > 90 || ang < -90) ang += 180;
+      e.text.setAttribute("transform", `translate(${(x1 + x2) / 2},${(y1 + y2) / 2}) rotate(${ang})`);
+      e.text.style.display = d < a.r + b.r + 40 ? "none" : "";
+    });
+  }
+
+  // ---- view ----
+  let view = { x: 0, y: 0, w: 1000, h: 600 };
+  const applyView = () => svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
+  function fit() {
+    const vis = nodes.filter(visible); if (!vis.length) return;
+    const xs = vis.map(n => n.x), ys = vis.map(n => n.y), pad = 60;
+    let x0 = Math.min(...xs) - pad, x1 = Math.max(...xs) + pad, y0 = Math.min(...ys) - pad, y1 = Math.max(...ys) + pad;
+    const box = svg.getBoundingClientRect(), ratio = box.width / Math.max(box.height, 1);
+    let w = x1 - x0, h = y1 - y0;
+    if (w / h > ratio) { const nh = w / ratio; y0 -= (nh - h) / 2; h = nh; } else { const nw = h * ratio; x0 -= (nw - w) / 2; w = nw; }
+    view = { x: x0, y: y0, w, h }; applyView();
+  }
+  const toWorld = (cx, cy) => { const b = svg.getBoundingClientRect();
+    return { x: view.x + (cx - b.left) / b.width * view.w, y: view.y + (cy - b.top) / b.height * view.h }; };
+  function zoomAt(cx, cy, factor) {
+    const p = toWorld(cx, cy), w = Math.min(Math.max(view.w * factor, 200), 8000), k = w / view.w;
+    view = { x: p.x - (p.x - view.x) * k, y: p.y - (p.y - view.y) * k, w, h: view.h * k }; applyView();
+  }
+  svg.addEventListener("wheel", ev => { ev.preventDefault(); zoomAt(ev.clientX, ev.clientY, ev.deltaY > 0 ? 1.12 : 1 / 1.12); }, { passive: false });
+  const pointers = new Map(); let drag = null, pinch = null;
+  svg.addEventListener("pointerdown", ev => {
+    svg.setPointerCapture(ev.pointerId); pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (pointers.size === 2) { const [p, q] = [...pointers.values()]; pinch = { d: Math.hypot(p.x - q.x, p.y - q.y) }; drag = null; return; }
+    const g = ev.target.closest(".node");
+    if (g) { const n = nodes.find(n => n.g === g); drag = { node: n, moved: false, start: toWorld(ev.clientX, ev.clientY), ox: n.x, oy: n.y }; n.fixed = true; }
+    else { drag = { pan: true, cx: ev.clientX, cy: ev.clientY, vx: view.x, vy: view.y, moved: false }; svg.classList.add("panning"); }
+  });
+  svg.addEventListener("pointermove", ev => {
+    if (!pointers.has(ev.pointerId)) return; pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (pinch && pointers.size === 2) { const [p, q] = [...pointers.values()], d = Math.hypot(p.x - q.x, p.y - q.y);
+      zoomAt((p.x + q.x) / 2, (p.y + q.y) / 2, pinch.d / d); pinch.d = d; return; }
+    if (!drag) return;
+    if (drag.node) { const p = toWorld(ev.clientX, ev.clientY), n = drag.node;
+      n.x = drag.ox + (p.x - drag.start.x); n.y = drag.oy + (p.y - drag.start.y);
+      if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 3) drag.moved = true;
+      for (let i = 0; i < 3; i++) step(0.25); draw(); }
+    else if (drag.pan) { const b = svg.getBoundingClientRect();
+      if (Math.abs(ev.clientX - drag.cx) + Math.abs(ev.clientY - drag.cy) > 3) drag.moved = true;
+      view.x = drag.vx - (ev.clientX - drag.cx) / b.width * view.w; view.y = drag.vy - (ev.clientY - drag.cy) / b.height * view.h; applyView(); }
+  });
+  const end = ev => {
+    pointers.delete(ev.pointerId); if (pointers.size < 2) pinch = null; if (!drag) return;
+    if (drag.node) { drag.node.sx = drag.node.x; drag.node.sy = drag.node.y; drag.node.fixed = false; if (!drag.moved) select(drag.node.id); }
+    else if (drag.pan && !drag.moved) select(null);
+    svg.classList.remove("panning"); drag = null;
+  };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+  gNodes.addEventListener("keydown", ev => { const g = ev.target.closest(".node");
+    if (g && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); select(nodes.find(n => n.g === g).id); } });
+
+  // ---- inspector ----
+  function select(id) {
+    selected = id;
+    const neigh = new Set(id ? [id] : []);
+    if (id) edges.forEach(e => { if (e.s === id) neigh.add(e.t); if (e.t === id) neigh.add(e.s); });
+    nodes.forEach(n => { n.g.classList.toggle("sel", n.id === id); n.g.classList.toggle("dim", !!id && !neigh.has(n.id)); });
+    edges.forEach(e => e.g.classList.toggle("dim", !!id && e.s !== id && e.t !== id));
+    if (!id) {
+      const counts = Object.keys(LABELS).map(l => [l, nodes.filter(n => n.label === l).length]).filter(c => c[1]);
+      const missing = nodes.filter(n => n.missing).map(n => n.caption);
+      insp.innerHTML = `<h2>Overview</h2>
+        <p class="note">Click a node to see its properties and relationships.${missing.length ? ` Red dashed nodes are pipeline phases with no skill yet: ${missing.map(esc).join(", ")}.` : " Every pipeline phase has a skill."}</p>
+        <table class="props">${counts.map(([l, c]) => `<tr><td>:${l}</td><td>${c}</td></tr>`).join("")}</table>`;
+      return;
+    }
+    const n = byId[id], L = LABELS[n.label] || FALLBACK;
+    const pill = n.missing ? `<span class="label-pill missing">:${esc(n.label)}</span>`
+      : `<span class="label-pill" style="background:${L.color}">:${esc(n.label)}</span>`;
+    const props = Object.entries(n.props).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+    const inc = edges.filter(e => e.t === id).map(e => `<li><button type="button" data-id="${esc(e.s)}">${esc(byId[e.s].caption)}</button> <code>-[:${esc(e.type)}]-&gt;</code></li>`);
+    const out = edges.filter(e => e.s === id).map(e => `<li><code>-[:${esc(e.type)}]-&gt;</code> <button type="button" data-id="${esc(e.t)}">${esc(byId[e.t].caption)}</button></li>`);
+    const note = n.missing ? `<p class="note">No skill answers <code>${esc(n.caption)}</code> yet, so the pipeline cannot run this phase on its own.</p>` : "";
+    insp.innerHTML = `<div class="insp-head">${pill}<span class="status ${statusClass(n.status)}">${esc(n.status || "")}</span></div>
+      <p class="insp-name">${esc(n.caption)}</p>${note}
+      <table class="props">${props}</table><h2>Relationships</h2>
+      <ul class="rels">${inc.concat(out).join("") || "<li>none</li>"}</ul>`;
+    insp.querySelectorAll("button[data-id]").forEach(b => b.addEventListener("click", () => select(b.dataset.id)));
+  }
+
+  // ---- filters ----
+  function renderChips() {
+    chips.textContent = "";
+    Object.keys(LABELS).forEach(l => {
+      const c = nodes.filter(n => n.label === l).length; if (!c) return;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", hiddenLabels.has(l) ? "false" : "true");
+      b.innerHTML = `<span class="dot" style="background:${LABELS[l].color}"></span>${l} <span class="count">${c}</span>`;
+      b.addEventListener("click", () => { hiddenLabels.has(l) ? hiddenLabels.delete(l) : hiddenLabels.add(l);
+        b.setAttribute("aria-pressed", hiddenLabels.has(l) ? "false" : "true"); applyFilter(); });
+      chips.appendChild(b);
+    });
+    const m = nodes.filter(n => n.missing).length;
+    if (m) { const s = document.createElement("span"); s.className = "chip"; s.style.cursor = "default";
+      s.innerHTML = `<span class="dot missing"></span>No skill yet <span class="count">${m}</span>`; chips.appendChild(s); }
+  }
+  function applyFilter() {
+    nodes.forEach(n => { n.g.style.display = visible(n) ? "" : "none"; });
+    edges.forEach(e => { e.g.style.display = visible(byId[e.s]) && visible(byId[e.t]) ? "" : "none"; });
+  }
+  projectSel.addEventListener("change", () => { project = projectSel.value; applyFilter(); fit(); });
+  document.getElementById("fit").addEventListener("click", fit);
+  document.getElementById("relayout").addEventListener("click", () => {
+    nodes.forEach(n => { n.sx = n.sx0; n.sy = n.sy0; }); layout(true); draw(); fit(); });
+
+  // ---- data ----
+  const refresh = document.getElementById("refresh");
+  async function fetchGraph() {
+    try {
+      const res = await fetch("api/graph", { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      load(await res.json());
+    } catch (err) {
+      document.getElementById("meta").textContent = `Could not load the graph (${err.message}). Is pk graph serve still running?`;
+    }
+  }
+  if (EMBEDDED) load(EMBEDDED);
+  else { refresh.hidden = false; refresh.addEventListener("click", fetchGraph); fetchGraph(); }
+  new ResizeObserver(() => fit()).observe(svg);
+})();
+</script>
+</body>
+</html>
