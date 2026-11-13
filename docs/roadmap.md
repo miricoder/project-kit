@@ -58,8 +58,10 @@ Honest caveats: the script cannot deploy, only check, because deploys run on the
 own account, and the platform recipes in `skills/devops/references/targets.md` are not
 exercised in CI. The secret scan looks for a short list of high-signal key shapes, not
 every possible secret. Claude Code's built-in `/security-review` goes deeper on the code
-itself and is worth running alongside. Still deferred: database migrations as a recorded
-step, and observability (alerts, dashboards) beyond the health check.
+itself and is worth running alongside. 0.9.0 adds continuous deploy (CI deploys
+staging after green tests, production on a tag behind approval) and upkeep (uptime and
+budget alerts, Dependabot) to `/devops` and `/launch`. Still deferred: database migrations
+as a recorded step, and dashboards.
 
 ## The MVP cut
 
