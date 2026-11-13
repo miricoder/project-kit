@@ -46,7 +46,9 @@ user's own account. It smoke-checks a URL before recording it, tags releases, ru
 test gate (the full suite plus every scenario mapped) and the security gate (secrets in
 files and history, `pip-audit` / `npm audit`, and the threat model's sections), and
 refuses `done launch` until production runs the release over https and a rollback has
-been recorded on production after that deploy. Gate rulings are `PASS` / `FAIL`; `PASS`
+been recorded on production after that deploy. Since 0.9.0, `done devops` also refuses
+without a CI job that deploys staging (a CI file naming both "deploy" and "staging") and a
+dependency-update config (`.github/dependabot.yml` or Renovate). Gate rulings are `PASS` / `FAIL`; `PASS`
 is now in `state.RULINGS_PASSING` alongside `SOUND`.
 The real deploy commands per platform are in `skills/devops/references/targets.md`. They
 cannot be tested in CI, because they need accounts.

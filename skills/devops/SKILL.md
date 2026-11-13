@@ -9,8 +9,10 @@ Takes a built project to a tagged release that runs on staging. The phase ends w
 things are true, and `pk ship done devops` checks every one:
 
 1. CI runs the project's test command (`.github/workflows/*.yml` or equivalent).
-2. A release is tagged (`pk ship release v1.0.0`), with a CHANGELOG entry.
-3. That release runs on staging and answers its health check, as recorded by `pk ship record`.
+2. CI deploys to staging after the tests pass, so every iteration ships by itself.
+3. Dependency updates are configured (`.github/dependabot.yml` or Renovate).
+4. A release is tagged (`pk ship release v1.0.0`), with a CHANGELOG entry.
+5. That release runs on staging and answers its health check, as recorded by `pk ship record`.
 
 ## Hard rules
 
@@ -81,6 +83,15 @@ Write the CI workflow if there is none. It must run **exactly** the project's te
 the language runtimes, a database service, browsers for end-to-end tests. Run on pull
 requests and on pushes to the main branch. Never put a secret into the file; use the CI
 provider's secret store, and keep the tests themselves free of real keys.
+
+## Step 3b: Continuous deploy and dependency updates
+
+Add the staging and production deploy jobs, following `references/targets.md` →
+**Continuous deploy**. Gate them on repository variables, so they are skipped until the user
+has set the target up. Write one `scripts/deploy.sh <env>` that both CI and a person run,
+and stamp each build with its version. Add `.github/dependabot.yml` for every package
+ecosystem in the repo. Write the one-time setup as a script the user runs in their own
+account, in Cloud Shell or their terminal; it prints the variables they add to GitHub.
 
 ## Step 4: Ask for the accounts
 

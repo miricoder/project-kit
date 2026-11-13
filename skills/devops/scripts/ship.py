@@ -167,6 +167,23 @@ def ci_blockers(project: Path, st: Dict[str, Any]) -> List[str]:
     return []
 
 
+DEPENDENCY_UPDATERS = (".github/dependabot.yml", ".github/dependabot.yaml", "renovate.json",
+                       ".github/renovate.json", "renovate.json5")
+
+
+def upkeep_blockers(project: Path) -> List[str]:
+    """Iterations keep shipping without a person: CI deploys staging when the tests pass,
+    and a bot proposes dependency updates."""
+    reasons: List[str] = []
+    texts = [f.read_text(encoding="utf-8", errors="replace").lower() for f in ci_files(project)]
+    if not any("deploy" in t and "staging" in t for t in texts):
+        reasons.append("no CI job deploys to staging after the tests pass "
+                       "(references/targets.md, 'Continuous deploy')")
+    if not any((project / name).is_file() for name in DEPENDENCY_UPDATERS):
+        reasons.append("no dependency updates configured (.github/dependabot.yml)")
+    return reasons
+
+
 def https_required(url: str) -> List[str]:
     if os.environ.get("PROJECT_KIT_ALLOW_HTTP") == "1":
         return []
@@ -288,6 +305,7 @@ def devops_blockers(project: Path, st: Dict[str, Any]) -> List[str]:
     reasons = list(state.blockers(st, "devops"))
     cfg = ship(st)
     reasons += ci_blockers(project, st)
+    reasons += upkeep_blockers(project)
     release = cfg.get("release")
     if not release:
         reasons.append("no release tagged (ship.py release v1.0.0)")

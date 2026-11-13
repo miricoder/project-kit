@@ -197,10 +197,10 @@ python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase design
 | `/remediate` | Handover ↔ Approval | **The yolo loop.** `pk qa` + judge panel → fix → re-check → re-judge, unattended, until everything passes; then hands to `/initiate` | ✅ |
 | `/initiate` | Initiation | **Judge-gated.** Asks before development starts; approved spec → feature backlog | ✅ |
 | `/build` | Build | One backlog slice at a time, test-first: the slice's scenarios become tests, code until they pass; `pk slice done` records it only when they do | ✅ |
-| `/devops` | DevOps | CI that runs the tests, a staging deploy on your own account, CHANGELOG, a tagged release; `pk ship done devops` records it | ✅ |
+| `/devops` | DevOps | CI that runs the tests and deploys staging after every green push, Dependabot, CHANGELOG, a tagged release; `pk ship done devops` records it | ✅ |
 | `/test` | Testing | **Test gate.** The full suite, with every acceptance scenario mapped to a test; `pk ship test` decides | ✅ |
 | `/security` | Security | **Security gate.** Threat model, secrets in files and history, dependency audit; `pk ship audit` decides | ✅ |
-| `/launch` | Launch | **Gated.** Production deploy, then a real rollback drill (back, check, restore, check); `pk ship done launch` records it | ✅ |
+| `/launch` | Launch | **Gated.** Production deploy, a real rollback drill (back, check, restore, check), and upkeep: uptime and budget alerts; `pk ship done launch` records it | ✅ |
 | `/graph` | all | **Not a phase.** Skills, phases, gates, artifacts and slices as a graph in a local database; `pk graph serve` shows it in any browser, `pk graph export` writes Cypher for Neo4j | ✅ |
 
 Three hard gates: the **judge gate** guards `/initiate`; the **test gate** and **security
@@ -249,7 +249,7 @@ is recorded only once its health path answers, and a gate passes only when the s
 | `pk ship config --target cloudrun --health /v1/health --env DATABASE_URL` | where and how it deploys (setting names only) |
 | `pk ship record staging --url <url>` | smoke-check, then record a deploy; allowed while slices are still being built |
 | `pk ship release v1.0.0` | tag a release: clean tree, CHANGELOG entry, already on staging |
-| `pk ship done devops` | CI runs the tests, the release is tagged, and it is on staging |
+| `pk ship done devops` | CI runs the tests and deploys staging, Dependabot is configured, the release is tagged and on staging |
 | `pk ship test` | the test gate; writes `docs/test-report.md` |
 | `pk ship audit` | the security gate; writes `docs/security-audit.md` |
 | `pk ship record production --url <url> --version v1.0.0` | needs the security gate and the version on staging |
