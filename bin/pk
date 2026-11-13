@@ -12,6 +12,7 @@
 #   pk keys status
 #   pk slice next
 #   pk graph serve
+#   pk ship status
 #
 # Plugin root resolution, in order: $CLAUDE_PLUGIN_ROOT, $PROJECT_KIT_ROOT, this script's
 # own parent directory.
@@ -45,7 +46,7 @@ for candidate in python3 python py; do
 done
 [ -n "$PY" ] || { echo "pk: Python 3.9+ not found (tried python3, python, py)" >&2; exit 1; }
 
-[ $# -ge 1 ] || { echo "usage: pk {state|gate|doctor|check|judge|qa|keys|slice|graph} [args...]" >&2; exit 2; }
+[ $# -ge 1 ] || { echo "usage: pk {state|gate|doctor|check|judge|qa|keys|slice|graph|ship} [args...]" >&2; exit 2; }
 SUB="$1"; shift
 
 case "$SUB" in
@@ -58,7 +59,8 @@ case "$SUB" in
   keys)   TARGET="$ROOT/scripts/keys.py" ;;
   slice)  TARGET="$ROOT/skills/build/scripts/slices.py" ;;
   graph)  TARGET="$ROOT/skills/graph/scripts/graph.py" ;;
-  *) echo "pk: unknown subcommand '$SUB' (expected state, gate, doctor, check, judge, qa, keys, slice or graph)" >&2; exit 2 ;;
+  ship)   TARGET="$ROOT/skills/devops/scripts/ship.py" ;;
+  *) echo "pk: unknown subcommand '$SUB' (expected state, gate, doctor, check, judge, qa, keys, slice, graph or ship)" >&2; exit 2 ;;
 esac
 
 [ -f "$TARGET" ] || { echo "pk: $TARGET not found; set PROJECT_KIT_ROOT" >&2; exit 2; }

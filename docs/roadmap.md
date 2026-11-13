@@ -47,17 +47,19 @@ pipeline as a browsable graph, exportable to Neo4j.
 Honest caveat: plain Claude Code already implements well from a spec. These add slice
 discipline and gate enforcement, not core capability.
 
-### P3 — professional hygiene
+### P3 — shipping (done in 0.8.0)
 
-`/devops` (branches, PRs, releases, tags, CHANGELOG, CI, migrations) and `/test`
-(pre-release gate mapping tests to the Gherkin criteria). Both replicable by hand, which
-is exactly how this repository has been run so far.
+`/devops` (CI, staging deploy, CHANGELOG, release tag), `/test` (the pre-release gate:
+full suite plus every Gherkin scenario mapped), `/security` (threat model, secrets in files
+and history, dependency audit) and `/launch` (production deploy and a real rollback drill),
+all through `pk ship`.
 
-### P4 — deprioritised
-
-`/security` — Claude Code already ships a `security-review` skill, so marginal value is
-lowest of the set. `/launch` — only matters once something real exists to ship, and cannot
-be called complete until a rollback has been rehearsed against a real release.
+Honest caveats: the script cannot deploy, only check, because deploys run on the user's
+own account, and the platform recipes in `skills/devops/references/targets.md` are not
+exercised in CI. The secret scan looks for a short list of high-signal key shapes, not
+every possible secret. Claude Code's built-in `/security-review` goes deeper on the code
+itself and is worth running alongside. Still deferred: database migrations as a recorded
+step, and observability (alerts, dashboards) beyond the health check.
 
 ## The MVP cut
 
