@@ -46,7 +46,9 @@ labels itself as the demo filer.
 
 **On your iPhone:** open the app's https address in Safari → Share → Add to Home Screen.
 **Tests:** `sh scripts/test.sh` (Python against a throwaway Postgres, the web app's unit
-tests, and the browser tests). **Deploy:** the `Dockerfile` builds one image for Cloud Run.
+tests, and the browser tests). **Deploy:** `sh scripts/setup-secrets.sh staging`, then
+`sh scripts/deploy.sh staging` (Cloud Run, EU). The whole path from here to a launched app,
+including the review and the gates, is in [docs/deploying.md](docs/deploying.md).
 
 ## Start here
 
