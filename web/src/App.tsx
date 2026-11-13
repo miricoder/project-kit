@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { api, Client, type LogEntry } from "./client";
+import * as idb from "./idb";
+import { afterOpen, APP_VERSION, offerReload, shown } from "./version";
 import { activeTrip, dueLabel, dueSoon, euros, headline, localDay, month, tooLong, tripSpan } from "./derive";
 
 type Screen = "dashboard" | "capture" | "devices";
@@ -19,7 +21,7 @@ export function App({ client }: { client: Client }) {
   useEffect(() => {
     const refresh = () => {
       setToday(localDay());
-      if (document.visibilityState === "visible") { void c.sync(); void c.flush(); }
+      if (document.visibilityState === "visible") { void c.sync(); void c.flush(); void c.checkHealth(); }
     };
     const online = () => { c.online = true; void c.flush(); void c.sync(); };
     const offline = () => { c.online = false; };
@@ -27,7 +29,9 @@ export function App({ client }: { client: Client }) {
     document.addEventListener("visibilitychange", refresh);
     window.addEventListener("online", online);
     window.addEventListener("offline", offline);
-    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void c.sync(); }, 30000);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") { void c.sync(); void c.checkHealth(); }
+    }, 30000);
     return () => {
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
@@ -51,11 +55,62 @@ export function App({ client }: { client: Client }) {
       {c.health?.model === "demo" && (
         <div className="demo" role="note">Demo filer: understands simple sentences only. Add an Anthropic API key for the real one.</div>
       )}
+      {offerReload(c.health?.app_version, APP_VERSION) && <UpdateOffer />}
+      <WhatsNew />
       {screen === "dashboard" && <Dashboard client={c} today={today} onSend={send} onDevices={() => setScreen("devices")} />}
       {screen === "capture" && <Capture client={c} onBack={() => setScreen("dashboard")} onSend={send} />}
       {screen === "devices" && <Devices client={c} onBack={() => setScreen("dashboard")} />}
       <div className="sr-only" aria-live="polite">{announce}</div>
     </>
+  );
+}
+
+// ---------------------------------------------------------------- versions
+
+type Entry = { version: string; date: string | null; notes: string[] };
+
+/** After an update: "Updated to 0.2.0" and what changed since the version this device last ran. */
+function WhatsNew() {
+  const [entries, setEntries] = useState<Entry[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const seen = await idb.get<string>("meta", "seen_version");
+      const notice = afterOpen(seen, APP_VERSION);
+      if (notice === "first-run") await idb.put("meta", APP_VERSION, "seen_version");
+      if (notice !== "updated") return;
+      let found: Entry[] = [];
+      try {
+        const res = await fetch(`/v1/whats-new?since=${encodeURIComponent(seen ?? "")}`);
+        if (res.ok) found = (await res.json()).entries;
+      } catch { /* offline: say it was updated, without the list */ }
+      if (live) setEntries(found);
+    })();
+    return () => { live = false; };
+  }, []);
+  if (!entries) return null;
+  const dismiss = async () => { await idb.put("meta", APP_VERSION, "seen_version"); setEntries(null); };
+  return (
+    <section className="notice whats-new" aria-label="What's new">
+      <p className="heading">Updated to {shown(APP_VERSION)}</p>
+      {entries.map((e) => (
+        <div key={e.version}>
+          {entries.length > 1 && <p className="meta">{shown(e.version)}</p>}
+          <ul>{e.notes.map((n) => <li key={n}>{n}</li>)}</ul>
+        </div>
+      ))}
+      <button className="btn secondary" type="button" onClick={dismiss}>Got it</button>
+    </section>
+  );
+}
+
+/** While open: the server now runs a different version than this page. */
+function UpdateOffer() {
+  return (
+    <div className="notice update-offer" role="status">
+      <span>A new version of Dumpit is ready.</span>
+      <button className="btn" type="button" onClick={() => window.location.reload()}>Update now</button>
+    </div>
   );
 }
 
@@ -335,6 +390,7 @@ function Devices({ client, onBack }: { client: Client; onBack: () => void }) {
         <h1 className="title">Devices</h1>
       </header>
       {client.me && <p className="muted">Signed in as {client.me.email}</p>}
+      <p className="meta">Dumpit {shown(APP_VERSION)}</p>
       {error && <p className="error" role="alert">{error}</p>}
       <ul className="card devices">
         {sessions?.map((s) => (

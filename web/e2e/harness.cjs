@@ -8,7 +8,8 @@ const ROOT = path.resolve(__dirname, "..", "..");
 
 function startServer() {
   return new Promise((resolve, reject) => {
-    const proc = spawn("python3", ["-m", "tests.e2e_server"], { cwd: ROOT, stdio: ["ignore", "pipe", "inherit"] });
+    const proc = spawn("python3", ["-m", "tests.e2e_server"], { cwd: ROOT, stdio: ["ignore", "pipe", "inherit"],
+      env: { ...process.env, APP_VERSION: process.env.APP_VERSION || "0.2.0", DUMPIT_CHANGELOG: path.join(ROOT, "tests", "fixtures", "changelog.md") } });
     let out = "";
     const timer = setTimeout(() => reject(new Error("server did not start in 60 s")), 60000);
     proc.stdout.on("data", (chunk) => {

@@ -403,3 +403,34 @@ Feature: Sign-in and the same data on every device
     And the iPhone has cleared the web app's stored data
     When the user opens the app and signs in again
     Then the Dashboard shows all 50 expenses' month total, the 10 tasks and the trip
+
+Feature: App versions and updates
+
+  Scenario: the app says what changed after an update
+    Given the app on the iPhone last ran version 0.1.0
+    And version 0.2.0 is deployed with the change "Second test change"
+    When the user opens the app
+    Then a notice says "Updated to 0.2.0" and lists "Second test change"
+    And after they dismiss it, it does not show again
+
+  Scenario: the first open after installing shows no update notice
+    Given the app has never run on this device
+    When the user signs in and the Dashboard opens
+    Then no update notice is shown
+
+  Scenario: an open app offers a new version when one is deployed
+    Given the app is open on version 0.2.0
+    When version 0.3.0 is deployed and the app comes back to the front
+    Then it offers "Update now"
+    And pressing it reloads the app from the server
+
+  Scenario: what's new lists only the versions the device has not seen
+    Given the changelog has versions 0.1.0, 0.2.0 and 0.3.0
+    And the service runs version 0.2.0
+    When a device that last ran 0.1.0 asks what is new
+    Then it gets only 0.2.0
+
+  Scenario: the app shows which version it is
+    When the user opens Devices
+    Then it shows "Dumpit" and the app's version
+

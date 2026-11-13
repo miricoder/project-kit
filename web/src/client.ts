@@ -11,7 +11,7 @@ export type LogEntry = { capture_id: string; text: string; created: number;
 export type OutboxEntry = { capture_id: string; text: string; source: "typed" | "paste";
   captured_at: string; tz: string; created: number; attempts: number };
 export type Me = { email: string; tz: string; monthly_budget_cents: number | null };
-export type Health = { model: string; dev: boolean };
+export type Health = { model: string; dev: boolean; app_version?: string };
 
 export type SendResult =
   | { kind: "filed"; status: "filed" | "note"; lines: LogLine[] }

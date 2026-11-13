@@ -29,7 +29,7 @@ from pydantic import BaseModel, ValidationError
 
 from dumpit_ops import Context, decide
 
-from . import db, store
+from . import db, store, versions
 from .filing import ProviderUnavailable, SchemaFailure, propose
 from .mailer import ConsoleMailer, Mailer, SmtpMailer
 from .model import PROMPT_VERSION, Model
@@ -87,8 +87,11 @@ def create_server(database_url: str, *, model: Optional[Model] = None,
                   public_url: Optional[str] = None, dev: bool = False,
                   per_user_daily: int = 200, daily_cap_eur: float = 2.0,
                   eur_per_mtok_in: float = 0.10, eur_per_mtok_out: float = 0.50,
-                  clock=time.time, web_dist: Optional[Path] = WEB_DIST) -> FastAPI:
+                  clock=time.time, web_dist: Optional[Path] = WEB_DIST,
+                  app_version: Optional[str] = None,
+                  changelog: Path = versions.CHANGELOG) -> FastAPI:
     app = FastAPI(title="Dumpit")
+    app.state.app_version = app_version or versions.current_version()
     allowed = {e.strip().lower() for e in (allowed_emails or []) if e.strip()}
     app.state.mailer = mailer or ConsoleMailer()
     app.state.model = model
@@ -150,7 +153,13 @@ def create_server(database_url: str, *, model: Optional[Model] = None,
         name = app.state.model.name if app.state.model else \
             os.environ.get("DUMPIT_MODEL", "claude-haiku-5-5")
         return {"status": "ok", "prompt_version": PROMPT_VERSION, "model": name,
-                "schema_version": version, "dev": dev}
+                "schema_version": version, "dev": dev, "app_version": app.state.app_version}
+
+    @app.get("/v1/whats-new")
+    def whats_new(since: str = "") -> Dict[str, Any]:
+        entries = versions.whats_new(versions.read_changelog(changelog), since,
+                                     app.state.app_version)
+        return {"version": app.state.app_version, "entries": entries}
 
     # ----------------------------------------------------------------- sign-in
 
@@ -458,7 +467,8 @@ def from_env() -> FastAPI:
         per_user_daily=int(os.environ.get("DUMPIT_PER_USER_DAILY", "200")),
         daily_cap_eur=float(os.environ.get("DUMPIT_DAILY_CAP_EUR", "2.0")),
         eur_per_mtok_in=float(os.environ.get("DUMPIT_EUR_PER_MTOK_IN", "0.10")),
-        eur_per_mtok_out=float(os.environ.get("DUMPIT_EUR_PER_MTOK_OUT", "0.50")))
+        eur_per_mtok_out=float(os.environ.get("DUMPIT_EUR_PER_MTOK_OUT", "0.50")),
+        changelog=Path(os.environ.get("DUMPIT_CHANGELOG", str(versions.CHANGELOG))))
 
 
 def __getattr__(name: str):

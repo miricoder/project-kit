@@ -171,3 +171,15 @@ Proposal Phases 0–2 are v1. Phase 0 settles the biggest risk (can a small mode
 - **Touches:** `eval/`, a server-side count of undos and corrections per capture (no analytics
   SDK)
 - **Done when:** both measured and recorded; `pk qa -C .` still passes
+
+## Slice 15: Version notice
+- **Delivers:** the installed app says when it has been updated and what changed, offers a
+  new version while it is open, and shows its version. Added 2026-11-13 at the user's
+  request, after /initiate; not in the judged spec.
+- **Proposal phase:** 1
+- **Scenarios:** the app says what changed after an update; the first open after installing
+  shows no update notice; an open app offers a new version when one is deployed; what's new
+  lists only the versions the device has not seen; the app shows which version it is
+- **Touches:** `APP_VERSION` baked into the image and the web build, `app_version` in
+  `/v1/health`, `GET /v1/whats-new?since=` read from `CHANGELOG.md`, the update banner, Devices
+- **Done when:** its scenarios pass as automated tests; `pk qa -C .` still passes

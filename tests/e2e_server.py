@@ -4,7 +4,7 @@
 
 Starts a throwaway Postgres (tests/pg.py), builds the service with the demo filer, dev
 sign-in and the built web app (web/dist), and prints one line `READY <url>` when it is
-listening. The harness adds POST /__seed for tests only: it inserts rows straight into the
+listening. The harness adds POST /__seed and POST /__version for tests only: it inserts rows straight into the
 signed-in user's account so a test can start from "the user has 50 expenses".
 """
 from __future__ import annotations
@@ -15,6 +15,7 @@ import signal
 import socket
 import sys
 import threading
+from pathlib import Path
 
 import uvicorn
 from fastapi import Request
@@ -27,14 +28,23 @@ from service import db  # noqa: E402
 from service.demo_model import DemoModel  # noqa: E402
 from service.mailer import ConsoleMailer  # noqa: E402
 from service.server import SESSION_COOKIE, create_server, token_hash  # noqa: E402
+from service import versions  # noqa: E402
 
 EMAIL = "me@example.com"
 EMAILS = [EMAIL, "second@example.com"] + [f"u{i}@example.com" for i in range(1, 30)]
 
 
 def build(database_url: str):
+    changelog = os.environ.get("DUMPIT_CHANGELOG")
     app = create_server(database_url, model=DemoModel(), mailer=ConsoleMailer(),
-                        allowed_emails=EMAILS, dev=True)
+                        allowed_emails=EMAILS, dev=True,
+                        changelog=Path(changelog) if changelog else versions.CHANGELOG)
+
+    @app.post("/__version")
+    async def set_version(request: Request):
+        """Tests only: act as if another version had been deployed."""
+        app.state.app_version = (await request.json())["version"]
+        return JSONResponse({"version": app.state.app_version})
 
     @app.post("/__seed")
     async def seed(request: Request):
