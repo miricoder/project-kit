@@ -19,10 +19,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ValidationError
 
-from dumpit_ops.schema import shape_problems
-
+from .filing import ProviderUnavailable, SchemaFailure, propose
 from .limits import Limits, token_hash
-from .model import (PROMPT_VERSION, AnthropicModel, Model, ModelOutputError, ProviderError)
+from .model import PROMPT_VERSION, AnthropicModel, Model
 
 MAX_TEXT = 4000
 log = logging.getLogger("dumpit.service")
@@ -112,22 +111,17 @@ def create_app(model: Optional[Model] = None, limits: Optional[Limits] = None,
                                {"Retry-After": str(limits.seconds_to_reset())}))
 
         model = current_model()
-        ops = None
-        for _ in range(2):                     # one retry on output that breaks the schema
-            try:
-                reply = model.propose(body.model_dump())
-            except ProviderError:
-                return done(_error(503, "model provider unavailable"))
-            except ModelOutputError:
-                continue
-            usage["input_tokens"] += reply.input_tokens
-            usage["output_tokens"] += reply.output_tokens
-            limits.add_spend(round(reply.input_tokens * rate_in
-                                   + reply.output_tokens * rate_out))
-            if not shape_problems(reply.ops):
-                ops = reply.ops
-                break
-        if ops is None:
+
+        def count(tokens_in: int, tokens_out: int) -> None:
+            usage["input_tokens"] += tokens_in
+            usage["output_tokens"] += tokens_out
+            limits.add_spend(round(tokens_in * rate_in + tokens_out * rate_out))
+
+        try:
+            ops = propose(model, body.model_dump(), on_usage=count).ops
+        except ProviderUnavailable:
+            return done(_error(503, "model provider unavailable"))
+        except SchemaFailure:
             return done(_error(502, "model output failed the schema check twice"))
 
         ops_kinds.update(op["op"] for op in ops)

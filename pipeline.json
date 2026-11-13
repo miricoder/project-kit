@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "dumpit",
   "created_at": "2026-10-25T20:48:19+00:00",
-  "updated_at": "2026-11-12T13:57:06+00:00",
+  "updated_at": "2026-11-13T16:19:30+00:00",
   "mode": "yolo",
   "budget": {
     "max_usd": 25.0,
@@ -106,5 +106,31 @@
     }
   ],
   "resume_point": "run /build",
-  "judge_max_rounds": 10
+  "judge_max_rounds": 10,
+  "build": {
+    "test_command": "python -m pytest -q",
+    "tests": [
+      "tests"
+    ]
+  },
+  "slices": {
+    "1": {
+      "status": "complete",
+      "name": "Op schema, Validator and filing service",
+      "started_at": "2026-11-13T16:18:02+00:00",
+      "completed_at": "2026-11-13T16:18:07+00:00"
+    },
+    "2": {
+      "status": "blocked",
+      "name": "Filing test set and scorer, first baseline",
+      "started_at": "2026-11-13T16:18:07+00:00",
+      "blocked_reason": "baseline needs ANTHROPIC_API_KEY; 50 captures by someone other than the builder"
+    },
+    "3": {
+      "status": "complete",
+      "name": "Sign-in and the server store",
+      "started_at": "2026-11-13T16:18:07+00:00",
+      "completed_at": "2026-11-13T16:19:30+00:00"
+    }
+  }
 }
