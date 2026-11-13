@@ -19,8 +19,8 @@ whole design premise.
 | | |
 |---|---|
 | Version | see `.claude-plugin/plugin.json` |
-| Skills built | `/pipeline`, `/ideate`, `/proposal`, `/design`, `/handover`, `/verdict`, `/remediate`, `/initiate`, `/build`, `/graph` — idea → judged spec → backlog → tested slices |
-| Skills remaining | 4 (`/devops`, `/test`, `/security`, `/launch`), see [docs/roadmap.md](docs/roadmap.md) |
+| Skills built | all 14: `/pipeline`, `/ideate`, `/proposal`, `/design`, `/handover`, `/verdict`, `/remediate`, `/initiate`, `/build`, `/devops`, `/test`, `/security`, `/launch`, `/graph`. Idea → judged spec → backlog → tested slices → launched |
+| Skills remaining | none; see [docs/roadmap.md](docs/roadmap.md) for what is deferred |
 | Tests | `pk check` runs exactly what CI runs |
 | Docs | <https://miricoder.github.io/project-kit/> — generated, never hand-edited |
 
@@ -39,8 +39,17 @@ exits 0. The last slice completes the build phase.
 (`~/.claude/project-kit/graph.db`) from the skills, `pipeline.json` and the backlog, serves
 an interactive viewer (`skills/graph/viewer.html`), and exports idempotent Cypher for Neo4j.
 
-**What does not:** shipping. `/devops`, `/test`, `/security` and `/launch` are still
-declared phases with no skill.
+**Shipping:** `pk ship` (`skills/devops/scripts/ship.py`) is the mechanical half of
+`/devops`, `/test`, `/security` and `/launch`. State goes in `pipeline.json` under `ship`
+(optional, so older state loads). The script never deploys, because deploying needs the
+user's own account. It smoke-checks a URL before recording it, tags releases, runs the
+test gate (the full suite plus every scenario mapped) and the security gate (secrets in
+files and history, `pip-audit` / `npm audit`, and the threat model's sections), and
+refuses `done launch` until production runs the release over https and a rollback has
+been recorded on production after that deploy. Gate rulings are `PASS` / `FAIL`; `PASS`
+is now in `state.RULINGS_PASSING` alongside `SOUND`.
+The real deploy commands per platform are in `skills/devops/references/targets.md`. They
+cannot be tested in CI, because they need accounts.
 
 **The yolo loop:** `/remediate` drives `pk qa` (`scripts/qa.py`: plan lint, accessibility,
 judge gate) and the judge panel in a fix → re-check → re-judge loop until everything passes,

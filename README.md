@@ -197,10 +197,10 @@ python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase design
 | `/remediate` | Handover ↔ Approval | **The yolo loop.** `pk qa` + judge panel → fix → re-check → re-judge, unattended, until everything passes; then hands to `/initiate` | ✅ |
 | `/initiate` | Initiation | **Judge-gated.** Asks before development starts; approved spec → feature backlog | ✅ |
 | `/build` | Build | One backlog slice at a time, test-first: the slice's scenarios become tests, code until they pass; `pk slice done` records it only when they do | ✅ |
-| `/devops` | DevOps | Repo, branches, PRs, releases, tags, CHANGELOG, CI, migrations | planned |
-| `/test` | Testing | Pre-release gate: suite, coverage, acceptance-criteria verification | planned |
-| `/security` | Security | Threat model, secret-in-history check, dependency audit | planned |
-| `/launch` | Launch | Soft launch, rollback drill, hotfix path, observability | planned |
+| `/devops` | DevOps | CI that runs the tests, a staging deploy on your own account, CHANGELOG, a tagged release; `pk ship done devops` records it | ✅ |
+| `/test` | Testing | **Test gate.** The full suite, with every acceptance scenario mapped to a test; `pk ship test` decides | ✅ |
+| `/security` | Security | **Security gate.** Threat model, secrets in files and history, dependency audit; `pk ship audit` decides | ✅ |
+| `/launch` | Launch | **Gated.** Production deploy, then a real rollback drill (back, check, restore, check); `pk ship done launch` records it | ✅ |
 | `/graph` | all | **Not a phase.** Skills, phases, gates, artifacts and slices as a graph in a local database; `pk graph serve` shows it in any browser, `pk graph export` writes Cypher for Neo4j | ✅ |
 
 Three hard gates: the **judge gate** guards `/initiate`; the **test gate** and **security
@@ -223,7 +223,7 @@ completes the build phase.
 | `pk slice block <n> --reason "..."` | record what a slice is waiting on (a key, an account) |
 
 `/graph` shows Project Kit as a graph: every skill, each project's phases, gates,
-artifacts and slices, and the phases that have no skill yet. The graph is kept in a local
+artifacts and slices, and any phase whose skill is missing. The graph is kept in a local
 SQLite database (`~/.claude/project-kit/graph.db`, rebuilt on every sync) and needs nothing
 installed.
 
@@ -234,6 +234,26 @@ installed.
 | `pk graph html -o graph.html` | one standalone page with the graph inside; opens anywhere |
 | `pk graph export -o graph.cypher` | idempotent Cypher; load with `cypher-shell -f graph.cypher` into Neo4j |
 | `pk graph show` | counts per label and relationship, and which skills are missing |
+
+## Shipping
+
+After the build, `/devops`, `/test`, `/security` and `/launch` take the project online with
+**your own** hosting account (Google Cloud Run, Fly.io, Render, or any Docker host; the
+commands are in `skills/devops/references/targets.md`). Project Kit never holds the
+credentials. It asks for each setting by name, and the values go into the platform's
+secret store. Each step is recorded by `pk ship`, which checks the result itself: a deploy
+is recorded only once its health path answers, and a gate passes only when the script ran it.
+
+| Command | Does |
+|---|---|
+| `pk ship config --target cloudrun --health /v1/health --env DATABASE_URL` | where and how it deploys (setting names only) |
+| `pk ship record staging --url <url>` | smoke-check, then record a deploy; allowed while slices are still being built |
+| `pk ship release v1.0.0` | tag a release: clean tree, CHANGELOG entry, already on staging |
+| `pk ship done devops` | CI runs the tests, the release is tagged, and it is on staging |
+| `pk ship test` | the test gate; writes `docs/test-report.md` |
+| `pk ship audit` | the security gate; writes `docs/security-audit.md` |
+| `pk ship record production --url <url> --version v1.0.0` | needs the security gate and the version on staging |
+| `pk ship done launch` | production runs the release over https, and a rollback was rehearsed |
 
 ## Run modes
 

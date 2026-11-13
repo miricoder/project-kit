@@ -157,10 +157,11 @@ lost.
 ## Phases
 
 See `references/phases.md` for each phase, its owner skill, inputs, outputs and gate.
-`ideate` → `build` are implemented; `devops` onward are declared in state and have no skill
-yet. `/build` loops over the backlog's slices itself (`pk slice`); the build phase is
+Every phase has a skill. `/build` loops over the backlog's slices itself (`pk slice`); the build phase is
 recorded complete by `pk slice done` when the last slice is, never by this skill.
-`/graph` shows the whole pipeline, and which skills are missing, as a graph.
+`/devops`, `/test`, `/security` and `/launch` go through `pk ship`, which records deploys,
+the release, the test and security gates and the launch. `/graph` shows the whole pipeline
+as a graph.
 
 `/remediate` is not a phase: it drives `handover` and `verdict` in a loop, fixing what
 `pk qa` and the judges find, until everything passes. In `yolo` mode `/design` hands over to

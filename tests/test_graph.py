@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import threading
@@ -151,8 +152,19 @@ class GraphTest(unittest.TestCase):
         for n in data["nodes"]:
             self.assertIn("sx", n)
             self.assertIn("sy", n)
+        self.assertFalse([e for e in data["edges"] if e["gap"]], "every skill ships now")
+
+    def test_a_missing_skill_is_drawn_as_a_gap(self):
+        partial = Path(self.tmp.name) / "plugin"
+        shutil.copytree(graph.PLUGIN_ROOT / ".claude-plugin", partial / ".claude-plugin")
+        shutil.copytree(graph.PLUGIN_ROOT / "skills", partial / "skills",
+                        ignore=lambda d, names: ["launch"] if d.endswith("skills") else [])
+        graph.sync(self.conn, [self.project], root=partial)
+        data = graph.layout(graph.read(self.conn))
+        self.assertTrue(self.node(data, "skill:launch")["missing"])
         gaps = [e for e in data["edges"] if e["gap"]]
         self.assertTrue(gaps, "missing skills are drawn as gaps")
+        self.assertTrue(all("skill:launch" in (e["s"], e["t"]) for e in gaps))
 
     # ---- serve -----------------------------------------------------------------------
 
@@ -168,12 +180,12 @@ class GraphTest(unittest.TestCase):
         data = json.loads(urllib.request.urlopen(base + "/api/graph").read())
         self.assertIn("project:demo", {n["id"] for n in data["nodes"]})
 
-    def test_cli_show_lists_missing_skills(self):
+    def test_cli_show_lists_no_missing_skills(self):
         graph.sync(self.conn, [self.project])
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
             self.assertEqual(graph.main(["show"]), 0)
-        self.assertIn("/launch", json.loads(out.getvalue())["missing_skills"])
+        self.assertEqual(json.loads(out.getvalue())["missing_skills"], [])
 
 
 if __name__ == "__main__":

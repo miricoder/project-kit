@@ -47,7 +47,8 @@ GATED_BY: Dict[str, str] = {"initiate": "judge", "launch": "security"}
 # `yolo` after none.
 AUTO_CHECKPOINTS: tuple[str, ...] = ("ideate", "proposal", "handover", "verdict")
 
-RULINGS_PASSING = ("SOUND",)
+# SOUND is the judge's passing ruling; PASS is what `pk ship test` and `pk ship audit` record.
+RULINGS_PASSING = ("SOUND", "PASS")
 RULINGS_CONDITIONAL = ("FIX FIRST",)
 
 
