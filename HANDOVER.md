@@ -19,8 +19,8 @@ whole design premise.
 | | |
 |---|---|
 | Version | see `.claude-plugin/plugin.json` |
-| Skills built | `/pipeline`, `/ideate`, `/proposal`, `/design`, `/handover`, `/verdict`, `/remediate`, `/initiate` — idea → judged spec → backlog |
-| Skills remaining | 5, see [docs/roadmap.md](docs/roadmap.md) |
+| Skills built | `/pipeline`, `/ideate`, `/proposal`, `/design`, `/handover`, `/verdict`, `/remediate`, `/initiate`, `/build`, `/graph` — idea → judged spec → backlog → tested slices |
+| Skills remaining | 4 (`/devops`, `/test`, `/security`, `/launch`), see [docs/roadmap.md](docs/roadmap.md) |
 | Tests | `pk check` runs exactly what CI runs |
 | Docs | <https://miricoder.github.io/project-kit/> — generated, never hand-edited |
 
@@ -29,8 +29,18 @@ Gherkin acceptance criteria → a three-family judge panel and a recorded ruling
 holds the gate. Everything up to the spec needs no credentials; the panel needs three seats,
 which can be paste seats (`PROJECT_KIT_PASTE_SEATS`) if there are no keys.
 
-**What does not:** building. `/build` is next; until it ships, `/initiate` ends by offering to
-build slice 1 directly.
+**Building:** `/build` takes one backlog slice at a time, test-first. `pk slice`
+(`skills/build/scripts/slices.py`) parses `docs/backlog.md`, tracks slice status in
+`pipeline.json` (`slices`, `build` keys; optional, so older state loads), and refuses
+`done` until every scenario of the slice is named in a test and the recorded test command
+exits 0. The last slice completes the build phase.
+
+**The graph:** `pk graph` (`skills/graph/scripts/graph.py`) rebuilds a SQLite graph
+(`~/.claude/project-kit/graph.db`) from the skills, `pipeline.json` and the backlog, serves
+an interactive viewer (`skills/graph/viewer.html`), and exports idempotent Cypher for Neo4j.
+
+**What does not:** shipping. `/devops`, `/test`, `/security` and `/launch` are still
+declared phases with no skill.
 
 **The yolo loop:** `/remediate` drives `pk qa` (`scripts/qa.py`: plan lint, accessibility,
 judge gate) and the judge panel in a fix → re-check → re-judge loop until everything passes,

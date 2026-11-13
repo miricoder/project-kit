@@ -118,6 +118,5 @@ pk state -C . next
     Slice 1: <name> — <delivers>
     Start building slice 1?
 
-On yes: build it test-first — write its scenarios as automated tests, implement until they
-pass, then `pk qa -C .`. (`/build`, which will own this step, is planned; until it ships this
-is done directly.)
+On yes: invoke `/build`. It builds the slices one at a time, test-first, and records each
+with `pk slice done`.

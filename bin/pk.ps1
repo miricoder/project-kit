@@ -12,6 +12,8 @@
     pk judge status
     pk qa
     pk keys status
+    pk slice next
+    pk graph serve
 
   Plugin root resolution, in order: $env:CLAUDE_PLUGIN_ROOT, $env:PROJECT_KIT_ROOT, this
   script's own parent directory.
@@ -19,7 +21,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $true, Position = 0)]
-  [ValidateSet('state', 'gate', 'doctor', 'check', 'judge', 'qa', 'keys')]
+  [ValidateSet('state', 'gate', 'doctor', 'check', 'judge', 'qa', 'keys', 'slice', 'graph')]
   [string]$Subcommand,
 
   [Parameter(ValueFromRemainingArguments = $true)]
@@ -40,6 +42,8 @@ $target = switch ($Subcommand) {
   'judge'  { Join-Path $root 'skills/handover/scripts/judge.py' }
   'qa'     { Join-Path $root 'scripts/qa.py' }
   'keys'   { Join-Path $root 'scripts/keys.py' }
+  'slice'  { Join-Path $root 'skills/build/scripts/slices.py' }
+  'graph'  { Join-Path $root 'skills/graph/scripts/graph.py' }
 }
 if (-not (Test-Path $target)) {
   Write-Error "pk: $target not found; set PROJECT_KIT_ROOT"

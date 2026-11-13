@@ -196,14 +196,44 @@ python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase design
 | `/verdict` | Approval | Reads the ruling, ranks fixes, back-propagates, admins rounds | ✅ |
 | `/remediate` | Handover ↔ Approval | **The yolo loop.** `pk qa` + judge panel → fix → re-check → re-judge, unattended, until everything passes; then hands to `/initiate` | ✅ |
 | `/initiate` | Initiation | **Judge-gated.** Asks before development starts; approved spec → feature backlog | ✅ |
-| `/build` | Build | Implements one backlog slice: code plus unit tests | planned |
+| `/build` | Build | One backlog slice at a time, test-first: the slice's scenarios become tests, code until they pass; `pk slice done` records it only when they do | ✅ |
 | `/devops` | DevOps | Repo, branches, PRs, releases, tags, CHANGELOG, CI, migrations | planned |
 | `/test` | Testing | Pre-release gate: suite, coverage, acceptance-criteria verification | planned |
 | `/security` | Security | Threat model, secret-in-history check, dependency audit | planned |
 | `/launch` | Launch | Soft launch, rollback drill, hotfix path, observability | planned |
+| `/graph` | all | **Not a phase.** Skills, phases, gates, artifacts and slices as a graph in a local database; `pk graph serve` shows it in any browser, `pk graph export` writes Cypher for Neo4j | ✅ |
 
 Three hard gates: the **judge gate** guards `/initiate`; the **test gate** and **security
 gate** guard `/launch`.
+
+## Building and the graph
+
+After `/initiate` writes `docs/backlog.md`, `/build` builds it one slice at a time:
+the slice's acceptance scenarios become tests first, then code until they pass. The skill
+never decides a slice is finished; `pk slice done` does, and refuses until every scenario of
+the slice is named in a test and the project's test command exits 0. The last slice
+completes the build phase.
+
+| Command | Does |
+|---|---|
+| `pk slice next` | the slice to build next, its scenarios, whether it may start |
+| `pk slice list` | every slice and its status |
+| `pk slice config --test-command "python -m pytest -q"` | how this project runs its tests (once) |
+| `pk slice start <n>` / `check <n>` / `done <n>` | start, dry-run, and record a slice |
+| `pk slice block <n> --reason "..."` | record what a slice is waiting on (a key, an account) |
+
+`/graph` shows Project Kit as a graph: every skill, each project's phases, gates,
+artifacts and slices, and the phases that have no skill yet. The graph is kept in a local
+SQLite database (`~/.claude/project-kit/graph.db`, rebuilt on every sync) and needs nothing
+installed.
+
+| Command | Does |
+|---|---|
+| `pk graph sync [--all]` | rebuild from the skills and this project (or every registered one) |
+| `pk graph serve` | live viewer at http://127.0.0.1:7474; `--host 0.0.0.0` to open it from a phone on the same network |
+| `pk graph html -o graph.html` | one standalone page with the graph inside; opens anywhere |
+| `pk graph export -o graph.cypher` | idempotent Cypher; load with `cypher-shell -f graph.cypher` into Neo4j |
+| `pk graph show` | counts per label and relationship, and which skills are missing |
 
 ## Run modes
 

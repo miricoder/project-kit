@@ -39,8 +39,10 @@ PostToolUse hook re-scans UI mockups for accessibility on every write.
 
 ### P2 — from approved spec to code
 
-`/initiate` shipped in 0.5.0 (judge-gated, asks first: spec → backlog). Next: `/build`
-(implement a slice with tests).
+`/initiate` shipped in 0.5.0 (judge-gated, asks first: spec → backlog). `/build` shipped
+in 0.7.0: one slice at a time, test-first, with `pk slice done` refusing until the slice's
+scenarios are named in tests and the suite passes. `/graph` shipped alongside it: the whole
+pipeline as a browsable graph, exportable to Neo4j.
 
 Honest caveat: plain Claude Code already implements well from a spec. These add slice
 discipline and gate enforcement, not core capability.
