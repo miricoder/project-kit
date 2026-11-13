@@ -1,0 +1,11 @@
+.git
+**/node_modules
+web/dist
+tests
+eval
+docs
+ui
+qa
+judge
+*.md
+!CHANGELOG.md

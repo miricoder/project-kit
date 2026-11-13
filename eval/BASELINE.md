@@ -19,7 +19,7 @@ it measures the prompt, and it is the number the other-people subset will be com
 ## How to record it
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m eval.score --limit 20        # smoke set first: under €0.01
 python -m eval.score                   # the whole set; writes eval/report.json
 ```

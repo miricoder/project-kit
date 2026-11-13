@@ -1,0 +1,23 @@
+# Weekly pull requests that update Dumpit's libraries. CI tests each one, so an update that
+# breaks something shows red before anyone merges it. Minor and patch updates are grouped
+# into one pull request per ecosystem to keep the noise down.
+#
+# GitHub reads this file only from the repository's default branch: it takes effect once
+# Dumpit is in its own repository (or on the default branch).
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule: { interval: weekly }
+    groups: { minor-and-patch: { update-types: [minor, patch] } }
+  - package-ecosystem: npm
+    directory: /web
+    schedule: { interval: weekly }
+    groups: { minor-and-patch: { update-types: [minor, patch] } }
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups: { minor-and-patch: { update-types: [minor, patch] } }

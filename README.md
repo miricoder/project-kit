@@ -28,7 +28,7 @@ Developer handoff spec: `docs/handoff.md`.
 You need Python 3.11+, Node 22 and Postgres 14+.
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 (cd web && npm ci && npm run build)
 
 export DUMPIT_DATABASE_URL=postgresql://localhost/dumpit   # an empty database; migrated on start
