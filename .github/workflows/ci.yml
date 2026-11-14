@@ -2,7 +2,7 @@ name: Dumpit CI
 
 # Every push and pull request: run every test, and build the container image.
 # Every push to the app's branch, once Google Cloud is set up: deploy to staging.
-# A v* tag (pk ship release): deploy to production, after approval in GitHub.
+# A v* tag (pk ship release, which only you can push): deploy to production.
 # Deploys need the four repository variables printed by scripts/setup-cloud.sh; until they
 # exist the deploy jobs are skipped and CI stays green. No secret is stored in GitHub.
 on:
@@ -67,7 +67,6 @@ jobs:
     needs: [test, image]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/') && vars.GCP_PROJECT != ''
     runs-on: ubuntu-latest
-    environment: staging
     concurrency: deploy-staging
     permissions:
       contents: read
@@ -91,7 +90,6 @@ jobs:
     needs: [test, image]
     if: startsWith(github.ref, 'refs/tags/v') && vars.GCP_PROJECT != ''
     runs-on: ubuntu-latest
-    environment: production
     concurrency: deploy-production
     permissions:
       contents: read

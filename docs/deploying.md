@@ -1,84 +1,146 @@
-# Putting Dumpit online
+# Putting Dumpit online, step by step
 
-Dumpit runs on **Google Cloud Run** (Europe), free at this scale. After a one-time setup,
-every change that passes the tests goes live on **staging** by itself. **Production** goes
-live when a release is tagged and you approve it. The installed app updates itself and tells
-you what changed.
+About 45 minutes, once. After that, every change that passes the tests goes live on its own.
+Use a computer for steps 1 to 5 (a phone works, but copying is fiddly). Step 6 is on your phone.
 
-Nothing needs installing on your computer. The setup runs in **Google Cloud Shell**, a
-terminal in your browser with everything already in it.
+Keep a private note open (Notes, Keep, a text file) to collect five things on the way:
+**Anthropic key, database string, Gmail app password, Project ID, and later the app's address.**
+Delete the note when you finish.
 
-## 1. Accounts (once)
+---
 
-| What | Where | Note |
-|---|---|---|
-| Anthropic API key | console.anthropic.com → Billing (add $5) → API Keys → Create | shown once; keep it for step 3 |
-| Database | neon.tech → New Project, region **Europe (Frankfurt)** → copy the `postgresql://…` string | make two: `dumpit-staging`, `dumpit-prod` |
-| Email sending | Gmail: turn on 2-Step Verification, then myaccount.google.com/apppasswords → create "Dumpit" | gives 16 letters |
-| Google Cloud | console.cloud.google.com → New Project (note the **Project ID**) → Billing → link a card | about €0 a month; a budget alert emails you first |
+## Step 1: Private home for the code (2 min)
 
-## 2. Google Cloud setup (once, about 5 minutes)
+1. Go to **github.com/new**.
+2. **Owner:** `miricoder`. **Repository name:** `dumpit`.
+3. Select **Private**.
+4. Leave *Add a README*, *.gitignore* and *license* off.
+5. Click **Create repository**.
+6. Tell Claude "repo created". It moves the app into the repo.
 
-Open console.cloud.google.com and click **>_** (Activate Cloud Shell) at the top right. In the
-terminal that opens:
+## Step 2: Anthropic key (5 min)
 
-```bash
-gcloud config set project YOUR-PROJECT-ID
-git clone -b dumpit https://github.com/miricoder/project-kit dumpit && cd dumpit
-sh scripts/setup-cloud.sh miricoder/project-kit
-```
+1. Go to **console.anthropic.com** and sign up.
+2. Go to **Settings → Billing → Buy credits**, buy **$5** and pay by card.
+3. Go to **Settings → API Keys → Create Key**. Name it `dumpit`, then click **Create**.
+4. Click **Copy** and paste the key into your note. It starts with `sk-ant-`, and it is shown only once.
 
-It ends by printing four values. In GitHub, open the repository, then **Settings → Secrets
-and variables → Actions → Variables → New repository variable**, and add each one:
-`GCP_PROJECT`, `GCP_REGION`, `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA`.
+## Step 3: Database (5 min)
 
-Then, still in GitHub: **Settings → Environments → New environment → `production` →
-Required reviewers → add yourself**. Production deploys then wait for your click.
+1. Go to **neon.tech** and click **Sign up**. *Continue with GitHub* is quickest.
+2. Create a project:
+   - **Project name:** `dumpit-staging`
+   - **Region:** **AWS Europe Central 1 (Frankfurt)**
+   - Click **Create**.
+3. On the project page, click **Connect**.
+4. Copy the connection string and paste it into your note. It looks like
+   `postgresql://neondb_owner:…@ep-…eu-central-1.aws.neon.tech/neondb?sslmode=require`.
 
-## 3. Your settings (once per environment)
+## Step 4: Sending the sign-in emails from your Gmail (3 min)
 
-In Cloud Shell:
+1. Go to **myaccount.google.com/security** and turn on **2-Step Verification**, if it is off.
+2. Go to **myaccount.google.com/apppasswords**:
+   - **App name:** `Dumpit`
+   - Click **Create**.
+3. Copy the 16 letters and paste them into your note, without the spaces.
+4. In your note, write this line, using your own Gmail name and the 16 letters:
 
-```bash
-sh scripts/setup-secrets.sh staging
-```
+       smtps://YOURNAME%40gmail.com:ABCDEFGHIJKLMNOP@smtp.gmail.com:465
 
-It asks for five things, with your typing hidden:
-- the Anthropic key;
-- the **staging** database string;
-- the email-sending address, `smtps://YOU%40gmail.com:THE16LETTERS@smtp.gmail.com:465` (the `%40` stands for the `@`);
-- the sender address, your Gmail;
-- the one email allowed to sign in.
+   `%40` stands for the `@` in your Gmail address. Type it exactly like that.
 
-## 4. First deploy
+## Step 5: Google Cloud (15 min)
 
-Either push any change to the `dumpit` branch, or in GitHub open **Actions → Dumpit CI → the
-latest run → Re-run all jobs**. After the tests pass, the **deploy-staging** job prints the
-app's address (`https://dumpit-staging-….run.app`). The same address is in Cloud Run, in the
-Cloud Console.
+**5a. Project and billing**
+1. Go to **console.cloud.google.com** and sign in. Accept the terms. If it offers a **free
+   trial**, take it: that also sets up billing.
+2. At the top left, click the **project picker** (next to the Google Cloud logo).
+3. Click **New Project**. Name it `dumpit`, then click **Create**.
+4. In the picker, select `dumpit`. Copy its **ID** into your note, for example `dumpit-472910`.
+5. If you didn't take the free trial: go to **☰ → Billing → Link a billing account**,
+   create one with your card, and link it.
 
-Then, once, in Cloud Shell: `sh scripts/setup-uptime.sh staging YOUR-EMAIL`. You'll then
-get an email if the app stops answering.
+**5b. Cloud Shell.** This is a terminal in your browser, with nothing to install.
 
-## 5. Install it
+1. At the top right of the console, click **>_** (*Activate Cloud Shell*). A terminal opens at
+   the bottom. Click **Authorize** if asked.
+2. Paste these lines one at a time, pressing Enter after each one. Put your Project ID in the
+   first line.
 
-- **Android (Chrome):** open the address → sign in with the emailed link → **⋮ → Install app**
-  (or **Add to Home screen**).
-- **iPhone (Safari):** open the address → sign in → **Share → Add to Home Screen**.
-- **Computer (Chrome or Edge):** open the address → the **install icon** at the right of the
-  address bar → Install. It opens in its own window like a desktop app.
+       gcloud config set project YOUR-PROJECT-ID
+       git clone -b dumpit https://github.com/miricoder/project-kit dumpit
+       cd dumpit
+       sh scripts/setup-cloud.sh miricoder/dumpit
 
-Sign in once on each device. The same data shows everywhere.
+   The last one takes 2 to 4 minutes. It ends by printing four lines, `GCP_PROJECT`,
+   `GCP_REGION`, `GCP_WIF_PROVIDER` and `GCP_DEPLOY_SA`. Copy them into your note.
+   *(The clone reads the setup scripts from the public copy. The deploy itself runs only from
+   your private `miricoder/dumpit`.)*
+3. Paste:
 
-## After that: changes, releases, upkeep
+       sh scripts/setup-secrets.sh staging
 
-| What happens | How |
+   It asks for five things. Paste each one from your note and press Enter.
+   **Nothing shows while you paste; that is normal.**
+
+   | It asks for | Paste |
+   |---|---|
+   | Anthropic API key | `sk-ant-…` |
+   | Postgres connection string | the `postgresql://…` line |
+   | Email sending | the `smtps://…` line |
+   | Sender address | your Gmail address |
+   | The email that may sign in | the email you will sign in with |
+
+## Step 6: Tell GitHub how to deploy (3 min)
+
+1. Go to **github.com/miricoder/dumpit/settings/variables/actions**.
+2. Click **New repository variable**, fill in **Name** and **Value** with the first line from
+   your note (`GCP_PROJECT`), then click **Add variable**.
+3. Repeat for `GCP_REGION`, `GCP_WIF_PROVIDER` and `GCP_DEPLOY_SA`.
+
+These are not secrets; no key is stored in GitHub.
+
+## Step 7: First deploy (8 min)
+
+1. Go to **github.com/miricoder/dumpit/actions**, click **Dumpit CI**, then the run at the top.
+2. Click **Re-run all jobs**, then **Re-run jobs**.
+3. Wait until **test**, **Container image builds** and **deploy-staging** are green.
+4. The run's page shows **Deployed 0.1.0-… to staging: https://dumpit-staging-….run.app**.
+   Copy that address into your note.
+5. Back in Cloud Shell, paste this, with your email:
+
+       sh scripts/setup-uptime.sh staging YOUR-EMAIL
+
+   You then get an email if the app ever stops answering.
+
+## Step 8: Install it
+
+**Android phone, Chrome**
+1. Open **Chrome** and go to the address from step 7.
+2. Type your email and tap **Send sign-in link**.
+3. Open the email from Dumpit and tap the link. It opens in Chrome, and you're in.
+4. Tap **⋮** (top right), then **Install app**. On some phones it says **Add to Home screen → Install**.
+5. Dumpit now has its own icon. Open it from there.
+
+**Computer, Chrome or Edge**
+1. Open the address and sign in the same way.
+2. Click the **install icon** at the right end of the address bar (a screen with a ↓), then
+   **Install**. It opens in its own window, and you can pin it to your taskbar or dock.
+
+**iPhone:** not yet. An app installed to the iPhone Home Screen keeps its own sign-in,
+separate from Safari, so the emailed link signs in Safari instead of the app. This needs a
+sign-in code to type into the app, which is a small change still to build.
+
+---
+
+## After that
+
+| When | What happens |
 |---|---|
-| A change is pushed and the tests pass | staging redeploys by itself |
-| You open the app after an update | "Updated to 0.1.0-abc123" and what changed, from `CHANGELOG.md` |
-| The app is open when a new version lands | "A new version of Dumpit is ready" → **Update now** |
-| A release is tagged (`pk ship release v1.0.0`, from `/devops`) | the production deploy waits for your approval in GitHub → Actions |
-| Production is first set up | `sh scripts/setup-secrets.sh production` (the **prod** database), then the tag, then `sh scripts/setup-uptime.sh production YOUR-EMAIL` |
-| A library has an update | Dependabot opens a weekly pull request; CI tests it |
-| Something goes wrong after a deploy | Cloud Run → dumpit → Revisions → send 100% of traffic to the previous one (the `/launch` rollback drill rehearses this) |
-| Spending goes above €1 | the budget emails you (20% of €5) |
+| Claude builds a change and it passes the tests | staging updates by itself in about 5 minutes |
+| You next open the app | "Updated to 0.1.0-…" and what changed |
+| The app is open when an update lands | **Update now** |
+| Something breaks | Cloud Run → `dumpit-staging` → **Revisions** → the previous one → **Manage traffic → 100%** |
+| Spending passes €1 | Google emails you |
+| A library has an update | a pull request appears in GitHub each week; CI tests it |
+| Going live for real (production) | `/project-kit:launch` walks you through it: a second Neon project, `setup-secrets.sh production`, then a release tag |

@@ -3,8 +3,7 @@
 #
 #   sh scripts/deploy.sh staging        # or: production
 #
-# CI runs this after the tests pass (staging on every push; production on a v* tag, after
-# approval). By hand, run it in Google Cloud Shell, which has gcloud and Docker built in.
+# CI runs this after the tests pass (staging on every push; production on a v* tag). By hand, run it in Google Cloud Shell, which has gcloud and Docker built in.
 # Needs scripts/setup-cloud.sh (once) and scripts/setup-secrets.sh (once per environment).
 set -eu
 cd "$(dirname "$0")/.."
