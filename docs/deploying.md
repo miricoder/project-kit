@@ -9,14 +9,12 @@ Delete the note when you finish.
 
 ---
 
-## Step 1: Private home for the code (2 min)
+## Step 1: Where the code lives
 
-1. Go to **github.com/new**.
-2. **Owner:** `miricoder`. **Repository name:** `dumpit`.
-3. Select **Private**.
-4. Leave *Add a README*, *.gitignore* and *license* off.
-5. Click **Create repository**.
-6. Tell Claude "repo created". It moves the app into the repo.
+Dumpit stays on the `dumpit` branch of the public `miricoder/project-kit` repository. The
+code and the deploy logs, including the app's address, are visible to anyone. Your data is not:
+only the email you allow can sign in. Dependabot reads its settings only from a repository's
+default branch, so it stays off while Dumpit lives on a branch.
 
 ## Step 2: Anthropic key (5 min)
 
@@ -70,12 +68,10 @@ Delete the note when you finish.
        gcloud config set project YOUR-PROJECT-ID
        git clone -b dumpit https://github.com/miricoder/project-kit dumpit
        cd dumpit
-       sh scripts/setup-cloud.sh miricoder/dumpit
+       sh scripts/setup-cloud.sh miricoder/project-kit
 
    The last one takes 2 to 4 minutes. It ends by printing four lines, `GCP_PROJECT`,
    `GCP_REGION`, `GCP_WIF_PROVIDER` and `GCP_DEPLOY_SA`. Copy them into your note.
-   *(The clone reads the setup scripts from the public copy. The deploy itself runs only from
-   your private `miricoder/dumpit`.)*
 3. Paste:
 
        sh scripts/setup-secrets.sh staging
@@ -93,7 +89,7 @@ Delete the note when you finish.
 
 ## Step 6: Tell GitHub how to deploy (3 min)
 
-1. Go to **github.com/miricoder/dumpit/settings/variables/actions**.
+1. Go to **github.com/miricoder/project-kit/settings/variables/actions**.
 2. Click **New repository variable**, fill in **Name** and **Value** with the first line from
    your note (`GCP_PROJECT`), then click **Add variable**.
 3. Repeat for `GCP_REGION`, `GCP_WIF_PROVIDER` and `GCP_DEPLOY_SA`.
@@ -102,7 +98,7 @@ These are not secrets; no key is stored in GitHub.
 
 ## Step 7: First deploy (8 min)
 
-1. Go to **github.com/miricoder/dumpit/actions**, click **Dumpit CI**, then the run at the top.
+1. Go to **github.com/miricoder/project-kit/actions**, click **Dumpit CI**, then the run at the top.
 2. Click **Re-run all jobs**, then **Re-run jobs**.
 3. Wait until **test**, **Container image builds** and **deploy-staging** are green.
 4. The run's page shows **Deployed 0.1.0-… to staging: https://dumpit-staging-….run.app**.
@@ -142,5 +138,4 @@ sign-in code to type into the app, which is a small change still to build.
 | The app is open when an update lands | **Update now** |
 | Something breaks | Cloud Run → `dumpit-staging` → **Revisions** → the previous one → **Manage traffic → 100%** |
 | Spending passes €1 | Google emails you |
-| A library has an update | a pull request appears in GitHub each week; CI tests it |
 | Going live for real (production) | `/project-kit:launch` walks you through it: a second Neon project, `setup-secrets.sh production`, then a release tag |
