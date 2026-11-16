@@ -163,6 +163,29 @@ def test_service_errors_count_as_not_correct(tmp_path):
     assert "Service errors: 1" in printed
 
 
+class RefusingProvider:
+    """A provider that turns every request down, as a bad key or an empty balance does."""
+    name = "refusing"
+
+    def propose(self, request):
+        from service.model import ProviderError
+        raise ProviderError("provider returned 401 authentication_error: invalid x-api-key")
+
+
+def test_the_reason_for_service_errors_is_printed(tmp_path):
+    data, printed, report = run(CASES[:3], RefusingProvider(), tmp_path)
+    assert report["results"][0]["status"] == 503
+    assert "invalid x-api-key" in report["results"][0]["detail"]
+    assert "3 × 503 provider returned 401 authentication_error: invalid x-api-key" in printed
+
+
+def test_a_schema_failure_names_the_first_problem(tmp_path):
+    case = CASES[0]
+    data, printed, report = run([case], OracleModel({case["id"]: [{"op": "create_task"}]}),
+                                tmp_path)
+    assert "missing 'title'" in report["results"][0]["detail"]
+
+
 def test_others_are_reported_separately(tmp_path):
     cases = [CASES[0], dict(CASES[1], author="ana")]
     wrong = {cases[1]["id"]: [{"op": "note", "text": "?", "suggestions": []}]}

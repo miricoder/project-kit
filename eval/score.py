@@ -154,6 +154,8 @@ def score_case(case: Dict[str, Any], file: Filer, rates: Rates) -> Dict[str, Any
     if status != 200:
         result.update(correct=False, error=body.get("error") if isinstance(body, dict)
                       else str(body))
+        if isinstance(body, dict) and body.get("detail"):
+            result["detail"] = body["detail"]
         return result
     filed, verdict = decide(case["text"], body["ops"], source=case["source"],
                             today=date.fromisoformat(case["today"]),
@@ -189,6 +191,11 @@ def summarise(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     costs = [r["cost_eur"] for r in results]
     summary["mean_cost_eur"] = round(sum(costs) / len(costs), 6) if costs else None
     summary["errors"] = sum(r["status"] != 200 for r in results)
+    reasons: Dict[str, int] = defaultdict(int)
+    for r in results:
+        if r["status"] != 200:
+            reasons[f"{r['status']} {r.get('detail') or r.get('error')}"] += 1
+    summary["error_reasons"] = dict(sorted(reasons.items(), key=lambda kv: -kv[1]))
     return summary
 
 
@@ -212,6 +219,8 @@ def print_summary(summary: Dict[str, Any], out: TextIO = sys.stdout) -> None:
     out.write(f"\nMean cost per capture: €{summary['mean_cost_eur']:.5f}\n")
     if summary["errors"]:
         out.write(f"Service errors: {summary['errors']} (counted as not correct)\n")
+        for reason, n in list(summary.get("error_reasons", {}).items())[:5]:
+            out.write(f"  {n} × {reason}\n")
 
 
 def run(cases: Iterable[Dict[str, Any]], file: Filer, *, rates: Optional[Rates] = None,

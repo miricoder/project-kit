@@ -150,7 +150,13 @@ class AnthropicModel:
         except anthropic.APIConnectionError as exc:
             raise ProviderError("provider unreachable") from exc
         except anthropic.APIStatusError as exc:
-            raise ProviderError(f"provider returned {exc.status_code}") from exc
+            # Anthropic's own error type and message say why (bad key, no credit, unknown
+            # model, invalid request); they never contain the capture.
+            error = (exc.body or {}).get("error", {}) if isinstance(exc.body, dict) else {}
+            kind = error.get("type") or getattr(exc, "type", None) or "error"
+            message = error.get("message") or str(exc.message)
+            raise ProviderError(f"provider returned {exc.status_code} {kind}: "
+                                f"{message[:300]}") from exc
 
         usage = response.usage
         if response.stop_reason != "end_turn":

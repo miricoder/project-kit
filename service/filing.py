@@ -29,17 +29,21 @@ def propose(model: Model, request: Dict[str, Any], on_usage=None) -> Proposal:
     """`on_usage(input_tokens, output_tokens)` is called for every reply, including a
     rejected first one, so spend is counted even when the batch is thrown away."""
     tokens_in = tokens_out = 0
+    last_problem = "model output failed the schema check twice"
     for _ in range(2):
         try:
             reply = model.propose(request)
         except ProviderError as exc:
             raise ProviderUnavailable(str(exc)) from exc
-        except ModelOutputError:
+        except ModelOutputError as exc:
+            last_problem = f"model output unreadable: {exc}"
             continue
         tokens_in += reply.input_tokens
         tokens_out += reply.output_tokens
         if on_usage:
             on_usage(reply.input_tokens, reply.output_tokens)
-        if not shape_problems(reply.ops):
+        problems = shape_problems(reply.ops)
+        if not problems:
             return Proposal(reply.ops, tokens_in, tokens_out)
-    raise SchemaFailure("model output failed the schema check twice")
+        last_problem = f"model output broke the op schema: {problems[0]}"
+    raise SchemaFailure(last_problem)

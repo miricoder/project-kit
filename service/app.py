@@ -37,8 +37,12 @@ class FileRequest(BaseModel):
     context: Dict[str, Any] = {}
 
 
-def _error(status: int, message: str, headers: Optional[Dict[str, str]] = None) -> JSONResponse:
-    return JSONResponse({"error": message}, status_code=status, headers=headers)
+def _error(status: int, message: str, headers: Optional[Dict[str, str]] = None,
+           detail: Optional[str] = None) -> JSONResponse:
+    body = {"error": message}
+    if detail:
+        body["detail"] = detail
+    return JSONResponse(body, status_code=status, headers=headers)
 
 
 def _bearer(request: Request) -> Optional[str]:
@@ -119,10 +123,11 @@ def create_app(model: Optional[Model] = None, limits: Optional[Limits] = None,
 
         try:
             ops = propose(model, body.model_dump(), on_usage=count).ops
-        except ProviderUnavailable:
-            return done(_error(503, "model provider unavailable"))
-        except SchemaFailure:
-            return done(_error(502, "model output failed the schema check twice"))
+        except ProviderUnavailable as exc:
+            return done(_error(503, "model provider unavailable", detail=str(exc)))
+        except SchemaFailure as exc:
+            return done(_error(502, "model output failed the schema check twice",
+                               detail=str(exc)))
 
         ops_kinds.update(op["op"] for op in ops)
         return done(JSONResponse({
