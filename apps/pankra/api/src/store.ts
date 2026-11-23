@@ -2,6 +2,7 @@ import type {
   AuditEntry,
   Credential,
   CredentialProvider,
+  Edge,
   NodeSummary,
   Profile,
   Provider,
@@ -9,6 +10,7 @@ import type {
   Result,
   Run,
   Session,
+  SyncReport,
 } from '@pankra/shared';
 
 /** Persistence for the training API. MongoDB implements it once the owner's cluster exists. */
@@ -38,6 +40,17 @@ export interface Store {
   /** Monthly spending cap in USD per provider; undefined means no cap. */
   getCap(userId: string, provider: Provider): number | undefined;
   setCap(userId: string, provider: Provider, monthlyUsd: number): void;
+  listEdges(): Edge[];
+  saveEdges(edges: Edge[]): void;
+  getRegistryState(): RegistryState;
+  setRegistryState(state: RegistryState): void;
+}
+
+export interface RegistryState {
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  lastReport: SyncReport | null;
 }
 
 /** Compare dotted versions numerically: 0.10.0 > 0.9.1. */
@@ -61,6 +74,8 @@ export class MemoryStore implements Store {
   private runs = new Map<string, Run>();
   private results = new Map<string, Result>();
   private caps = new Map<string, number>();
+  private edges: Edge[] = [];
+  private registryState: RegistryState = { lastAttemptAt: null, lastSuccessAt: null, lastError: null, lastReport: null };
 
   getProfile(userId: string): Profile | undefined {
     const p = this.profiles.get(userId);
@@ -170,6 +185,22 @@ export class MemoryStore implements Store {
 
   setCap(userId: string, provider: Provider, monthlyUsd: number): void {
     this.caps.set(`${userId}:${provider}`, monthlyUsd);
+  }
+
+  listEdges(): Edge[] {
+    return structuredClone(this.edges);
+  }
+
+  saveEdges(edges: Edge[]): void {
+    this.edges = structuredClone(edges);
+  }
+
+  getRegistryState(): RegistryState {
+    return structuredClone(this.registryState);
+  }
+
+  setRegistryState(state: RegistryState): void {
+    this.registryState = structuredClone(state);
   }
 
   /** Everything stored, for tests that check what was (and was not) written. */

@@ -1,7 +1,11 @@
 import Constants from 'expo-constants';
 import type {
   CredentialStatus,
+  Edge,
   NodeSummary,
+  RegistryNode,
+  RegistryStatus,
+  SyncReport,
   Profile,
   Provider,
   Result,
@@ -85,7 +89,14 @@ export const api = {
   logResult: (sessionId: string, parts: ResultPart[], notes?: string) =>
     post<Result>('/results', { sessionId, parts, notes }),
   result: (id: string) => get<Result>(`/results/${id}`),
+  nodes: () => get<GraphNode[]>('/nodes'),
+  edges: () => get<Edge[]>('/edges'),
+  registryStatus: () => get<RegistryStatus>('/registry/status'),
+  syncRegistry: () => post<SyncReport>('/registry/sync', {}),
 };
+
+/** A node as GET /nodes serves it. */
+export type GraphNode = NodeSummary & Pick<RegistryNode, 'vision' | 'tools' | 'input' | 'steps' | 'skills' | 'agents'>;
 
 /** Local calendar date as YYYY-MM-DD. */
 export function today(): string {

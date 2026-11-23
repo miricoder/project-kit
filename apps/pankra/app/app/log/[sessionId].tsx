@@ -5,18 +5,6 @@ import type { CredentialStatus, NodeSummary, Result, ResultPart, Run } from '@pa
 import { api } from '../../src/api';
 import { RunPanel } from '../../src/RunPanel';
 
-/**
- * result-analyzer as the run panel shows it. Slice 6 (registry sync) replaces this with the
- * node served by GET /nodes.
- */
-const RESULT_ANALYZER: NodeSummary = {
-  kind: 'skill',
-  name: 'result-analyzer',
-  version: '0.1.0',
-  description: 'Compares what you did with the plan: key feedback and 2 to 3 tips.',
-  providers: { claude: { model: 'claude-sonnet-5-5' }, gpt: { model: 'gpt-5' } },
-  requires: ['apiKey'],
-};
 
 interface Row {
   label: string;
@@ -61,11 +49,16 @@ export default function Log() {
   const [notes, setNotes] = useState('');
   const [result, setResult] = useState<Result | null>(null);
   const [credentials, setCredentials] = useState<CredentialStatus[]>([]);
+  const [analyzer, setAnalyzer] = useState<NodeSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       api.credentials().then(setCredentials).catch(() => setCredentials([]));
+      api
+        .nodes()
+        .then((nodes) => setAnalyzer(nodes.find((n) => n.kind === 'skill' && n.name === 'result-analyzer') ?? null))
+        .catch(() => setAnalyzer(null));
     }, []),
   );
 
@@ -140,12 +133,16 @@ export default function Log() {
       ) : (
         <>
           <Text style={styles.saved}>Result saved.</Text>
-          <RunPanel
-            node={RESULT_ANALYZER}
-            credentials={credentials}
-            input={{ sessionId, resultId: result.id }}
-            onResult={onRun}
-          />
+          {analyzer ? (
+            <RunPanel
+              node={analyzer}
+              credentials={credentials}
+              input={{ sessionId, resultId: result.id }}
+              onResult={onRun}
+            />
+          ) : (
+            <Text>result-analyzer is not loaded yet: sync the registry in Settings to get feedback.</Text>
+          )}
         </>
       )}
       {result?.feedback ? (

@@ -108,6 +108,9 @@ export interface RegistryNode extends NodeSummary {
   output?: JSONSchema;
   /** Agents: the skills they run, in order. */
   steps?: Array<{ skill: string; order: number }>;
+  /** Plugins: what they bundle. */
+  skills?: string[];
+  agents?: string[];
   retired: boolean;
 }
 
@@ -156,4 +159,31 @@ export interface Result {
   uploadIds: string[];
   feedback?: ResultFeedback;
   createdAt: string;
+}
+
+/** A graph edge from the registry index: `contains`, `calls` (numbered), `uses`, `runsOn`. */
+export interface Edge {
+  from: string; // "<kind>:<name>", e.g. "agent:weekly-coach" or "tool:sessions.read"
+  to: string;
+  type: 'contains' | 'calls' | 'uses' | 'runsOn';
+  order?: number;
+}
+
+export interface SyncReport {
+  ok: boolean;
+  added: number;
+  updated: number;
+  retired: number;
+  skipped: Array<{ kind: string; name: string; reason: string }>;
+  error?: string;
+}
+
+export interface RegistryStatus {
+  repo: string;
+  ref: string;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  lastReport: SyncReport | null;
+  nodes: number;
 }

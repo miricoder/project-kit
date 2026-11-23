@@ -1,13 +1,21 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { shiftSchedule, type CredentialStatus, type Result, type Session } from '@pankra/shared';
-import type { Store } from './store.ts';
+import {
+  shiftSchedule,
+  type CredentialStatus,
+  type RegistryNode,
+  type RegistryStatus,
+  type Result,
+  type Session,
+} from '@pankra/shared';
+import { compareVersions, type Store } from './store.ts';
 import { Vault, isExpired } from './vault.ts';
 import { claudeAdapter } from './providers/claude.ts';
 import { gptAdapter } from './providers/gpt.ts';
 import type { FetchLike } from './providers/types.ts';
 import { runNode, spentThisMonth } from './runner.ts';
+import { syncRegistry, type RegistryConfig } from './registry.ts';
 
 export interface AppDeps {
   store: Store;
@@ -17,9 +25,13 @@ export interface AppDeps {
   vaultKey?: string;
   /** The clock; injected so retention can be tested. */
   now?: () => Date;
-  /** HTTP client for the provider APIs; injected so tests stand in for the providers. */
+  /** HTTP client for the provider APIs and GitHub; injected so tests stand in for them. */
   fetch?: FetchLike;
+  /** Where the registry is pulled from (REGISTRY_REPO, REGISTRY_REF). */
+  registry?: RegistryConfig;
 }
+
+export const DEFAULT_REGISTRY: RegistryConfig = { repo: 'miricoder/project-kit', ref: 'main' };
 
 const ProviderParam = z.object({ provider: z.enum(['claude', 'gpt']) });
 const CapBody = z.object({ monthlyUsd: z.number().nonnegative().max(10_000) });
@@ -101,6 +113,53 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   const vault = deps.vaultKey ? new Vault(deps.vaultKey) : undefined;
   const fetchImpl = deps.fetch ?? fetch;
   const adapters = { claude: claudeAdapter(fetchImpl), gpt: gptAdapter(fetchImpl) };
+
+  // Registry: skills, agents and plugins pulled from project-kit's registry/ by the API.
+  const registry = deps.registry ?? DEFAULT_REGISTRY;
+
+  app.post('/api/v1/registry/sync', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const report = await syncRegistry({ store: deps.store, fetch: fetchImpl, config: registry, now, auditUserId: userId });
+    return report.ok ? report : reply.code(502).send(report);
+  });
+
+  app.get('/api/v1/registry/status', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const state = deps.store.getRegistryState();
+    const status: RegistryStatus = {
+      repo: registry.repo,
+      ref: registry.ref,
+      ...state,
+      nodes: deps.store.listNodes().filter((n) => !n.retired).length,
+    };
+    return status;
+  });
+
+  // The graph: the latest version of every node still in the registry, and the edges.
+  app.get('/api/v1/nodes', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const latest = new Map<string, RegistryNode>();
+    for (const n of deps.store.listNodes()) {
+      if (n.retired) continue;
+      const key = `${n.kind}:${n.name}`;
+      const have = latest.get(key);
+      if (!have || compareVersions(n.version, have.version) > 0) latest.set(key, n);
+    }
+    return [...latest.values()]
+      .sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
+      .map(({ kind, name, version, description, providers, requires, vision, tools, input, steps, skills, agents }) => ({
+        kind, name, version, description, providers, requires, vision, tools, input, steps, skills, agents,
+      }));
+  });
+
+  app.get('/api/v1/edges', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    return deps.store.listEdges();
+  });
 
   // Runs: a skill or agent on a chosen provider. Refusals happen before any provider call.
   app.post('/api/v1/runs', async (req, reply) => {

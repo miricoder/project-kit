@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
-import type { CredentialStatus, Provider, Retention } from '@pankra/shared';
+import type { CredentialStatus, Provider, RegistryStatus, Retention } from '@pankra/shared';
 import { api } from '../src/api';
 
 const PROVIDERS: Array<{ id: Provider; name: string }> = [
@@ -149,6 +149,62 @@ function CapRow({ provider, name, monthlyUsd, spentUsd, onChange }: {
 
 type Caps = Awaited<ReturnType<typeof api.caps>>;
 
+/** Registry: where skills come from, when they last synced, and Sync now. */
+function RegistryCard() {
+  const [status, setStatus] = useState<RegistryStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const load = useCallback(() => {
+    api.registryStatus().then(setStatus).catch((e: Error) => setMessage(e.message));
+  }, []);
+  useFocusEffect(load);
+
+  async function syncNow() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const r = await api.syncRegistry();
+      const skipped = r.skipped.map((s) => `${s.name} (${s.reason})`).join(', ');
+      setMessage(`Synced: ${r.added} added, ${r.updated} updated, ${r.retired} retired${skipped ? `; skipped ${skipped}` : ''}.`);
+    } catch (e) {
+      setMessage((e as Error).message);
+    } finally {
+      setBusy(false);
+      load();
+    }
+  }
+
+  const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : 'never');
+  return (
+    <View style={styles.card}>
+      <Text style={styles.label} accessibilityRole="header">Skills registry</Text>
+      {status ? (
+        <>
+          <Text style={styles.small}>
+            {status.repo} at {status.ref} · {status.nodes} nodes
+          </Text>
+          <Text>Last successful sync: {when(status.lastSuccessAt)}</Text>
+          {status.lastError ? (
+            <Text style={styles.error}>
+              Last attempt {when(status.lastAttemptAt)} failed: {status.lastError}. Current skills are kept.
+            </Text>
+          ) : null}
+        </>
+      ) : null}
+      {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
+      <Pressable
+        accessibilityRole="button"
+        disabled={busy}
+        accessibilityState={{ disabled: busy }}
+        onPress={syncNow}
+        style={[styles.button, busy && styles.disabled]}
+      >
+        <Text style={styles.buttonText}>{busy ? 'Syncing…' : 'Sync now'}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 /** Settings: LLM keys, encrypted on the server, kept for the period chosen; monthly caps. */
 export default function Settings() {
   const [statuses, setStatuses] = useState<CredentialStatus[]>([]);
@@ -184,6 +240,7 @@ export default function Settings() {
           />
         ))}
       </View>
+      <RegistryCard />
     </ScrollView>
   );
 }
