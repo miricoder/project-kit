@@ -1,0 +1,6 @@
+node_modules/
+.expo/
+dist/
+app/src/demo/registry.json
+dist-preview/
+dist-web/

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Refuses a commit that adds a secret. Turn it on once per clone:
+#   git config core.hooksPath .githooks
+# Real values go in .env (ignored by git) locally and in the host's secret settings
+# (Vercel, Render) when deployed; .env.example holds placeholders only.
+set -euo pipefail
+
+patterns=(
+  'mongodb(\+srv)?://[^:/@<[:space:]]+:[^@<[:space:]]{4,}@'   # connection string with a password
+  'postgres(ql)?://[^:/@<[:space:]]+:[^@<[:space:]]{4,}@'
+  'sk-ant-[A-Za-z0-9_-]{20,}'                                 # Anthropic key
+  'sk-(proj-)?[A-Za-z0-9_-]{32,}'                             # OpenAI key
+  're_[A-Za-z0-9]{8}_[A-Za-z0-9]{16,}'                        # Resend key
+  'AKIA[0-9A-Z]{16}'                                          # AWS access key
+  'gh[pousr]_[A-Za-z0-9]{36,}'                                # GitHub token
+  '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+)
+regex=$(IFS='|'; echo "${patterns[*]}")
+
+# Only lines this commit adds; placeholders such as <db-password> or PASSWORD pass.
+hits=$(git diff --cached -U0 --no-color --diff-filter=ACM | grep -E '^\+[^+]' | grep -En "$regex" | grep -vE 'PASSWORD@|<[a-z-]+>' || true)
+blocked=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)\.env($|\.)' | grep -vE '\.example$' || true)
+
+if [[ -n "$hits" || -n "$blocked" ]]; then
+  echo "pre-commit: this commit looks like it contains a secret, so it was stopped." >&2
+  [[ -n "$blocked" ]] && echo "  .env files must not be committed: $blocked" >&2
+  # Show where, never what: the matched text is masked.
+  [[ -n "$hits" ]] && echo "$hits" | sed -E 's/(.{0,24}).*/  added line: \1… (rest hidden)/' >&2
+  echo "Move the value to .env or the host's secret settings and commit a placeholder." >&2
+  exit 1
+fi

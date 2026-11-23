@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "cd apps/pankra && npm ci",
+  "buildCommand": "cd apps/pankra && npm run build:web",
+  "outputDirectory": "apps/pankra/dist-web",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

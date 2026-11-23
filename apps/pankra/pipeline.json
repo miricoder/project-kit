@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "project": "pankra",
+  "created_at": "2026-11-23T15:51:03+00:00",
+  "updated_at": "2026-11-23T18:05:20+00:00",
+  "mode": "yolo",
+  "budget": {
+    "max_usd": 25.0,
+    "spent_usd": 0.0
+  },
+  "phases": {
+    "ideate": {
+      "status": "complete",
+      "artifacts": [
+        "docs/research.md"
+      ],
+      "completed_at": "2026-11-23T15:51:03+00:00"
+    },
+    "proposal": {
+      "status": "complete",
+      "artifacts": [
+        "docs/proposal.md"
+      ],
+      "completed_at": "2026-11-23T15:51:03+00:00"
+    },
+    "design": {
+      "status": "complete",
+      "artifacts": [
+        "docs/spec.md",
+        "docs/acceptance.feature"
+      ],
+      "completed_at": "2026-11-23T15:51:03+00:00"
+    },
+    "handover": {
+      "status": "skipped",
+      "artifacts": [],
+      "skipped_reason": "judge gate waived: Owner skipped the judge panel and approved the design directly",
+      "skipped_at": "2026-11-23T16:11:35+00:00"
+    },
+    "verdict": {
+      "status": "skipped",
+      "artifacts": [],
+      "skipped_reason": "judge gate waived: Owner skipped the judge panel and approved the design directly",
+      "skipped_at": "2026-11-23T16:11:35+00:00"
+    },
+    "initiate": {
+      "status": "complete",
+      "artifacts": [
+        "docs/backlog.md"
+      ],
+      "completed_at": "2026-11-23T16:13:36+00:00"
+    },
+    "build": {
+      "status": "in progress",
+      "artifacts": []
+    },
+    "devops": {
+      "status": "not started",
+      "artifacts": []
+    },
+    "test": {
+      "status": "not started",
+      "artifacts": []
+    },
+    "security": {
+      "status": "not started",
+      "artifacts": []
+    },
+    "launch": {
+      "status": "not started",
+      "artifacts": []
+    }
+  },
+  "gates": {
+    "judge": {
+      "status": "complete",
+      "ruling": "WAIVED",
+      "round": 0,
+      "open_fixes": [],
+      "decided_at": "2026-11-23T16:11:35+00:00",
+      "waived_reason": "Owner skipped the judge panel and approved the design directly"
+    },
+    "test": {
+      "status": "not started",
+      "ruling": null,
+      "round": 0,
+      "open_fixes": [],
+      "decided_at": null
+    },
+    "security": {
+      "status": "not started",
+      "ruling": null,
+      "round": 0,
+      "open_fixes": [],
+      "decided_at": null
+    }
+  },
+  "rounds": [
+    {
+      "gate": "judge",
+      "round": 0,
+      "ruling": "WAIVED",
+      "open_fixes": [],
+      "at": "2026-11-23T16:11:35+00:00",
+      "reason": "Owner skipped the judge panel and approved the design directly"
+    }
+  ],
+  "resume_point": "run /build",
+  "imports": [
+    {
+      "from": "/home/user/project-kit/apps/pankra/docs",
+      "artifacts": [
+        "docs/acceptance.feature",
+        "docs/proposal.md",
+        "docs/research.md",
+        "docs/spec.md"
+      ],
+      "copied": [],
+      "at": "2026-11-23T15:51:03+00:00"
+    }
+  ],
+  "build": {
+    "test_command": "npm test --silent",
+    "tests": [
+      "tests"
+    ]
+  },
+  "slices": {
+    "1": {
+      "status": "complete",
+      "name": "Foundation and the Today card",
+      "started_at": "2026-11-23T16:13:59+00:00",
+      "completed_at": "2026-11-23T16:16:58+00:00"
+    },
+    "2": {
+      "status": "complete",
+      "name": "Add class and the schedule shifter",
+      "started_at": "2026-11-23T17:31:34+00:00",
+      "completed_at": "2026-11-23T17:33:29+00:00"
+    },
+    "3": {
+      "status": "complete",
+      "name": "Key vault and retention",
+      "started_at": "2026-11-23T17:33:42+00:00",
+      "completed_at": "2026-11-23T17:35:10+00:00"
+    },
+    "4": {
+      "status": "complete",
+      "name": "Skill runner and provider adapters",
+      "started_at": "2026-11-23T17:35:39+00:00",
+      "completed_at": "2026-11-23T17:40:02+00:00"
+    },
+    "5": {
+      "status": "complete",
+      "name": "Log results with feedback",
+      "started_at": "2026-11-23T17:40:25+00:00",
+      "completed_at": "2026-11-23T17:42:53+00:00"
+    },
+    "6": {
+      "status": "complete",
+      "name": "Registry sync",
+      "started_at": "2026-11-23T17:43:02+00:00",
+      "completed_at": "2026-11-23T17:45:49+00:00"
+    },
+    "7": {
+      "status": "complete",
+      "name": "Skills graph screen",
+      "started_at": "2026-11-23T17:46:25+00:00",
+      "completed_at": "2026-11-23T17:51:11+00:00"
+    },
+    "8": {
+      "status": "complete",
+      "name": "Data in: screenshots, races and Strava",
+      "started_at": "2026-11-23T17:51:27+00:00",
+      "completed_at": "2026-11-23T17:57:03+00:00"
+    },
+    "9": {
+      "status": "blocked",
+      "name": "Fuel and share",
+      "started_at": "2026-11-23T17:57:19+00:00",
+      "blocked_reason": "docs/acceptance.feature has no scenarios for Fuel and Share (proposal phase 5); the code and 7 unit tests are built, but pk cannot check the slice until the owner approves scenarios for it"
+    },
+    "10": {
+      "status": "blocked",
+      "name": "iPhone app",
+      "started_at": "2026-11-23T18:01:38+00:00",
+      "blocked_reason": "built and its scenario passes at the API level; the Xcode install itself needs the owner: a bundle ID (PANKRA_BUNDLE_ID), the deployed https API URL, and the owner's Mac, Xcode and iPhone (docs/ios-install.md)"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "pankra",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "api",
+    "app"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/shared && tsc -p api && tsc -p app",
+    "build:web": "node scripts/build-web.mjs"
+  },
+  "devDependencies": {
+    "@types/cytoscape": "^3.21.9",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
