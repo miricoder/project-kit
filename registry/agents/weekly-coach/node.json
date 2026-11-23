@@ -2,7 +2,7 @@
   "kind": "agent",
   "name": "weekly-coach",
   "version": "0.1.0",
-  "description": "Weekly check-in end to end: review and log, fit in new sessions, write the updated cards, then build the music for the next session.",
+  "description": "Weekly check-in end to end: review the week and log results, fit in new sessions, then write the updated cards.",
   "apps": [
     "pankra"
   ],
@@ -15,13 +15,11 @@
     }
   },
   "requires": [
-    "apiKey",
-    "spotifyToken"
+    "apiKey"
   ],
   "steps": [
     "purposed-convo-workout-readjust",
     "schedule-shifter",
-    "workout-whiteboard",
-    "music-curator"
+    "workout-whiteboard"
   ]
 }

@@ -5,6 +5,10 @@ description: Build the music for a session — a tempo band per section, running
 
 # Music curator
 
+> **Future R&D.** Not in PANKRA v1 and not in any plugin yet. Which service (Spotify,
+> which needs Premium for a developer app, or Apple Music, which needs the paid Apple
+> Developer Program) is still to be decided.
+
 ## Steps
 
 1. Read the session (`sessions.read`) and the athlete's music preferences from the profile

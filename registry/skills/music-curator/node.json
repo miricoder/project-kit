@@ -2,7 +2,7 @@
   "kind": "skill",
   "name": "music-curator",
   "version": "0.1.0",
-  "description": "Builds the music for a session: tempo band per section, running cadence, and a playlist from the connected service with timer ducking points.",
+  "description": "Future R&D, not in v1 or any plugin yet. Builds session music: tempo band per section, running cadence, a playlist from the connected service, timer ducking points.",
   "apps": [
     "pankra"
   ],
