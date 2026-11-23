@@ -66,24 +66,34 @@ const resultAnalyzer: NodeContract = {
 
 const MAX_IMAGES = 4;
 
+/** The images behind `input.uploadIds`, each checked to belong to the user. */
+async function uploadedImages(
+  store: Store,
+  storage: ObjectStorage,
+  userId: string,
+  input: Record<string, unknown>,
+): Promise<RunImage[] | string> {
+  const ids = Array.isArray(input.uploadIds) ? input.uploadIds.map(String) : [];
+  if (ids.length > MAX_IMAGES) return `At most ${MAX_IMAGES} images per run`;
+  const images: RunImage[] = [];
+  for (const id of ids) {
+    const upload = store.getUpload(userId, id);
+    if (!upload) return `No upload ${id}`;
+    const object = await storage.get(upload.storageKey);
+    if (!object) return `The image for upload ${id} is missing`;
+    images.push({ mime: object.mime, data: object.bytes });
+  }
+  return images;
+}
+
 /**
  * screenshot-reader: reads uploaded images; its output becomes the upload's `extracted`
  * values, parsed in code, and is never saved as a race until the athlete confirms.
  */
 const screenshotReader: NodeContract = {
   async images(store, storage, userId, input) {
-    const ids = Array.isArray(input.uploadIds) ? input.uploadIds.map(String) : [];
-    if (ids.length === 0) return 'Upload an image first';
-    if (ids.length > MAX_IMAGES) return `At most ${MAX_IMAGES} images per run`;
-    const images: RunImage[] = [];
-    for (const id of ids) {
-      const upload = store.getUpload(userId, id);
-      if (!upload) return `No upload ${id}`;
-      const object = await storage.get(upload.storageKey);
-      if (!object) return `The image for upload ${id} is missing`;
-      images.push({ mime: object.mime, data: object.bytes });
-    }
-    return images;
+    const images = await uploadedImages(store, storage, userId, input);
+    return Array.isArray(images) && images.length === 0 ? 'Upload an image first' : images;
   },
   persist(store, userId, run, input) {
     const out = run.output as { kind: string; data: Record<string, unknown>; uncertain?: Array<{ field?: string; seen?: string }> };
@@ -100,9 +110,26 @@ const screenshotReader: NodeContract = {
   },
 };
 
+/** meal-planner: the fridge (photo or list) with the day's sessions and the profile. */
+const mealPlanner: NodeContract = {
+  context(store, userId, input) {
+    const date = String(input.date ?? '');
+    const hasPhoto = Array.isArray(input.uploadIds) && input.uploadIds.length > 0;
+    const hasList = typeof input.fridgeText === 'string' && input.fridgeText.trim().length > 0;
+    if (!hasPhoto && !hasList) return 'Add a fridge photo or a list of what is in the fridge';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'date must look like 2026-11-25';
+    return {
+      sessions: store.listSessions(userId, date, date),
+      profile: store.getProfile(userId) ?? null,
+    };
+  },
+  images: uploadedImages,
+};
+
 export const CONTRACTS: Record<string, NodeContract> = {
   'skill:result-analyzer': resultAnalyzer,
   'skill:screenshot-reader': screenshotReader,
+  'skill:meal-planner': mealPlanner,
 };
 
 export function contractFor(node: Pick<RegistryNode, 'kind' | 'name'>): NodeContract {

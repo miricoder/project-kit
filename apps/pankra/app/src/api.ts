@@ -6,6 +6,7 @@ import type {
   Race,
   RaceAnalysis,
   RaceDraft,
+  PostTheme,
   Upload,
   UploadKind,
   Edge,
@@ -107,6 +108,9 @@ export const api = {
     get<RaceAnalysis>(`/races/${id}/analysis${targetS ? `?targetS=${targetS}` : ''}`),
   activities: () => get<Activity[]>('/activities'),
   stravaConnectUrl: () => get<{ url: string }>('/strava/connect'),
+  /** The day's workout as a 1080 x 1350 PNG. */
+  postUrl: (sessionId: string, theme: PostTheme) =>
+    `${API_URL}/sessions/${encodeURIComponent(sessionId)}/post.png?theme=${theme}`,
 };
 
 /**
@@ -116,7 +120,8 @@ export const api = {
 async function uploadScreenshot(
   image: { uri: string; mimeType?: string | null; fileName?: string | null },
   kind: UploadKind,
-  provider: Provider,
+  /** Read it with screenshot-reader on this provider; omit to only store it. */
+  provider?: Provider,
 ): Promise<Upload> {
   const form = new FormData();
   const mime = image.mimeType ?? 'image/jpeg';
@@ -127,7 +132,7 @@ async function uploadScreenshot(
     // React Native's FormData takes a file reference instead of a Blob.
     form.append('image', { uri: image.uri, name, type: mime } as unknown as Blob);
   }
-  const res = await fetch(`${API_URL}/uploads?kind=${kind}&provider=${provider}`, {
+  const res = await fetch(`${API_URL}/uploads?kind=${kind}${provider ? `&provider=${provider}` : ''}`, {
     method: 'POST',
     credentials: 'include',
     body: form,

@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import {
   analyzeRace,
+  buildCard,
+  postFromCard,
+  postSvg,
   shiftSchedule,
   type CredentialStatus,
   type Race,
@@ -23,6 +26,7 @@ import { syncRegistry, type RegistryConfig } from './registry.ts';
 import { MemoryStorage, type ObjectStorage } from './storage.ts';
 import { authorizeUrl, connect, importActivity, type StravaConfig } from './strava.ts';
 import multipart from '@fastify/multipart';
+import { Resvg } from '@resvg/resvg-js';
 
 export interface AppDeps {
   store: Store;
@@ -99,6 +103,23 @@ const StravaEvent = z.object({
   event_time: z.number().optional(),
   updates: z.record(z.string()).optional(),
 });
+
+const PostThemeSchema = z.enum(['whiteboard', 'game-inspired', 'clean']);
+const RenderBody = z.object({
+  theme: PostThemeSchema,
+  post: z.object({
+    date: z.string().max(40).optional(),
+    title: z.string().min(1).max(200),
+    sections: z
+      .array(z.object({ label: z.string().max(100), lines: z.array(z.string().max(300)).max(40) }))
+      .max(20),
+  }),
+});
+
+/** SVG to PNG at the SVG's own size, with the host's fonts. */
+function renderPng(svg: string): Buffer {
+  return new Resvg(svg, { font: { loadSystemFonts: true, defaultFontFamily: 'DejaVu Sans' } }).render().asPng();
+}
 
 const ResultBody = z.object({
   sessionId: z.string().min(1),
@@ -474,6 +495,31 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     const targetS = q.data.targetS ?? deps.store.getProfile(userId)?.raceTargetS;
     if (!targetS) return reply.code(400).send({ error: 'Set a race target first, e.g. 60:00' });
     return analyzeRace(race, targetS);
+  });
+
+  // Share: the day's workout as a 1080 x 1350 PNG for Instagram.
+  app.get('/api/v1/sessions/:id/post.png', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const q = z.object({ theme: PostThemeSchema.default('whiteboard') }).safeParse(req.query);
+    if (!q.success) return reply.code(400).send({ error: errorText(q.error) });
+    const session = deps.store.getSession(userId, (req.params as { id: string }).id);
+    if (!session) return reply.code(404).send({ error: 'No such session' });
+    const profile = deps.store.getProfile(userId);
+    if (!profile) return reply.code(409).send({ error: 'Set up the profile first' });
+    const png = renderPng(postSvg(postFromCard(buildCard(session, profile)), q.data.theme));
+    return reply
+      .type('image/png')
+      .header('content-disposition', `attachment; filename="pankra-${session.date}.png"`)
+      .send(png);
+  });
+
+  app.post('/api/v1/posts/render', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const body = RenderBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
+    return reply.type('image/png').send(renderPng(postSvg(body.data.post, body.data.theme)));
   });
 
   app.get('/api/v1/activities', async (req, reply) => {

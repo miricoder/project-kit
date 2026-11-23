@@ -26,6 +26,9 @@ export default function Today() {
       <Link href="/races" style={styles.link}>
         Races ›
       </Link>
+      <Link href="/fuel" style={styles.link}>
+        Fuel ›
+      </Link>
       <Link href="/paces" style={styles.link}>
         Paces ›
       </Link>
@@ -43,6 +46,9 @@ export default function Today() {
           <WhiteboardCard card={card} />
           <Link href={{ pathname: '/log/[sessionId]', params: { sessionId: id } }} style={styles.link}>
             Log result ›
+          </Link>
+          <Link href={{ pathname: '/share/[sessionId]', params: { sessionId: id } }} style={styles.link}>
+            Share as a post ›
           </Link>
         </View>
       ))}
