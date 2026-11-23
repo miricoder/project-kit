@@ -62,8 +62,8 @@ Feature: LLM providers and keys
     And no request is sent to any provider
 
   Scenario: expired key is deleted
-    Given a Claude key saved on 2026-11-23 with 7-day retention
-    When the time is 2026-11-30 at 00:15
+    Given a Claude key saved at 2026-11-23 09:00 with 7-day retention
+    When the time is 2026-11-30 09:15
     Then no Claude key is stored
     And the audit log has a "keyDeleted" entry
     And the result-analyzer node shows amber for claude
