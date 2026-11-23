@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "project": "pankra",
+  "created_at": "2026-11-23T16:16:07+00:00",
+  "updated_at": "2026-11-23T16:17:05+00:00",
+  "mode": "auto",
+  "budget": {
+    "max_usd": 25.0,
+    "spent_usd": 0.0
+  },
+  "phases": {
+    "ideate": {
+      "status": "complete",
+      "artifacts": [
+        "docs/research.md"
+      ],
+      "completed_at": "2026-11-23T16:16:07+00:00"
+    },
+    "proposal": {
+      "status": "complete",
+      "artifacts": [
+        "docs/proposal.md"
+      ],
+      "completed_at": "2026-11-23T16:16:07+00:00"
+    },
+    "design": {
+      "status": "complete",
+      "artifacts": [
+        "docs/spec.md",
+        "docs/acceptance.feature"
+      ],
+      "completed_at": "2026-11-23T16:16:07+00:00"
+    },
+    "handover": {
+      "status": "skipped",
+      "artifacts": [],
+      "skipped_reason": "judge gate waived: owner-reviewed spec",
+      "skipped_at": "2026-11-23T16:16:07+00:00"
+    },
+    "verdict": {
+      "status": "skipped",
+      "artifacts": [],
+      "skipped_reason": "judge gate waived: owner-reviewed spec",
+      "skipped_at": "2026-11-23T16:16:07+00:00"
+    },
+    "initiate": {
+      "status": "complete",
+      "artifacts": [
+        "docs/backlog.md"
+      ],
+      "completed_at": "2026-11-23T16:17:05+00:00"
+    },
+    "build": {
+      "status": "not started",
+      "artifacts": []
+    },
+    "devops": {
+      "status": "not started",
+      "artifacts": []
+    },
+    "test": {
+      "status": "not started",
+      "artifacts": []
+    },
+    "security": {
+      "status": "not started",
+      "artifacts": []
+    },
+    "launch": {
+      "status": "not started",
+      "artifacts": []
+    }
+  },
+  "gates": {
+    "judge": {
+      "status": "complete",
+      "ruling": "WAIVED",
+      "round": 0,
+      "open_fixes": [],
+      "decided_at": "2026-11-23T16:16:07+00:00",
+      "waived_reason": "owner-reviewed spec"
+    },
+    "test": {
+      "status": "not started",
+      "ruling": null,
+      "round": 0,
+      "open_fixes": [],
+      "decided_at": null
+    },
+    "security": {
+      "status": "not started",
+      "ruling": null,
+      "round": 0,
+      "open_fixes": [],
+      "decided_at": null
+    }
+  },
+  "rounds": [
+    {
+      "gate": "judge",
+      "round": 0,
+      "ruling": "WAIVED",
+      "open_fixes": [],
+      "at": "2026-11-23T16:16:07+00:00",
+      "reason": "owner-reviewed spec"
+    }
+  ],
+  "resume_point": "run /build",
+  "imports": [
+    {
+      "from": "/home/user/project-kit/apps/pankra/docs",
+      "artifacts": [
+        "docs/acceptance.feature",
+        "docs/proposal.md",
+        "docs/research.md",
+        "docs/spec.md"
+      ],
+      "copied": [],
+      "at": "2026-11-23T16:16:07+00:00"
+    }
+  ]
+}
