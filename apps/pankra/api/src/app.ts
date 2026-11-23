@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { shiftSchedule, type CredentialStatus, type Session } from '@pankra/shared';
+import { shiftSchedule, type CredentialStatus, type Result, type Session } from '@pankra/shared';
 import type { Store } from './store.ts';
 import { Vault, isExpired } from './vault.ts';
 import { claudeAdapter } from './providers/claude.ts';
@@ -32,6 +32,25 @@ const RunBody = z.object({
   provider: z.enum(['claude', 'gpt']),
   model: z.string().min(1).max(100).optional(),
   input: z.record(z.unknown()),
+});
+
+const ResultBody = z.object({
+  sessionId: z.string().min(1),
+  parts: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(100),
+        loadKg: z.number().nonnegative().optional(),
+        reps: z.number().int().nonnegative().optional(),
+        timeS: z.number().positive().optional(),
+        distanceM: z.number().nonnegative().optional(),
+        speedKmh: z.number().positive().optional(),
+        rpe: z.number().min(1).max(10).optional(),
+      }),
+    )
+    .min(1)
+    .max(100),
+  notes: z.string().max(5000).optional(),
 });
 
 const CredentialParams = z.object({ provider: z.enum(['claude', 'gpt']) });
@@ -212,6 +231,36 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       });
     }
     return reply.code(204).send();
+  });
+
+  // Results: typed against a session; result-analyzer's feedback is kept with them.
+  app.post('/api/v1/results', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const body = ResultBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
+    if (!deps.store.getSession(userId, body.data.sessionId)) {
+      return reply.code(404).send({ error: 'No such session' });
+    }
+    const result: Result = {
+      id: randomUUID(),
+      userId,
+      sessionId: body.data.sessionId,
+      parts: body.data.parts,
+      notes: body.data.notes,
+      uploadIds: [],
+      createdAt: now().toISOString(),
+    };
+    deps.store.saveResult(result);
+    return result;
+  });
+
+  app.get('/api/v1/results/:id', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const result = deps.store.getResult(userId, (req.params as { id: string }).id);
+    if (!result) return reply.code(404).send({ error: 'No such result' });
+    return result;
   });
 
   app.get('/api/v1/profile', async (req, reply) => {

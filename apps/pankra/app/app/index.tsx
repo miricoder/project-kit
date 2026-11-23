@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, Stack } from 'expo-router';
 import { buildCard, type Card } from '@pankra/shared';
 import { api, today } from '../src/api';
@@ -7,13 +7,13 @@ import { WhiteboardCard } from '../src/WhiteboardCard';
 
 /** Today: the day's sessions as whiteboard cards. */
 export default function Today() {
-  const [cards, setCards] = useState<Card[] | null>(null);
+  const [cards, setCards] = useState<Array<{ id: string; card: Card }> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const day = today();
     Promise.all([api.sessions(day, day), api.profile()])
-      .then(([sessions, profile]) => setCards(sessions.map((s) => buildCard(s, profile))))
+      .then(([sessions, profile]) => setCards(sessions.map((s) => ({ id: s.id, card: buildCard(s, profile) }))))
       .catch((e: Error) => setError(e.message));
   }, []);
 
@@ -29,7 +29,14 @@ export default function Today() {
       {error ? <Text accessibilityRole="alert">Could not load today: {error}</Text> : null}
       {!cards && !error ? <ActivityIndicator accessibilityLabel="Loading" /> : null}
       {cards?.length === 0 ? <Text>Nothing planned today.</Text> : null}
-      {cards?.map((c, i) => <WhiteboardCard key={i} card={c} />)}
+      {cards?.map(({ id, card }) => (
+        <View key={id} style={styles.item}>
+          <WhiteboardCard card={card} />
+          <Link href={{ pathname: '/log/[sessionId]', params: { sessionId: id } }} style={styles.link}>
+            Log result ›
+          </Link>
+        </View>
+      ))}
     </ScrollView>
   );
 }
@@ -37,4 +44,5 @@ export default function Today() {
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 16 },
   link: { color: '#1d4ed8', fontSize: 16, paddingVertical: 8 },
+  item: { gap: 4 },
 });

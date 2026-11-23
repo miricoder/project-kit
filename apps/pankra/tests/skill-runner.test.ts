@@ -85,6 +85,11 @@ async function setup(keys: Array<'claude' | 'gpt'>, replies: Record<'claude' | '
     id: 'sess-1', userId: USER, date: '2026-11-23', title: 'Air runner 5 x 1 km', type: 'gym',
     status: 'Today', source: 'plan', sections: [],
   });
+  // result-analyzer analyses a logged result, so one is logged for the session.
+  store.saveResult({
+    id: 'res-1', userId: USER, sessionId: 'sess-1', uploadIds: [], createdAt: '2026-11-23T09:30:00.000Z',
+    parts: [{ label: 'Rep 1', distanceM: 900, timeS: 250 }],
+  });
   const providers = fakeProviders(replies);
   const app = buildApp({ store, userId: () => USER, vaultKey: VAULT_KEY, now: () => NOW, fetch: providers.fetchImpl });
   for (const p of keys) {

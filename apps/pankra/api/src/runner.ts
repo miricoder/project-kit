@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Ajv, type ErrorObject } from 'ajv';
 import type { NodeSummary, Provider, RegistryNode, Run } from '@pankra/shared';
+import { contractFor } from './contracts.ts';
 import { ProviderError, type ProviderAdapter } from './providers/types.ts';
 import type { Store } from './store.ts';
 import { isExpired, type Vault } from './vault.ts';
@@ -100,10 +101,16 @@ export async function runNode(deps: RunnerDeps, userId: string, req: RunRequest)
     }
   }
 
+  const contract = contractFor(node);
+  const input = req.input as Record<string, unknown>;
+  const context = contract.context?.(deps.store, userId, input);
+  if (typeof context === 'string') return refuse(400, context);
+
   const model = req.model ?? providerConfig.model;
   const adapter = deps.adapters[req.provider];
   const apiKey = deps.vault.open(credential);
-  const validOutput = ajv.compile(node.output);
+  const outputSchema = contract.outputSchema ? contract.outputSchema(node.output) : node.output;
+  const validOutput = ajv.compile(outputSchema);
   const system = systemPrompt(node);
   const run: Run = {
     id: randomUUID(),
@@ -120,21 +127,23 @@ export async function runNode(deps: RunnerDeps, userId: string, req: RunRequest)
 
   let problem: string | undefined;
   try {
-    let input: unknown = req.input;
+    const first: Record<string, unknown> = context ? { ...input, context } : input;
+    let sent: unknown = first;
     for (let attempt = 1; attempt <= 2 && run.status !== 'succeeded'; attempt++) {
-      const result = await adapter.run({ system, input, images: [], tools: [], outputSchema: node.output, model, apiKey });
+      const result = await adapter.run({ system, input: sent, images: [], tools: [], outputSchema, model, apiKey });
       run.tokens.in += result.tokensIn;
       run.tokens.out += result.tokensOut;
       run.costUsd = Math.round((run.costUsd + result.costUsd) * 1e6) / 1e6;
       if (validOutput(result.output)) {
         run.status = 'succeeded';
-        run.output = result.output;
+        const output = result.output as Record<string, unknown>;
+        run.output = contract.finish && context ? contract.finish(output, context) : output;
         problem = undefined;
       } else {
         problem = `Output did not match the ${node.name} schema: ${describeErrors(validOutput.errors)}`;
         // One automatic repair attempt: the same request, with what was wrong.
-        input = {
-          original: req.input,
+        sent = {
+          ...first,
           previousOutput: result.output,
           problem: `${problem}. Return the complete corrected output.`,
         };
@@ -145,5 +154,7 @@ export async function runNode(deps: RunnerDeps, userId: string, req: RunRequest)
   }
   const saved: Run = problem ? { ...run, error: problem } : run;
   deps.store.saveRun(saved);
+  // Only a validated, successful run writes anything beyond the run itself.
+  if (saved.status === 'succeeded') contract.persist?.(deps.store, userId, saved, input);
   return { refused: false, run: saved };
 }

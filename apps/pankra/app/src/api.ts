@@ -1,5 +1,17 @@
 import Constants from 'expo-constants';
-import type { CredentialStatus, NodeSummary, Profile, Provider, Retention, Run, ScheduleChange, Section, Session } from '@pankra/shared';
+import type {
+  CredentialStatus,
+  NodeSummary,
+  Profile,
+  Provider,
+  Result,
+  ResultPart,
+  Retention,
+  Run,
+  ScheduleChange,
+  Section,
+  Session,
+} from '@pankra/shared';
 
 const API_URL: string =
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
@@ -70,6 +82,9 @@ export const api = {
   setCap: (provider: Provider, monthlyUsd: number) => send('PUT', `/caps/${provider}`, { monthlyUsd }),
   insert: (date: string, session: NewClass) =>
     post<{ session: Session; changes: ScheduleChange[] }>('/sessions/insert', { date, session }),
+  logResult: (sessionId: string, parts: ResultPart[], notes?: string) =>
+    post<Result>('/results', { sessionId, parts, notes }),
+  result: (id: string) => get<Result>(`/results/${id}`),
 };
 
 /** Local calendar date as YYYY-MM-DD. */

@@ -6,6 +6,7 @@ import type {
   Profile,
   Provider,
   RegistryNode,
+  Result,
   Run,
   Session,
 } from '@pankra/shared';
@@ -16,6 +17,10 @@ export interface Store {
   saveProfile(profile: Profile): void;
   listSessions(userId: string, from: string, to: string): Session[];
   saveSession(session: Session): void;
+  getSession(userId: string, id: string): Session | undefined;
+  getResult(userId: string, id: string): Result | undefined;
+  latestResultFor(userId: string, sessionId: string): Result | undefined;
+  saveResult(result: Result): void;
   getCredential(userId: string, provider: CredentialProvider): Credential | undefined;
   listCredentials(userId: string): Credential[];
   allCredentials(): Credential[];
@@ -54,7 +59,7 @@ export class MemoryStore implements Store {
   private audit: AuditEntry[] = [];
   private nodes = new Map<string, RegistryNode>();
   private runs = new Map<string, Run>();
-  private results = new Map<string, unknown>();
+  private results = new Map<string, Result>();
   private caps = new Map<string, number>();
 
   getProfile(userId: string): Profile | undefined {
@@ -75,6 +80,27 @@ export class MemoryStore implements Store {
 
   saveSession(session: Session): void {
     this.sessions.set(session.id, structuredClone(session));
+  }
+
+  getSession(userId: string, id: string): Session | undefined {
+    const s = this.sessions.get(id);
+    return s && s.userId === userId ? structuredClone(s) : undefined;
+  }
+
+  getResult(userId: string, id: string): Result | undefined {
+    const r = this.results.get(id);
+    return r && r.userId === userId ? structuredClone(r) : undefined;
+  }
+
+  latestResultFor(userId: string, sessionId: string): Result | undefined {
+    const matches = [...this.results.values()]
+      .filter((r) => r.userId === userId && r.sessionId === sessionId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return matches[0] && structuredClone(matches[0]);
+  }
+
+  saveResult(result: Result): void {
+    this.results.set(result.id, structuredClone(result));
   }
 
   getCredential(userId: string, provider: CredentialProvider): Credential | undefined {

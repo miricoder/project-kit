@@ -127,3 +127,33 @@ export interface Run {
   error?: string;
   createdAt: string;
 }
+
+export interface ResultPart {
+  label: string;
+  loadKg?: number;
+  reps?: number;
+  timeS?: number;
+  distanceM?: number;
+  speedKmh?: number;
+  rpe?: number;
+}
+
+/** What result-analyzer said about a result, kept with it. */
+export interface ResultFeedback {
+  runId: string;
+  feedback: string;
+  tips: string[];
+  prs?: string[];
+  adjustments?: Array<{ sessionId?: string; change?: string }>;
+}
+
+export interface Result {
+  id: string;
+  userId: string;
+  sessionId: string;
+  parts: ResultPart[];
+  notes?: string;
+  uploadIds: string[];
+  feedback?: ResultFeedback;
+  createdAt: string;
+}
