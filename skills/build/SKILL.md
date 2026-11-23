@@ -67,10 +67,17 @@ instead of reporting a refusal:
 pk state -C . import <design folder> --project <name>
 ```
 
-Run from inside the plugin (a project-kit session), this creates the project next to the
-plugin (`../<name>`, a git repository) and prints `project_dir`; use that as `-C` from here
-on. If a repository for the app is attached to the session, pass `--to <its checkout>`
-instead, so the work is saved there.
+It prints `project_dir`; use that as `-C` from here on. Where the project lands:
+
+- **Design in `apps/<name>` of the project-kit repository** (e.g. `apps/pankra`): the app
+  is built **in place**, in that same folder, and committed and pushed with the
+  project-kit repository. No second repository is needed. This is the normal case in a
+  project-kit session.
+- Design anywhere else inside the plugin: a sibling project `../<name>` (a git repo).
+- `--to <dir>` overrides both, e.g. a separate app repository the user asked for.
+
+When the project is in `apps/<name>`, every command takes `-C apps/<name>`, and commits
+touch only that folder.
 
 If `next` then says the judge panel is next, ask the user **once**, with AskUserQuestion:
 run the panel, or skip it with a reason (`pk state -C <dir> waive judge --reason "..."`).

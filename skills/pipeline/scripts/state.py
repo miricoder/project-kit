@@ -96,6 +96,38 @@ def plugin_root_of(directory: str | os.PathLike[str]) -> Optional[Path]:
     return None
 
 
+APPS_DIR = "apps"
+
+
+def app_home_of(directory: str | os.PathLike[str]) -> Optional[Path]:
+    """The `apps/<name>` folder of the plugin repository at or above `directory`, if any.
+
+    The plugin repository may host its owner's apps under apps/<name>: the design and the
+    app live side by side in one repository. That folder is a legitimate project home;
+    the rest of the plugin tree is not.
+    """
+    root = plugin_root_of(directory)
+    if root is None:
+        return None
+    here = Path(os.path.realpath(os.path.expanduser(str(directory))))
+    try:
+        parts = here.relative_to(root).parts
+    except ValueError:
+        return None
+    if len(parts) >= 2 and parts[0] == APPS_DIR:
+        return root / parts[0] / parts[1]
+    return None
+
+
+def blocked_by_plugin(directory: str | os.PathLike[str]) -> Optional[Path]:
+    """The plugin root when `directory` is inside the plugin's own source (refuse), or
+    None when it is outside the plugin or inside an app home under apps/<name>."""
+    root = plugin_root_of(directory)
+    if root is None or app_home_of(directory) is not None:
+        return None
+    return root
+
+
 def looks_like_a_container(directory: str | os.PathLike[str]) -> Optional[str]:
     """Why this directory is a poor home for a project, or None if it is fine.
 
@@ -457,14 +489,19 @@ def _import_target(args: argparse.Namespace) -> str:
     if args.to:
         target = Path(os.path.expanduser(args.to))
     else:
-        inside = plugin_root_of(args.dir)
-        if inside is None:
+        if blocked_by_plugin(args.dir) is None:
             return args.dir
         src = Path(os.path.expanduser(args.source)).resolve()
+        home = app_home_of(src)
+        if home is not None:
+            # The design lives in apps/<name>: build the app right there, in place.
+            args.project = args.project or slugify(home.name)
+            return str(home)
+        inside = plugin_root_of(args.dir)
         name = args.project or slugify(src.parent.name if src.name == "docs" else src.name)
         args.project = name
         target = inside.parent / name
-    if plugin_root_of(target.parent if not target.exists() else target) is not None:
+    if blocked_by_plugin(target if target.exists() else target.parent) is not None:
         raise StateError(f"{target} is inside the Project Kit plugin; choose a directory "
                          "outside it with --to")
     fresh = not target.exists() or not any(target.iterdir())
@@ -477,15 +514,16 @@ def _import_target(args: argparse.Namespace) -> str:
 
 def _check_home(directory: str, here: bool, project: Optional[str]) -> None:
     """Refuse to start a project inside the plugin, or in a directory that looks wrong."""
-    inside = plugin_root_of(directory)
+    inside = blocked_by_plugin(directory)
     if inside is not None:
         raise StateError(
             f"refusing to initialise inside the Project Kit plugin at {inside}. "
             "This would write pipeline.json and docs/ into the tool's own source. "
-            "Change to an empty directory for your product and run it there "
+            "Use apps/<name> inside it, or an empty directory outside it "
             "(design files kept in the plugin can still be brought in from there: "
             "pk state import <that folder>).")
-    reason = None if here else looks_like_a_container(directory)
+    in_app_home = app_home_of(directory) is not None
+    reason = None if here or in_app_home else looks_like_a_container(directory)
     if reason is not None:
         suggestion = slugify(project) if project else "<project-name>"
         raise StateError(
@@ -562,7 +600,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 st = new_state(project, args.mode, args.max_usd)
                 created = True
             else:
-                inside = plugin_root_of(args.dir)
+                inside = blocked_by_plugin(args.dir)
                 if inside is not None:
                     raise StateError(f"refusing to import into the Project Kit plugin at {inside}")
                 st = load(args.dir)

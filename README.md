@@ -108,7 +108,8 @@ run it from, so it checks that the directory is a sensible home first:
 | An empty directory | Used as-is; the project takes its name |
 | An existing git repo | Used as-is — brownfield work is expected |
 | A folder of unrelated work (`~/projects`) or your home directory | `/ideate` creates a subdirectory named from your idea and works there |
-| Inside the Project Kit plugin | Refused — that would write your files into the tool's own source |
+| `apps/<name>` in the Project Kit repository | Used as-is — design and app side by side |
+| Anywhere else inside the Project Kit plugin | Refused — that would write your files into the tool's own source |
 
 Pass `--here` to `pk state init` only if you deliberately want to initialise in place.
 
@@ -124,9 +125,10 @@ research and proposal behind it), import it into an empty project directory:
 pk state -C . import <folder-with-your-docs> --project <name>
 ```
 
-Your design can live in this repository (as `apps/pankra` does): run the import from here
-and the project is created beside the plugin as `../<name>`, or wherever `--to <dir>` says.
-In practice you just tell Claude "build apps/pankra" and `/build` does the import itself.
+Your design and app can live in this repository, under `apps/<name>` (as `apps/pankra`
+does): that folder is the project, and the app is built and committed right there. In
+practice you just tell Claude `/project-kit:build apps/pankra`, and `/build` does the
+import itself. Everything else in the plugin's source is still off limits to a project.
 
 `research.md`, `proposal.md`, `spec.md` and `acceptance.feature` are copied into `docs/`;
 each phase whose file arrived is marked complete, earlier ones without a file are marked
