@@ -103,12 +103,60 @@ function KeyRow({ provider, name, status, onChange }: {
   );
 }
 
-/** Settings: LLM keys, encrypted on the server, kept for the period chosen. */
+function CapRow({ provider, name, monthlyUsd, spentUsd, onChange }: {
+  provider: Provider;
+  name: string;
+  monthlyUsd: number | null;
+  spentUsd: number;
+  onChange: () => void;
+}) {
+  const [value, setValue] = useState(monthlyUsd === null ? '' : String(monthlyUsd));
+  const [error, setError] = useState<string | null>(null);
+  async function save() {
+    const n = Number(value);
+    if (!value.trim() || !Number.isFinite(n) || n < 0) return setError('Enter an amount in dollars, e.g. 10');
+    setError(null);
+    try {
+      await api.setCap(provider, n);
+      onChange();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  return (
+    <View style={styles.capRow}>
+      <Text style={styles.capName}>
+        {name}: ${spentUsd.toFixed(2)} spent this month
+        {monthlyUsd !== null ? ` of $${monthlyUsd.toFixed(2)}` : ', no cap'}
+      </Text>
+      <View style={styles.actions}>
+        <TextInput
+          style={[styles.input, styles.capInput]}
+          value={value}
+          onChangeText={setValue}
+          accessibilityLabel={`${name} monthly cap in dollars`}
+          keyboardType="decimal-pad"
+          placeholder="10"
+        />
+        <Pressable accessibilityRole="button" onPress={save} style={styles.button}>
+          <Text style={styles.buttonText}>Set cap</Text>
+        </Pressable>
+      </View>
+      {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
+    </View>
+  );
+}
+
+type Caps = Awaited<ReturnType<typeof api.caps>>;
+
+/** Settings: LLM keys, encrypted on the server, kept for the period chosen; monthly caps. */
 export default function Settings() {
   const [statuses, setStatuses] = useState<CredentialStatus[]>([]);
+  const [caps, setCaps] = useState<Caps>([]);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(() => {
     api.credentials().then(setStatuses).catch((e: Error) => setError(e.message));
+    api.caps().then(setCaps).catch((e: Error) => setError(e.message));
   }, []);
   useFocusEffect(load);
 
@@ -120,6 +168,22 @@ export default function Settings() {
       {PROVIDERS.map((p) => (
         <KeyRow key={p.id} provider={p.id} name={p.name} status={statuses.find((s) => s.provider === p.id)} onChange={load} />
       ))}
+      <View style={styles.card}>
+        <Text style={styles.label} accessibilityRole="header">Monthly spending caps</Text>
+        <Text style={styles.small}>
+          Runs stop once a provider reaches its cap, until next month or until you raise it.
+        </Text>
+        {caps.map((c) => (
+          <CapRow
+            key={`${c.provider}:${c.monthlyUsd}`}
+            provider={c.provider}
+            name={PROVIDERS.find((p) => p.id === c.provider)?.name ?? c.provider}
+            monthlyUsd={c.monthlyUsd}
+            spentUsd={c.spentUsd}
+            onChange={load}
+          />
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -140,4 +204,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   buttonText: { color: '#fff', fontWeight: '700' },
   error: { color: '#b91c1c' },
+  capRow: { gap: 6, paddingTop: 6 },
+  capName: { fontSize: 15, color: '#111827' },
+  capInput: { minWidth: 100 },
 });

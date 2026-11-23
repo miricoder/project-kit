@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import type { CredentialStatus, Profile, Provider, Retention, ScheduleChange, Section, Session } from '@pankra/shared';
+import type { CredentialStatus, NodeSummary, Profile, Provider, Retention, Run, ScheduleChange, Section, Session } from '@pankra/shared';
 
 const API_URL: string =
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
@@ -11,6 +11,18 @@ async function get<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+/** An API refusal, with the server's explanation (and what it needs, for runs). */
+export class ApiError extends Error {
+  status: number;
+  needs?: { credential: Provider };
+
+  constructor(status: number, message: string, needs?: { credential: Provider }) {
+    super(message);
+    this.status = status;
+    this.needs = needs;
+  }
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -19,8 +31,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const detail = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(detail?.error ?? `HTTP ${res.status}`);
+    const detail = (await res.json().catch(() => null)) as { error?: string; needs?: { credential: Provider } } | null;
+    throw new ApiError(res.status, detail?.error ?? `HTTP ${res.status}`, detail?.needs);
   }
   return (await res.json()) as T;
 }
@@ -52,6 +64,10 @@ export const api = {
   saveKey: (provider: Provider, secret: string, retention: Retention) =>
     send('PUT', `/credentials/${provider}`, { secret, retention }) as Promise<{ last4: string; expiresAt: string | null }>,
   deleteKey: (provider: Provider) => send('DELETE', `/credentials/${provider}`),
+  run: (node: Pick<NodeSummary, 'kind' | 'name'>, provider: Provider, input: Record<string, unknown>) =>
+    post<Run>('/runs', { node: { kind: node.kind, name: node.name }, provider, input }),
+  caps: () => get<Array<{ provider: Provider; monthlyUsd: number | null; spentUsd: number }>>('/caps'),
+  setCap: (provider: Provider, monthlyUsd: number) => send('PUT', `/caps/${provider}`, { monthlyUsd }),
   insert: (date: string, session: NewClass) =>
     post<{ session: Session; changes: ScheduleChange[] }>('/sessions/insert', { date, session }),
 };

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "pankra",
   "created_at": "2026-11-23T15:51:03+00:00",
-  "updated_at": "2026-11-23T17:35:10+00:00",
+  "updated_at": "2026-11-23T17:40:02+00:00",
   "mode": "yolo",
   "budget": {
     "max_usd": 25.0,
@@ -143,6 +143,12 @@
       "name": "Key vault and retention",
       "started_at": "2026-11-23T17:33:42+00:00",
       "completed_at": "2026-11-23T17:35:10+00:00"
+    },
+    "4": {
+      "status": "complete",
+      "name": "Skill runner and provider adapters",
+      "started_at": "2026-11-23T17:35:39+00:00",
+      "completed_at": "2026-11-23T17:40:02+00:00"
     }
   }
 }

@@ -95,3 +95,35 @@ export interface NodeSummary {
   providers: Partial<Record<Provider, { model: string }>>;
   requires: string[];
 }
+
+export type JSONSchema = Record<string, unknown>;
+
+/** A registry node as stored by the API (a versioned copy of project-kit's registry/). */
+export interface RegistryNode extends NodeSummary {
+  /** Text of the node's files, keyed by file name (SKILL.md, AGENT.md, ...). */
+  files: Record<string, string>;
+  vision: boolean;
+  tools: string[];
+  input: JSONSchema;
+  output?: JSONSchema;
+  /** Agents: the skills they run, in order. */
+  steps?: Array<{ skill: string; order: number }>;
+  retired: boolean;
+}
+
+export type RunStatus = 'succeeded' | 'failed';
+
+export interface Run {
+  id: string;
+  userId: string;
+  nodeRef: { kind: NodeSummary['kind']; name: string; version: string };
+  provider: Provider;
+  model: string;
+  input: unknown;
+  output?: unknown;
+  tokens: { in: number; out: number };
+  costUsd: number;
+  status: RunStatus;
+  error?: string;
+  createdAt: string;
+}

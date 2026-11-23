@@ -4,6 +4,10 @@ import { randomUUID } from 'node:crypto';
 import { shiftSchedule, type CredentialStatus, type Session } from '@pankra/shared';
 import type { Store } from './store.ts';
 import { Vault, isExpired } from './vault.ts';
+import { claudeAdapter } from './providers/claude.ts';
+import { gptAdapter } from './providers/gpt.ts';
+import type { FetchLike } from './providers/types.ts';
+import { runNode, spentThisMonth } from './runner.ts';
 
 export interface AppDeps {
   store: Store;
@@ -13,7 +17,22 @@ export interface AppDeps {
   vaultKey?: string;
   /** The clock; injected so retention can be tested. */
   now?: () => Date;
+  /** HTTP client for the provider APIs; injected so tests stand in for the providers. */
+  fetch?: FetchLike;
 }
+
+const ProviderParam = z.object({ provider: z.enum(['claude', 'gpt']) });
+const CapBody = z.object({ monthlyUsd: z.number().nonnegative().max(10_000) });
+const RunBody = z.object({
+  node: z.object({
+    kind: z.enum(['skill', 'agent', 'plugin', 'provider']),
+    name: z.string().min(1).max(100),
+    version: z.string().max(40).optional(),
+  }),
+  provider: z.enum(['claude', 'gpt']),
+  model: z.string().min(1).max(100).optional(),
+  input: z.record(z.unknown()),
+});
 
 const CredentialParams = z.object({ provider: z.enum(['claude', 'gpt']) });
 const CredentialBody = z.object({
@@ -61,6 +80,50 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   const app = Fastify({ logger: false });
   const now = deps.now ?? (() => new Date());
   const vault = deps.vaultKey ? new Vault(deps.vaultKey) : undefined;
+  const fetchImpl = deps.fetch ?? fetch;
+  const adapters = { claude: claudeAdapter(fetchImpl), gpt: gptAdapter(fetchImpl) };
+
+  // Runs: a skill or agent on a chosen provider. Refusals happen before any provider call.
+  app.post('/api/v1/runs', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const body = RunBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
+    const outcome = await runNode({ store: deps.store, vault, adapters, now }, userId, body.data);
+    if (outcome.refused) return reply.code(outcome.httpStatus).send(outcome.body);
+    return outcome.run;
+  });
+
+  app.get('/api/v1/runs/:id', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const run = deps.store.getRun(userId, (req.params as { id: string }).id);
+    if (!run) return reply.code(404).send({ error: 'No such run' });
+    return run;
+  });
+
+  // Monthly spending caps per provider, and what has been spent this month.
+  app.get('/api/v1/caps', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const at = now();
+    return (['claude', 'gpt'] as const).map((provider) => ({
+      provider,
+      monthlyUsd: deps.store.getCap(userId, provider) ?? null,
+      spentUsd: Math.round(spentThisMonth(deps.store, userId, provider, at) * 100) / 100,
+    }));
+  });
+
+  app.put('/api/v1/caps/:provider', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const params = ProviderParam.safeParse(req.params);
+    if (!params.success) return reply.code(404).send({ error: 'Unknown provider' });
+    const body = CapBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
+    deps.store.setCap(userId, params.data.provider, body.data.monthlyUsd);
+    return { provider: params.data.provider, monthlyUsd: body.data.monthlyUsd };
+  });
 
   app.get('/api/v1/health', async () => ({ ok: true }));
 
