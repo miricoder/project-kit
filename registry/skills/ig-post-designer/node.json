@@ -1,0 +1,79 @@
+{
+  "kind": "skill",
+  "name": "ig-post-designer",
+  "version": "0.1.0",
+  "description": "Lays out the day's workout as a 1080 x 1350 Instagram post in a chosen theme for export as an image.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": false,
+  "tools": [
+    "sessions.read",
+    "results.read"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string"
+      },
+      "theme": {
+        "enum": [
+          "whiteboard",
+          "game-inspired",
+          "clean"
+        ]
+      },
+      "withResults": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "sessionId",
+      "theme"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "date": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "sections": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "title",
+      "sections"
+    ]
+  }
+}

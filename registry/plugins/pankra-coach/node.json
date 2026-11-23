@@ -1,0 +1,34 @@
+{
+  "kind": "plugin",
+  "name": "pankra-coach",
+  "version": "0.1.0",
+  "description": "Everything PANKRA v1 runs: training, racing, fuel and post skills, the weekly-coach and race-review agents, and the app tools they call.",
+  "apps": [
+    "pankra"
+  ],
+  "skills": [
+    "purposed-convo-workout-readjust",
+    "workout-whiteboard",
+    "result-analyzer",
+    "race-analyzer",
+    "schedule-shifter",
+    "pace-planner",
+    "meal-planner",
+    "ig-post-designer",
+    "screenshot-reader"
+  ],
+  "agents": [
+    "weekly-coach",
+    "race-review"
+  ],
+  "tools": [
+    "profile.read",
+    "races.read",
+    "results.read",
+    "results.write",
+    "sessions.read",
+    "sessions.write",
+    "strava.activities",
+    "uploads.read"
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "kind": "skill",
+  "name": "purposed-convo-workout-readjust",
+  "version": "0.1.0",
+  "description": "Purposed convo for the weekly check-in: week status, today's results with feedback, new sessions fitted in, questions before and after, and the updated schedule.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": false,
+  "tools": [
+    "profile.read",
+    "sessions.read",
+    "sessions.write",
+    "results.read",
+    "results.write",
+    "uploads.read"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "weekStart": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "uploadIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "weekStart"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "day": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string"
+            },
+            "session": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "result": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "feedback": {
+        "type": "string"
+      },
+      "tips": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "changes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "status",
+      "questions"
+    ]
+  }
+}

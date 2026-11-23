@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/miricoder/project-kit/registry/schema/node.schema.json",
+  "title": "Registry node",
+  "type": "object",
+  "required": ["kind", "name", "version", "description", "apps"],
+  "properties": {
+    "kind": {"enum": ["skill", "agent", "plugin"]},
+    "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,63}$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "description": {"type": "string", "minLength": 20},
+    "apps": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "providers": {
+      "type": "object",
+      "description": "Skill and agent only. Provider id to its default model.",
+      "propertyNames": {"enum": ["claude", "gpt"]},
+      "additionalProperties": {"type": "object", "required": ["model"],
+        "properties": {"model": {"type": "string"}}}
+    },
+    "requires": {
+      "type": "array",
+      "items": {"enum": ["apiKey", "stravaToken", "spotifyToken"]}
+    },
+    "vision": {"type": "boolean"},
+    "tools": {"type": "array", "items": {"type": "string"}},
+    "input": {"type": "object", "description": "JSON Schema of the run input"},
+    "output": {"type": "object", "description": "JSON Schema of the run output"},
+    "steps": {
+      "type": "array",
+      "description": "Agent only. Skills in run order.",
+      "items": {"type": "string"}
+    },
+    "skills": {"type": "array", "items": {"type": "string"}},
+    "agents": {"type": "array", "items": {"type": "string"}}
+  },
+  "allOf": [
+    {"if": {"properties": {"kind": {"const": "skill"}}},
+     "then": {"required": ["providers", "requires", "vision", "tools", "input", "output"]}},
+    {"if": {"properties": {"kind": {"const": "agent"}}},
+     "then": {"required": ["providers", "requires", "steps"]}},
+    {"if": {"properties": {"kind": {"const": "plugin"}}},
+     "then": {"required": ["skills", "agents", "tools"]}}
+  ]
+}

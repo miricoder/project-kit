@@ -39,6 +39,13 @@ exits 0. The last slice completes the build phase.
 (`~/.claude/project-kit/graph.db`) from the skills, `pipeline.json` and the backlog, serves
 an interactive viewer (`skills/graph/viewer.html`), and exports idempotent Cypher for Neo4j.
 
+**The runtime registry:** `registry/` holds skills, agents and plugins that *apps built with
+Project Kit* pull and run at runtime (first app: PANKRA). It is not part of the plugin and is
+not loaded by Claude Code. Each node is a `SKILL.md`/`AGENT.md` plus a provider-agnostic
+`node.json`; `python3 registry/build_index.py` validates them and writes `registry/index.json`,
+which apps fetch from GitHub. `tests/test_registry.py` fails CI on an invalid node or a stale
+index. See `registry/README.md`.
+
 **Shipping:** `pk ship` (`skills/devops/scripts/ship.py`) is the mechanical half of
 `/devops`, `/test`, `/security` and `/launch`. State goes in `pipeline.json` under `ship`
 (optional, so older state loads). The script never deploys, because deploying needs the

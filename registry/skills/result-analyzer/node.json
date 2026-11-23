@@ -1,0 +1,78 @@
+{
+  "kind": "skill",
+  "name": "result-analyzer",
+  "version": "0.1.0",
+  "description": "Analyses a logged workout against the prescription and earlier results, gives key feedback and tips, and proposes changes to upcoming sessions.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": false,
+  "tools": [
+    "profile.read",
+    "sessions.read",
+    "results.read"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string"
+      },
+      "resultId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "sessionId"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "feedback": {
+        "type": "string"
+      },
+      "prs": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "tips": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "adjustments": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "sessionId": {
+              "type": "string"
+            },
+            "change": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "feedback",
+      "tips"
+    ]
+  }
+}

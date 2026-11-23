@@ -1,0 +1,70 @@
+{
+  "kind": "skill",
+  "name": "music-curator",
+  "version": "0.1.0",
+  "description": "Future R&D, not in v1 or any plugin yet. Builds session music: tempo band per section, running cadence, a playlist from the connected service, timer ducking points.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey",
+    "spotifyToken"
+  ],
+  "vision": false,
+  "tools": [
+    "profile.read",
+    "sessions.read",
+    "music.search",
+    "music.playlist"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "sessionId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "sessionId"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "tempoPlan": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "section": {
+              "type": "string"
+            },
+            "bpm": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "playlistId": {
+        "type": "string"
+      },
+      "cues": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "tempoPlan"
+    ]
+  }
+}
