@@ -1,0 +1,92 @@
+{
+  "kind": "skill",
+  "name": "schedule-shifter",
+  "version": "0.1.0",
+  "description": "Inserts a new session into the week and pushes planned sessions to the next free days, keeping a rest day and flagging back-to-back hard days.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": false,
+  "tools": [
+    "profile.read",
+    "sessions.read",
+    "sessions.write"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "date": {
+        "type": "string"
+      },
+      "newSession": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "uploadIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "date",
+      "newSession"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "changes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "sessionId": {
+              "type": "string"
+            },
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "changes"
+    ]
+  }
+}

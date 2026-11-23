@@ -1,0 +1,635 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "kind": "skill",
+      "name": "ig-post-designer",
+      "version": "0.1.0",
+      "description": "Lays out the day's workout as a 1080 x 1350 Instagram post in a chosen theme for export as an image.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/ig-post-designer/SKILL.md",
+        "registry/skills/ig-post-designer/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": false,
+      "tools": [
+        "sessions.read",
+        "results.read"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "meal-planner",
+      "version": "0.1.0",
+      "description": "Suggests meals before and after the day's session, and a race-morning plan, from a fridge photo or list.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/meal-planner/SKILL.md",
+        "registry/skills/meal-planner/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": true,
+      "tools": [
+        "profile.read",
+        "sessions.read",
+        "uploads.read"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "music-curator",
+      "version": "0.1.0",
+      "description": "Builds the music for a session: tempo band per section, running cadence, and a playlist from the connected service with timer ducking points.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/music-curator/SKILL.md",
+        "registry/skills/music-curator/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey",
+        "spotifyToken"
+      ],
+      "vision": false,
+      "tools": [
+        "profile.read",
+        "sessions.read",
+        "music.search",
+        "music.playlist"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "pace-planner",
+      "version": "0.1.0",
+      "description": "Sets and progresses running paces per machine (Air runner, treadmill, track) from the athlete's own runs, up to a race date.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/pace-planner/SKILL.md",
+        "registry/skills/pace-planner/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey",
+        "stravaToken"
+      ],
+      "vision": false,
+      "tools": [
+        "profile.read",
+        "results.read",
+        "strava.activities"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "purposed-convo-workout-readjust",
+      "version": "0.1.0",
+      "description": "Purposed convo for the weekly check-in: week status, today's results with feedback, new sessions fitted in, questions before and after, and the updated schedule.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/purposed-convo-workout-readjust/SKILL.md",
+        "registry/skills/purposed-convo-workout-readjust/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": false,
+      "tools": [
+        "profile.read",
+        "sessions.read",
+        "sessions.write",
+        "results.read",
+        "results.write",
+        "uploads.read"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "race-analyzer",
+      "version": "0.1.0",
+      "description": "Breaks down Hyrox race splits against a target and earlier races, and ranks the segments by seconds to gain.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/race-analyzer/SKILL.md",
+        "registry/skills/race-analyzer/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": false,
+      "tools": [
+        "profile.read",
+        "races.read"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "result-analyzer",
+      "version": "0.1.0",
+      "description": "Analyses a logged workout against the prescription and earlier results, gives key feedback and tips, and proposes changes to upcoming sessions.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/result-analyzer/SKILL.md",
+        "registry/skills/result-analyzer/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": false,
+      "tools": [
+        "profile.read",
+        "sessions.read",
+        "results.read"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "schedule-shifter",
+      "version": "0.1.0",
+      "description": "Inserts a new session into the week and pushes planned sessions to the next free days, keeping a rest day and flagging back-to-back hard days.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/schedule-shifter/SKILL.md",
+        "registry/skills/schedule-shifter/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": false,
+      "tools": [
+        "profile.read",
+        "sessions.read",
+        "sessions.write"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "screenshot-reader",
+      "version": "0.1.0",
+      "description": "Reads race results, run summaries and class workouts out of screenshots into structured data for the athlete to confirm.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/screenshot-reader/SKILL.md",
+        "registry/skills/screenshot-reader/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": true,
+      "tools": [
+        "uploads.read"
+      ]
+    },
+    {
+      "kind": "skill",
+      "name": "workout-whiteboard",
+      "version": "0.1.0",
+      "description": "Writes a day's workout, or several days, as fully spelled-out whiteboard cards: flow, rest, machine per rep, mat lengths, timer settings and fallbacks.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/skills/workout-whiteboard/SKILL.md",
+        "registry/skills/workout-whiteboard/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey"
+      ],
+      "vision": false,
+      "tools": [
+        "profile.read",
+        "sessions.read",
+        "results.read"
+      ]
+    },
+    {
+      "kind": "agent",
+      "name": "race-review",
+      "version": "0.1.0",
+      "description": "From race screenshots to a training plan: read and confirm the splits, analyse the gap to target, and set the paces that follow.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/agents/race-review/AGENT.md",
+        "registry/agents/race-review/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey",
+        "stravaToken"
+      ]
+    },
+    {
+      "kind": "agent",
+      "name": "weekly-coach",
+      "version": "0.1.0",
+      "description": "Weekly check-in end to end: review and log, fit in new sessions, write the updated cards, then build the music for the next session.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/agents/weekly-coach/AGENT.md",
+        "registry/agents/weekly-coach/node.json"
+      ],
+      "providers": {
+        "claude": {
+          "model": "claude-sonnet-5-5"
+        },
+        "gpt": {
+          "model": "gpt-5"
+        }
+      },
+      "requires": [
+        "apiKey",
+        "spotifyToken"
+      ]
+    },
+    {
+      "kind": "plugin",
+      "name": "pankra-coach",
+      "version": "0.1.0",
+      "description": "Everything PANKRA runs: training, racing, fuel, posts and music skills, the weekly-coach and race-review agents, and the app tools they call.",
+      "apps": [
+        "pankra"
+      ],
+      "files": [
+        "registry/plugins/pankra-coach/node.json"
+      ],
+      "tools": [
+        "music.playlist",
+        "music.search",
+        "profile.read",
+        "races.read",
+        "results.read",
+        "results.write",
+        "sessions.read",
+        "sessions.write",
+        "strava.activities",
+        "uploads.read"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "skill:ig-post-designer",
+      "to": "tool:sessions.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:ig-post-designer",
+      "to": "tool:results.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:meal-planner",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:meal-planner",
+      "to": "tool:sessions.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:meal-planner",
+      "to": "tool:uploads.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:music-curator",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:music-curator",
+      "to": "tool:sessions.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:music-curator",
+      "to": "tool:music.search",
+      "type": "uses"
+    },
+    {
+      "from": "skill:music-curator",
+      "to": "tool:music.playlist",
+      "type": "uses"
+    },
+    {
+      "from": "skill:pace-planner",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:pace-planner",
+      "to": "tool:results.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:pace-planner",
+      "to": "tool:strava.activities",
+      "type": "uses"
+    },
+    {
+      "from": "skill:purposed-convo-workout-readjust",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:purposed-convo-workout-readjust",
+      "to": "tool:sessions.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:purposed-convo-workout-readjust",
+      "to": "tool:sessions.write",
+      "type": "uses"
+    },
+    {
+      "from": "skill:purposed-convo-workout-readjust",
+      "to": "tool:results.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:purposed-convo-workout-readjust",
+      "to": "tool:results.write",
+      "type": "uses"
+    },
+    {
+      "from": "skill:purposed-convo-workout-readjust",
+      "to": "tool:uploads.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:race-analyzer",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:race-analyzer",
+      "to": "tool:races.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:result-analyzer",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:result-analyzer",
+      "to": "tool:sessions.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:result-analyzer",
+      "to": "tool:results.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:schedule-shifter",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:schedule-shifter",
+      "to": "tool:sessions.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:schedule-shifter",
+      "to": "tool:sessions.write",
+      "type": "uses"
+    },
+    {
+      "from": "skill:screenshot-reader",
+      "to": "tool:uploads.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:workout-whiteboard",
+      "to": "tool:profile.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:workout-whiteboard",
+      "to": "tool:sessions.read",
+      "type": "uses"
+    },
+    {
+      "from": "skill:workout-whiteboard",
+      "to": "tool:results.read",
+      "type": "uses"
+    },
+    {
+      "from": "agent:race-review",
+      "to": "skill:screenshot-reader",
+      "type": "calls",
+      "order": 1
+    },
+    {
+      "from": "agent:race-review",
+      "to": "skill:race-analyzer",
+      "type": "calls",
+      "order": 2
+    },
+    {
+      "from": "agent:race-review",
+      "to": "skill:pace-planner",
+      "type": "calls",
+      "order": 3
+    },
+    {
+      "from": "agent:weekly-coach",
+      "to": "skill:purposed-convo-workout-readjust",
+      "type": "calls",
+      "order": 1
+    },
+    {
+      "from": "agent:weekly-coach",
+      "to": "skill:schedule-shifter",
+      "type": "calls",
+      "order": 2
+    },
+    {
+      "from": "agent:weekly-coach",
+      "to": "skill:workout-whiteboard",
+      "type": "calls",
+      "order": 3
+    },
+    {
+      "from": "agent:weekly-coach",
+      "to": "skill:music-curator",
+      "type": "calls",
+      "order": 4
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:purposed-convo-workout-readjust",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:workout-whiteboard",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:result-analyzer",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:race-analyzer",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:schedule-shifter",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:pace-planner",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:meal-planner",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:ig-post-designer",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:screenshot-reader",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "skill:music-curator",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "agent:weekly-coach",
+      "type": "contains"
+    },
+    {
+      "from": "plugin:pankra-coach",
+      "to": "agent:race-review",
+      "type": "contains"
+    }
+  ]
+}

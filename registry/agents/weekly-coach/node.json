@@ -1,0 +1,27 @@
+{
+  "kind": "agent",
+  "name": "weekly-coach",
+  "version": "0.1.0",
+  "description": "Weekly check-in end to end: review and log, fit in new sessions, write the updated cards, then build the music for the next session.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey",
+    "spotifyToken"
+  ],
+  "steps": [
+    "purposed-convo-workout-readjust",
+    "schedule-shifter",
+    "workout-whiteboard",
+    "music-curator"
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "kind": "skill",
+  "name": "race-analyzer",
+  "version": "0.1.0",
+  "description": "Breaks down Hyrox race splits against a target and earlier races, and ranks the segments by seconds to gain.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": false,
+  "tools": [
+    "profile.read",
+    "races.read"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "raceId": {
+        "type": "string"
+      },
+      "targetSeconds": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "raceId"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "segments": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "actualSeconds": {
+              "type": "number"
+            },
+            "targetSeconds": {
+              "type": "number"
+            },
+            "gainSeconds": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "findings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "trainingChanges": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "segments",
+      "findings"
+    ]
+  }
+}

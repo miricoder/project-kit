@@ -1,0 +1,82 @@
+{
+  "kind": "skill",
+  "name": "meal-planner",
+  "version": "0.1.0",
+  "description": "Suggests meals before and after the day's session, and a race-morning plan, from a fridge photo or list.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": true,
+  "tools": [
+    "profile.read",
+    "sessions.read",
+    "uploads.read"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "date": {
+        "type": "string"
+      },
+      "fridgeText": {
+        "type": "string"
+      },
+      "uploadIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "date"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "seen": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "before": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "after": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "buy": {
+        "type": "string"
+      },
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "before",
+      "after"
+    ]
+  }
+}

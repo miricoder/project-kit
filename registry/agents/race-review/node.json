@@ -1,0 +1,26 @@
+{
+  "kind": "agent",
+  "name": "race-review",
+  "version": "0.1.0",
+  "description": "From race screenshots to a training plan: read and confirm the splits, analyse the gap to target, and set the paces that follow.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey",
+    "stravaToken"
+  ],
+  "steps": [
+    "screenshot-reader",
+    "race-analyzer",
+    "pace-planner"
+  ]
+}

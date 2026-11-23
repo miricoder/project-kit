@@ -1,0 +1,80 @@
+{
+  "kind": "skill",
+  "name": "pace-planner",
+  "version": "0.1.0",
+  "description": "Sets and progresses running paces per machine (Air runner, treadmill, track) from the athlete's own runs, up to a race date.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey",
+    "stravaToken"
+  ],
+  "vision": false,
+  "tools": [
+    "profile.read",
+    "results.read",
+    "strava.activities"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "raceDate": {
+        "type": "string"
+      }
+    }
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "targets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "machine": {
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "progression": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "week": {
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "notes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "targets"
+    ]
+  }
+}

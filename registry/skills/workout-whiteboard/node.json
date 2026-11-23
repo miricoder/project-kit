@@ -1,0 +1,97 @@
+{
+  "kind": "skill",
+  "name": "workout-whiteboard",
+  "version": "0.1.0",
+  "description": "Writes a day's workout, or several days, as fully spelled-out whiteboard cards: flow, rest, machine per rep, mat lengths, timer settings and fallbacks.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": false,
+  "tools": [
+    "profile.read",
+    "sessions.read",
+    "results.read"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "sessionIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "sessionIds"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "cards": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string"
+            },
+            "duration": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            },
+            "sections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "log": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "cards"
+    ]
+  }
+}

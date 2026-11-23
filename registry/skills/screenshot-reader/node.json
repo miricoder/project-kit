@@ -1,0 +1,67 @@
+{
+  "kind": "skill",
+  "name": "screenshot-reader",
+  "version": "0.1.0",
+  "description": "Reads race results, run summaries and class workouts out of screenshots into structured data for the athlete to confirm.",
+  "apps": [
+    "pankra"
+  ],
+  "providers": {
+    "claude": {
+      "model": "claude-sonnet-5-5"
+    },
+    "gpt": {
+      "model": "gpt-5"
+    }
+  },
+  "requires": [
+    "apiKey"
+  ],
+  "vision": true,
+  "tools": [
+    "uploads.read"
+  ],
+  "input": {
+    "type": "object",
+    "properties": {
+      "uploadIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "uploadIds"
+    ]
+  },
+  "output": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string"
+      },
+      "data": {
+        "type": "object"
+      },
+      "uncertain": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "seen": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "kind",
+      "data"
+    ]
+  }
+}
