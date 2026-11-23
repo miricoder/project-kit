@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, Stack, useFocusEffect } from 'expo-router';
 import { nodeBadge, type CredentialStatus, type Edge, type Provider } from '@pankra/shared';
-import { api, type GraphNode } from '../src/api';
+import { IS_PREVIEW, api, type GraphNode } from '../src/api';
 import { nodeId } from '../src/graph';
 import { RunPanel } from '../src/RunPanel';
 import SkillsGraph from '../src/SkillsGraph';
@@ -75,9 +75,11 @@ export default function Skills() {
             {n.steps?.length ? (
               <Text style={styles.small}>{n.steps.map((s) => `${s.order}. ${s.skill}`).join('  ')}</Text>
             ) : null}
-            {n.kind !== 'plugin' ? (
+            {n.kind === 'plugin' ? null : IS_PREVIEW ? (
+              <Text style={styles.small}>Runs on Claude when opened on claude.ai</Text>
+            ) : (
               <Text style={ready ? styles.ok : styles.warn}>{ready ? '● Ready' : '● Needs a key'}</Text>
-            ) : null}
+            )}
           </Pressable>
         );
       })}
