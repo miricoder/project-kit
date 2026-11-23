@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": {
+    "a11y": {
+      "passed": true,
+      "problems": []
+    }
+  }
+}

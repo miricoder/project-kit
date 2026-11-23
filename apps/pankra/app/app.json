@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "PANKRA",
+    "slug": "pankra",
+    "scheme": "pankra",
+    "version": "0.1.0",
+    "platforms": ["ios", "web"],
+    "web": { "bundler": "metro", "output": "single" },
+    "plugins": ["expo-router"],
+    "extra": { "apiUrl": "http://localhost:3000/api/v1" }
+  }
+}
