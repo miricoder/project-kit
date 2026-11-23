@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
@@ -29,7 +30,12 @@ export interface AppDeps {
   fetch?: FetchLike;
   /** Where the registry is pulled from (REGISTRY_REPO, REGISTRY_REF). */
   registry?: RegistryConfig;
+  /** Origins the web app is served from (CORS_ORIGINS, comma-separated). */
+  corsOrigins?: string[];
 }
+
+/** Expo's web dev server and a local static preview. */
+export const DEFAULT_CORS_ORIGINS = ['http://localhost:8081', 'http://localhost:8080'];
 
 export const DEFAULT_REGISTRY: RegistryConfig = { repo: 'miricoder/project-kit', ref: 'main' };
 
@@ -109,6 +115,12 @@ function errorText(error: z.ZodError): string {
 export function buildApp(deps: AppDeps): FastifyInstance {
   // Request bodies are never logged: they can carry keys.
   const app = Fastify({ logger: false });
+  // The web app is served from another origin (Vercel; Expo's dev server locally).
+  void app.register(cors, {
+    origin: deps.corsOrigins ?? DEFAULT_CORS_ORIGINS,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  });
   const now = deps.now ?? (() => new Date());
   const vault = deps.vaultKey ? new Vault(deps.vaultKey) : undefined;
   const fetchImpl = deps.fetch ?? fetch;

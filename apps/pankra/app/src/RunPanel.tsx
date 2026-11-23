@@ -1,19 +1,31 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
-import { nodeBadge, type CredentialStatus, type NodeSummary, type Provider, type Run } from '@pankra/shared';
+import { nodeBadge, type CredentialStatus, type JSONSchema, type NodeSummary, type Provider, type Run } from '@pankra/shared';
 import { ApiError, api } from './api';
 
 const NAMES: Record<Provider, string> = { claude: 'Claude', gpt: 'GPT' };
+
+/** The string properties of a JSON schema, as simple text fields. */
+function textFields(schema?: JSONSchema): Array<{ name: string; required: boolean }> {
+  const props = (schema?.properties ?? {}) as Record<string, { type?: string }>;
+  const required = new Set((schema?.required as string[] | undefined) ?? []);
+  return Object.entries(props)
+    .filter(([, p]) => p.type === 'string')
+    .map(([name]) => ({ name, required: required.has(name) }));
+}
 
 /**
  * Run panel: description, provider choice, credential status and Run. A missing key or a
  * reached cap is explained before anything is sent; a failed run offers Retry.
  */
-export function RunPanel({ node, credentials, input, onResult }: {
+export function RunPanel({ node, credentials, input, inputSchema, onResult }: {
   node: NodeSummary;
   credentials: CredentialStatus[];
+  /** Input the caller already has (e.g. the session being logged). */
   input: Record<string, unknown>;
+  /** When given, the panel asks for the schema's text fields the caller did not supply. */
+  inputSchema?: JSONSchema;
   onResult?: (run: Run) => void;
 }) {
   const offered = (Object.keys(node.providers) as Provider[]).filter((p) => node.providers[p]);
@@ -21,14 +33,19 @@ export function RunPanel({ node, credentials, input, onResult }: {
   const [busy, setBusy] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
   const [refusal, setRefusal] = useState<ApiError | null>(null);
+  const [typed, setTyped] = useState<Record<string, string>>({});
   const badge = nodeBadge(node, provider, credentials);
+  const fields = textFields(inputSchema).filter((f) => !(f.name in input));
 
   async function go() {
     setBusy(true);
     setRefusal(null);
     setRun(null);
     try {
-      const result = await api.run(node, provider, input);
+      const extra = Object.fromEntries(
+        Object.entries(typed).filter(([, v]) => v.trim()).map(([k, v]) => [k, v.trim()]),
+      );
+      const result = await api.run(node, provider, { ...extra, ...input });
       setRun(result);
       onResult?.(result);
     } catch (e) {
@@ -57,6 +74,17 @@ export function RunPanel({ node, credentials, input, onResult }: {
           </Pressable>
         ))}
       </View>
+      {fields.map((f) => (
+        <TextInput
+          key={f.name}
+          style={styles.input}
+          value={typed[f.name] ?? ''}
+          onChangeText={(v) => setTyped({ ...typed, [f.name]: v })}
+          placeholder={`${f.name}${f.required ? ' (required)' : ''}`}
+          accessibilityLabel={f.name}
+          autoCapitalize="none"
+        />
+      ))}
       <Text style={badge === 'green' ? styles.ok : styles.warn}>
         {badge === 'green' ? `● Ready on ${NAMES[provider]}` : `● Needs a ${NAMES[provider]} key`}
       </Text>
@@ -101,6 +129,7 @@ const styles = StyleSheet.create({
   ok: { color: '#15803d', fontWeight: '600' },
   warn: { color: '#b45309', fontWeight: '600' },
   small: { fontSize: 14, color: '#374151' },
+  input: { borderWidth: 1, borderColor: '#9ca3af', borderRadius: 8, padding: 10, fontSize: 16 },
   button: { backgroundColor: '#111827', borderRadius: 8, padding: 12, alignItems: 'center' },
   disabled: { opacity: 0.5 },
   buttonText: { color: '#fff', fontWeight: '700' },

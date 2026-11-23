@@ -7,6 +7,7 @@
     "start": "node --experimental-strip-types src/server.ts"
   },
   "dependencies": {
+    "@fastify/cors": "^10.1.0",
     "@pankra/shared": "0.1.0",
     "ajv": "^8.20.0",
     "fastify": "^5.1.0",

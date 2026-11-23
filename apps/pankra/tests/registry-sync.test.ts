@@ -3,35 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { buildApp } from '../api/src/app.ts';
 import { MemoryStore } from '../api/src/store.ts';
 import type { NodeSummary, RegistryNode } from '../packages/shared/src/index.ts';
+import { RAW, REF, REPO, ROOT, fakeGitHub } from './helpers/fake-github.ts';
 
 const USER = 'owner';
-const REPO = 'miricoder/project-kit';
-const REF = 'registry-v0.1.0';
-const RAW = `https://raw.githubusercontent.com/${REPO}/${REF}/`;
-const ROOT = new URL('../../../', import.meta.url); // the project-kit checkout
-
-type Override = (path: string, text: string) => string;
-
-/** Stands in for raw.githubusercontent.com, serving this checkout's registry/ at REF. */
-function fakeGitHub(opts: { down?: boolean; override?: Override } = {}) {
-  const requested: string[] = [];
-  const fetchImpl = (async (url: string | URL) => {
-    const u = String(url);
-    requested.push(u);
-    if (opts.down) return new Response('Service Unavailable', { status: 503 });
-    if (!u.startsWith(RAW)) return new Response('Not Found', { status: 404 });
-    const path = u.slice(RAW.length);
-    if (!path.startsWith('registry/') || path.includes('..')) return new Response('Not Found', { status: 404 });
-    let text: string;
-    try {
-      text = readFileSync(new URL(path, ROOT), 'utf8');
-    } catch {
-      return new Response('Not Found', { status: 404 });
-    }
-    return new Response(opts.override ? opts.override(path, text) : text, { status: 200 });
-  }) as unknown as typeof fetch;
-  return { fetchImpl, requested };
-}
 
 function appWith(store: MemoryStore, github: ReturnType<typeof fakeGitHub>, at: string) {
   return buildApp({

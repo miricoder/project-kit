@@ -23,6 +23,9 @@ export default function Today() {
       <Link href="/week" style={styles.link}>
         Week ›
       </Link>
+      <Link href="/skills" style={styles.link}>
+        Skills ›
+      </Link>
       <Link href="/settings" style={styles.link}>
         Settings ›
       </Link>

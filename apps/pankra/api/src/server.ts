@@ -11,7 +11,8 @@ const registry = {
   repo: process.env.REGISTRY_REPO ?? DEFAULT_REGISTRY.repo,
   ref: process.env.REGISTRY_REF ?? DEFAULT_REGISTRY.ref,
 };
-const app = buildApp({ store, userId: () => OWNER, vaultKey: process.env.VAULT_KEY, registry });
+const corsOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean);
+const app = buildApp({ store, userId: () => OWNER, vaultKey: process.env.VAULT_KEY, registry, corsOrigins });
 
 // Jobs (Agenda on MongoDB replaces these timers once the database is in place).
 const MINUTE = 60_000;
