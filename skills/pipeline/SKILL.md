@@ -67,6 +67,39 @@ pk state -C . init --project <name> --max-usd 25
 
 Tell the user the budget cap you set and that `/pipeline` can change it.
 
+### The user already has a plan
+
+If the user already has any of `research.md`, `proposal.md`, `spec.md` +
+`acceptance.feature` (in a folder, a repo, or the plugin's `apps/<name>/docs`), **do not
+re-run those phases** — import them. From an empty project directory:
+
+```bash
+pk state -C . import <folder> --project <name>
+```
+
+It copies the files into `docs/`, marks each phase whose artifact arrived `complete` and
+any earlier phase with no artifact `skipped`. A spec without its Gherkin scenarios is
+refused: `/initiate` and `/build` need them. The source may be inside the plugin: run from
+there (a project-kit session, design in `apps/<name>`), the project is created next to the
+plugin as `../<name>` and its path printed as `project_dir`; `--to <dir>` puts it anywhere
+else, such as an attached app repository.
+
+### The user wants to skip the judge panel
+
+The panel is the default, not a toll. If the user says they don't want it (no keys, no
+budget, spec already reviewed, a first prototype), ask for a one-line reason and record it:
+
+```bash
+pk state -C . waive judge --reason "<their reason>"
+```
+
+`/handover` and `/verdict` become `skipped`, `/initiate` may run next, and the waiver shows
+in `next`, the registry and the graph. Add `--skip-judge "<reason>"` to `import` to do both
+in one step. Only the judge gate can be waived; the test and security gates are free and
+mechanical, and always have to pass. Running `/handover` later replaces the waiver with a
+real ruling. Offer the waiver whenever the panel is what blocks the user — never apply it
+without their say-so.
+
 ## Step 2: Report where things stand
 
 ```bash
@@ -113,6 +146,8 @@ After each skill reports a deliverable:
 ```bash
 pk state -C . phase <phase> complete --artifact <path> [--artifact <path>]
 ```
+
+`skipped` counts as done for ordering but is always reported as skipped, never as complete.
 
 Use `in progress` when starting long work and `blocked --reason "<why>"` when you cannot
 proceed — a blocked phase is reported by `next` instead of being silently skipped.

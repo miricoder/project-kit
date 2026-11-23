@@ -366,3 +366,132 @@ class ContainerDirectoryTest(StateTestCase):
         (target / "existing").mkdir(parents=True)
         self.assertEqual(state.main(["-C", str(target), "init", "--here"]), 0)
         self.assertTrue((target / state.STATE_FILE).exists())
+
+
+class WaiverTest(StateTestCase):
+    """The judge panel is the default, not a toll: the user may waive it, on the record."""
+
+    def designed(self):
+        st = self.fresh()
+        for phase in ("ideate", "proposal", "design"):
+            state.set_phase(st, phase, "complete")
+        return st
+
+    def test_waiving_judge_opens_initiate_and_marks_panel_phases_skipped(self):
+        st = self.designed()
+        self.assertTrue(state.blockers(st, "initiate"))
+        state.waive(st, "judge", "spec reviewed by hand")
+        self.assertEqual(state.blockers(st, "initiate"), [])
+        self.assertEqual(state.next_phase(st), "initiate")
+        for phase in ("handover", "verdict"):
+            self.assertEqual(st["phases"][phase]["status"], "skipped")
+        self.assertEqual(st["gates"]["judge"]["ruling"], "WAIVED")
+        self.assertIn("spec reviewed by hand", " ".join(state.waivers(st)))
+
+    def test_waiver_needs_a_reason(self):
+        with self.assertRaises(state.StateError):
+            state.waive(self.designed(), "judge", "  ")
+
+    def test_test_and_security_gates_cannot_be_waived(self):
+        for gate in ("test", "security"):
+            with self.assertRaises(state.StateError):
+                state.waive(self.designed(), gate, "no")
+        st = self.designed()
+        st["gates"]["test"].update(status="complete", ruling="WAIVED")
+        self.assertFalse(state.gate_passed(st, "test"))
+
+    def test_a_real_ruling_replaces_a_waiver(self):
+        st = self.designed()
+        state.waive(st, "judge", "later")
+        state.record_ruling(st, "judge", "REJECT", 1, ["fix x"])
+        self.assertFalse(state.gate_passed(st, "judge"))
+
+    def test_skipped_phase_is_not_reported_as_complete(self):
+        st = self.designed()
+        state.waive(st, "judge", "r")
+        self.assertNotEqual(st["phases"]["handover"]["status"], "complete")
+        state.set_phase(st, "handover", "complete")
+        self.assertNotIn("skipped_reason", st["phases"]["handover"])
+
+
+class ImportTest(StateTestCase):
+    """Bring-your-own-plan: an existing spec is an entry point, not a reason to refuse."""
+
+    def plan(self, *names, nested=False):
+        src = self.dir / "plan"
+        target = src / "docs" if nested else src
+        target.mkdir(parents=True)
+        for n in names:
+            (target / n).write_text(f"# {n}\n")
+        return src
+
+    def project(self):
+        proj = self.dir / "app"
+        proj.mkdir()
+        return proj
+
+    def test_full_plan_completes_planning_phases(self):
+        src = self.plan("research.md", "proposal.md", "spec.md", "acceptance.feature",
+                        "inputs-checklist.md")
+        proj = self.project()
+        st = self.fresh()
+        state.import_plan(st, proj, src)
+        for phase in ("ideate", "proposal", "design"):
+            self.assertEqual(st["phases"][phase]["status"], "complete")
+        self.assertTrue((proj / "docs" / "spec.md").is_file())
+        self.assertTrue((proj / "docs" / "inputs-checklist.md").is_file())
+        self.assertEqual(state.next_phase(st), "handover")
+
+    def test_spec_only_skips_earlier_phases(self):
+        src = self.plan("spec.md", "acceptance.feature", nested=True)
+        st = self.fresh()
+        state.import_plan(st, self.project(), src)
+        self.assertEqual(st["phases"]["ideate"]["status"], "skipped")
+        self.assertEqual(st["phases"]["proposal"]["status"], "skipped")
+        self.assertEqual(st["phases"]["design"]["status"], "complete")
+
+    def test_spec_without_scenarios_is_refused(self):
+        src = self.plan("spec.md")
+        with self.assertRaises(state.StateError):
+            state.import_plan(self.fresh(), self.project(), src)
+
+    def test_does_not_clobber_a_different_existing_file(self):
+        src = self.plan("spec.md", "acceptance.feature")
+        proj = self.project()
+        (proj / "docs").mkdir()
+        (proj / "docs" / "spec.md").write_text("mine")
+        with self.assertRaises(state.StateError):
+            state.import_plan(self.fresh(), proj, src)
+        state.import_plan(self.fresh(), proj, src, overwrite=True)
+        self.assertEqual((proj / "docs" / "spec.md").read_text(), "# spec.md\n")
+
+    def test_cli_import_with_skip_judge_reaches_initiate(self):
+        src = self.plan("research.md", "proposal.md", "spec.md", "acceptance.feature")
+        proj = self.project()
+        rc = state.main(["-C", str(proj), "import", str(src), "--project", "demo",
+                         "--skip-judge", "spec reviewed by hand"])
+        self.assertEqual(rc, 0)
+        st = state.load(proj)
+        self.assertEqual(state.next_phase(st), "initiate")
+        self.assertEqual(state.blockers(st, "initiate"), [])
+
+
+class ImportFromPluginTest(StateTestCase):
+    """A design kept in the plugin's apps/<name> is imported into a sibling project."""
+
+    def test_import_run_inside_plugin_creates_sibling_project(self):
+        plugin = self.dir / "project-kit"
+        (plugin / ".claude-plugin").mkdir(parents=True)
+        (plugin / ".claude-plugin" / "plugin.json").write_text('{"name": "project-kit"}')
+        docs = plugin / "apps" / "pankra" / "docs"
+        docs.mkdir(parents=True)
+        for n in ("research.md", "proposal.md", "spec.md", "acceptance.feature"):
+            (docs / n).write_text(n)
+        rc = state.main(["-C", str(plugin), "import", str(plugin / "apps" / "pankra"),
+                         "--skip-judge", "owner-reviewed"])
+        self.assertEqual(rc, 0)
+        project = self.dir / "pankra"
+        self.assertTrue((project / "pipeline.json").is_file())
+        self.assertTrue((project / "docs" / "spec.md").is_file())
+        self.assertFalse((plugin / "pipeline.json").exists())
+        self.assertEqual(state.next_phase(state.load(project)), "initiate")

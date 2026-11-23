@@ -163,7 +163,8 @@ def collect_project(directory: Path) -> Graph:
         entry = st["phases"][phase]
         ph = g.node(f"phase:{name}:{phase}", "Phase", phase, name=phase, project=name,
                     order=i + 1, status=entry["status"], completed_at=entry.get("completed_at"),
-                    blocked_reason=entry.get("blocked_reason"), skipped=entry.get("skipped"))
+                    blocked_reason=entry.get("blocked_reason"),
+                    skipped=entry.get("skipped_reason"))
         if i:
             g.edge(f"phase:{name}:{state.PHASES[i - 1]}", "NEXT", ph)
         g.edge(f"skill:{phase}", "RUNS", ph)
@@ -179,8 +180,8 @@ def collect_project(directory: Path) -> Graph:
 
     guarded = {gate: phase for phase, gate in state.GATED_BY.items()}
     for gate, record in st["gates"].items():
-        status = "complete" if state.gate_passed(st, gate) else (
-            "waived" if record.get("ruling") == "WAIVED" else record.get("status", "not started"))
+        status = "waived" if record.get("ruling") == "WAIVED" else (
+            "complete" if state.gate_passed(st, gate) else record.get("status", "not started"))
         gid = g.node(f"gate:{name}:{gate}", "Gate", gate, name=gate, project=name,
                      ruling=record.get("ruling"), round=record.get("round"), status=status,
                      open_fixes=len(record.get("open_fixes") or []) or None,

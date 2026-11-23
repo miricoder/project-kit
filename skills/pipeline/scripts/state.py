@@ -35,8 +35,12 @@ PHASES: tuple[str, ...] = (
 )
 WAVE1: tuple[str, ...] = PHASES[:5]
 
-# House-style status enum (.github/continuity_protocol.md).
-STATUSES = ("not started", "in progress", "blocked", "complete")
+# House-style status enum (.github/continuity_protocol.md), plus "skipped": the user chose
+# not to run this phase (they brought the artifact themselves, or waived the judge panel).
+# A skipped phase satisfies later phases' ordering, and is always shown as skipped, never
+# as complete, so nobody mistakes it for work the pipeline did.
+STATUSES = ("not started", "in progress", "blocked", "complete", "skipped")
+DONE = ("complete", "skipped")
 MODES = ("manual", "auto", "yolo")
 GATES = ("judge", "test", "security")
 
@@ -50,6 +54,22 @@ AUTO_CHECKPOINTS: tuple[str, ...] = ("ideate", "proposal", "handover", "verdict"
 # SOUND is the judge's passing ruling; PASS is what `pk ship test` and `pk ship audit` record.
 RULINGS_PASSING = ("SOUND", "PASS")
 RULINGS_CONDITIONAL = ("FIX FIRST",)
+
+# A gate the user may open by an explicit, recorded decision instead of a ruling. Only the
+# judge gate: it costs money and needs third-party keys. The test and security gates are
+# mechanical and free, so they always have to be earned.
+WAIVABLE_GATES = ("judge",)
+WAIVED = "WAIVED"
+# Phases a judge waiver stands in for.
+JUDGE_PHASES = ("handover", "verdict")
+
+# Bring-your-own-plan: which file proves which planning phase, and where it lives.
+IMPORTABLE: tuple[tuple[str, str], ...] = (
+    ("ideate", "docs/research.md"),
+    ("proposal", "docs/proposal.md"),
+    ("design", "docs/spec.md"),
+    ("design", "docs/acceptance.feature"),
+)
 
 
 class StateError(RuntimeError):
@@ -174,6 +194,12 @@ def set_phase(state: Dict[str, Any], phase: str, status: str,
         entry.pop("blocked_reason", None)
     if status == "blocked":
         entry["blocked_reason"] = reason or "unspecified"
+    if status == "skipped":
+        entry["skipped_reason"] = reason or "unspecified"
+        entry["skipped_at"] = _now()
+    else:
+        entry.pop("skipped_reason", None)
+        entry.pop("skipped_at", None)
     state["resume_point"] = describe_next(state)
     return state
 
@@ -207,7 +233,117 @@ def gate_passed(state: Dict[str, Any], gate: str) -> bool:
     ruling = record.get("ruling")
     if ruling in RULINGS_PASSING:
         return True
+    if ruling == WAIVED:
+        return gate in WAIVABLE_GATES
     return ruling in RULINGS_CONDITIONAL and not record.get("open_fixes")
+
+
+def waive(state: Dict[str, Any], gate: str, reason: str) -> Dict[str, Any]:
+    """Open a gate by the user's recorded decision rather than a ruling.
+
+    The waiver is not a pass: it is stored as ruling WAIVED with the reason and time, the
+    phases it replaces are marked skipped (not complete), and `next`, the registry and the
+    graph all show it. A later real ruling overwrites it.
+    """
+    if gate not in WAIVABLE_GATES:
+        raise StateError(f"the {gate} gate cannot be waived; only "
+                         f"{', '.join(WAIVABLE_GATES)} can. It has to pass.")
+    if not reason or not reason.strip():
+        raise StateError("a waiver needs a reason (--reason), so the record says why")
+    if gate_passed(state, gate) and state["gates"][gate].get("ruling") != WAIVED:
+        raise StateError(f"the {gate} gate already passed with a ruling; nothing to waive")
+    state["gates"][gate] = {
+        "status": "complete", "ruling": WAIVED, "round": state["gates"][gate].get("round", 0),
+        "open_fixes": [], "decided_at": _now(), "waived_reason": reason.strip(),
+    }
+    if gate == "judge":
+        for phase in JUDGE_PHASES:
+            if state["phases"][phase]["status"] != "complete":
+                set_phase(state, phase, "skipped", reason=f"judge gate waived: {reason.strip()}")
+    state["rounds"].append({"gate": gate, "round": state["gates"][gate]["round"],
+                            "ruling": WAIVED, "open_fixes": [], "at": _now(),
+                            "reason": reason.strip()})
+    state["resume_point"] = describe_next(state)
+    return state
+
+
+def waivers(state: Dict[str, Any]) -> List[str]:
+    """Human-readable list of every gate waived and phase skipped, for reports."""
+    out = [f"{g} gate waived: {r.get('waived_reason', 'no reason recorded')}"
+           for g, r in state["gates"].items() if r.get("ruling") == WAIVED]
+    out += [f"{p} skipped" + (f": {e['skipped_reason']}" if e.get("skipped_reason") else "")
+            for p, e in state["phases"].items() if e["status"] == "skipped"]
+    return out
+
+
+def import_plan(state: Dict[str, Any], project_dir: str | os.PathLike[str],
+                source: str | os.PathLike[str], overwrite: bool = False) -> Dict[str, Any]:
+    """Bring an existing plan into the project and record what it covers.
+
+    Copies research.md, proposal.md, spec.md and acceptance.feature (from `source` or
+    `source/docs`) into docs/, plus any other .md alongside them. Each planning phase whose
+    artifact arrived is marked complete; a planning phase before it with no artifact is
+    marked skipped. A spec without acceptance criteria is refused: /initiate and /build
+    turn scenarios into slices and tests, and have nothing to work from without them.
+    """
+    import shutil
+    src = Path(os.path.expanduser(str(source))).resolve()
+    if (src / "docs").is_dir() and not any((src / Path(rel).name).is_file()
+                                          for _, rel in IMPORTABLE):
+        src = src / "docs"
+    if not src.is_dir():
+        raise StateError(f"{src} is not a directory")
+    dest_root = Path(project_dir).resolve()
+    if src == (dest_root / "docs").resolve():
+        copy = False                     # already in place: just record it
+    else:
+        copy = True
+    found = {rel: src / Path(rel).name for _, rel in IMPORTABLE
+             if (src / Path(rel).name).is_file()}
+    has_spec = "docs/spec.md" in found
+    has_feature = "docs/acceptance.feature" in found
+    if has_spec != has_feature:
+        missing = "docs/acceptance.feature" if has_spec else "docs/spec.md"
+        raise StateError(f"{src} has one half of a design but not {Path(missing).name}; "
+                         "the design phase needs both the spec and its Gherkin scenarios")
+    if not found:
+        raise StateError(f"{src} holds none of research.md, proposal.md, spec.md, "
+                         "acceptance.feature; nothing to import")
+
+    copied: List[str] = []
+    if copy:
+        (dest_root / "docs").mkdir(parents=True, exist_ok=True)
+        extras = [f for f in sorted(src.iterdir())
+                  if f.is_file() and f.suffix in (".md", ".feature")
+                  and f not in found.values()]
+        for rel, path in [*found.items(), *((f"docs/{f.name}", f) for f in extras)]:
+            target = dest_root / rel
+            if target.exists() and not overwrite:
+                if target.read_bytes() != path.read_bytes():
+                    raise StateError(f"{rel} already exists and differs; pass --overwrite "
+                                     "to replace it")
+                continue
+            shutil.copyfile(path, target)
+            copied.append(rel)
+
+    by_phase: Dict[str, List[str]] = {}
+    for phase, rel in IMPORTABLE:
+        if rel in found:
+            by_phase.setdefault(phase, []).append(rel)
+    last = max(PHASES.index(p) for p in by_phase)
+    for phase in PHASES[:last + 1]:
+        entry = state["phases"][phase]
+        if entry["status"] == "complete":
+            continue
+        if phase in by_phase:
+            set_phase(state, phase, "complete", by_phase[phase])
+        else:
+            set_phase(state, phase, "skipped",
+                      reason=f"plan imported from {src} without this phase's artifact")
+    state.setdefault("imports", []).append(
+        {"from": str(src), "artifacts": sorted(found), "copied": copied, "at": _now()})
+    state["resume_point"] = describe_next(state)
+    return state
 
 
 def add_spend(state: Dict[str, Any], usd: float) -> Dict[str, Any]:
@@ -225,7 +361,7 @@ def budget_exceeded(state: Dict[str, Any]) -> bool:
 def next_phase(state: Dict[str, Any]) -> Optional[str]:
     """The first phase that is not complete, or None when every phase is done."""
     for phase in PHASES:
-        if state["phases"][phase]["status"] != "complete":
+        if state["phases"][phase]["status"] not in DONE:
             return phase
     return None
 
@@ -250,7 +386,7 @@ def blockers(state: Dict[str, Any], phase: str) -> List[str]:
         reasons.append(f"{phase} is blocked: {own.get('blocked_reason', 'unspecified')}")
     for earlier in PHASES[:index]:
         entry = state["phases"][earlier]
-        if entry["status"] != "complete":
+        if entry["status"] not in DONE:
             reasons.append(f"{earlier} is {entry['status']}, not complete")
     gate = GATED_BY.get(phase)
     if gate and not gate_passed(state, gate):
@@ -272,6 +408,9 @@ def describe_next(state: Dict[str, Any]) -> str:
     reasons = blockers(state, phase)
     if reasons:
         return f"blocked before /{phase}: " + "; ".join(reasons)
+    if phase == "handover" and not gate_passed(state, "judge"):
+        return ("run /handover (the judge panel), or skip it: "
+                "pk state waive judge --reason \"...\"")
     return f"run /{phase}"
 
 
@@ -293,6 +432,7 @@ def registry_upsert(state: Dict[str, Any], project_dir: str | os.PathLike[str]) 
         "phase": next_phase(state) or "complete",
         "mode": state["mode"],
         "judge_ruling": state["gates"]["judge"].get("ruling"),
+        "waivers": waivers(state),
         "launched": state["phases"]["launch"]["status"] == "complete",
         "updated_at": state["updated_at"],
     }
@@ -308,6 +448,52 @@ def registry_upsert(state: Dict[str, Any], project_dir: str | os.PathLike[str]) 
 
 def _emit(data: Any) -> None:
     print(json.dumps(data, indent=2))
+
+
+def _import_target(args: argparse.Namespace) -> str:
+    """Where an import lands. Running it from inside the plugin (a project-kit session
+    whose design lives in apps/<name>) is not an error: the project is created next to the
+    plugin, named after it, as a git repository, and its path is reported."""
+    if args.to:
+        target = Path(os.path.expanduser(args.to))
+    else:
+        inside = plugin_root_of(args.dir)
+        if inside is None:
+            return args.dir
+        src = Path(os.path.expanduser(args.source)).resolve()
+        name = args.project or slugify(src.parent.name if src.name == "docs" else src.name)
+        args.project = name
+        target = inside.parent / name
+    if plugin_root_of(target.parent if not target.exists() else target) is not None:
+        raise StateError(f"{target} is inside the Project Kit plugin; choose a directory "
+                         "outside it with --to")
+    fresh = not target.exists() or not any(target.iterdir())
+    target.mkdir(parents=True, exist_ok=True)
+    if fresh and not (target / ".git").exists():
+        import subprocess
+        subprocess.run(["git", "init", "-q", str(target)], check=False)
+    return str(target)
+
+
+def _check_home(directory: str, here: bool, project: Optional[str]) -> None:
+    """Refuse to start a project inside the plugin, or in a directory that looks wrong."""
+    inside = plugin_root_of(directory)
+    if inside is not None:
+        raise StateError(
+            f"refusing to initialise inside the Project Kit plugin at {inside}. "
+            "This would write pipeline.json and docs/ into the tool's own source. "
+            "Change to an empty directory for your product and run it there "
+            "(design files kept in the plugin can still be brought in from there: "
+            "pk state import <that folder>).")
+    reason = None if here else looks_like_a_container(directory)
+    if reason is not None:
+        suggestion = slugify(project) if project else "<project-name>"
+        raise StateError(
+            f"{Path(os.path.realpath(directory))} is probably not where this project "
+            f"should live: {reason}. Project Kit writes pipeline.json and docs/ into "
+            f"the directory you run it from.\n"
+            f"  Create one:   mkdir {suggestion} && cd {suggestion}\n"
+            f"  Or force it:  --here")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -341,30 +527,61 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--round", type=int, default=1)
     p.add_argument("--open-fix", action="append", default=[])
 
+    p = sub.add_parser("waive", help="open a gate by your recorded decision (judge only)")
+    p.add_argument("gate", choices=WAIVABLE_GATES)
+    p.add_argument("--reason", required=True)
+
+    p = sub.add_parser("import", help="bring an existing plan (research/proposal/spec/"
+                                       "acceptance) into this project")
+    p.add_argument("source", help="directory holding the files, or one with a docs/ inside")
+    p.add_argument("--project", help="project name if pipeline.json does not exist yet")
+    p.add_argument("--mode", default="auto", choices=MODES)
+    p.add_argument("--max-usd", type=float, default=25.0)
+    p.add_argument("--overwrite", action="store_true",
+                   help="replace docs/ files that already exist and differ")
+    p.add_argument("--skip-judge", metavar="REASON",
+                   help="also waive the judge gate, so /initiate can run next")
+    p.add_argument("--here", action="store_true",
+                   help="import even if this directory looks like a poor home")
+    p.add_argument("--to", metavar="DIR",
+                   help="project directory to create or use (default: -C, or a sibling "
+                        "of the plugin named after the project when -C is inside it)")
+
     p = sub.add_parser("budget", help="inspect or adjust the budget")
     p.add_argument("--add", type=float)
     p.add_argument("--max", type=float)
 
     args = parser.parse_args(argv)
     try:
+        if args.command == "import":
+            created = False
+            args.dir = _import_target(args)
+            if not state_path(args.dir).exists():
+                _check_home(args.dir, args.here, args.project)
+                project = args.project or slugify(Path(os.path.realpath(args.dir)).name)
+                st = new_state(project, args.mode, args.max_usd)
+                created = True
+            else:
+                inside = plugin_root_of(args.dir)
+                if inside is not None:
+                    raise StateError(f"refusing to import into the Project Kit plugin at {inside}")
+                st = load(args.dir)
+            import_plan(st, args.dir, args.source, args.overwrite)
+            if args.skip_judge:
+                waive(st, "judge", args.skip_judge)
+            save(st, args.dir)
+            registry_upsert(st, args.dir)
+            _emit({"project": st["project"], "project_dir": str(Path(args.dir).resolve()),
+                   "created": created,
+                   "imported": st["imports"][-1],
+                   "phases": {p: st["phases"][p]["status"] for p in PHASES},
+                   "waivers": waivers(st), "next": describe_next(st)})
+            return 0
+
         if args.command == "init":
             if state_path(args.dir).exists():
                 raise StateError(f"{STATE_FILE} already exists in {Path(args.dir).resolve()}")
-            inside = plugin_root_of(args.dir)
-            if inside is not None:
-                raise StateError(
-                    f"refusing to initialise inside the Project Kit plugin at {inside}. "
-                    "This would write pipeline.json and docs/ into the tool's own source. "
-                    "Change to an empty directory for your product and run it there.")
-            reason = None if args.here else looks_like_a_container(args.dir)
-            if reason is not None:
-                suggestion = slugify(args.project) if args.project else "<project-name>"
-                raise StateError(
-                    f"{Path(os.path.realpath(args.dir))} is probably not where this project "
-                    f"should live: {reason}. Project Kit writes pipeline.json and docs/ into "
-                    f"the directory you run it from.\n"
-                    f"  Create one:   mkdir {suggestion} && cd {suggestion}\n"
-                    f"  Or force it:  --here")
+            _check_home(args.dir, args.here, args.project)
             project = args.project or slugify(Path(os.path.realpath(args.dir)).name)
             state = new_state(project, args.mode, args.max_usd)
             save(state, args.dir)
@@ -383,7 +600,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             _emit({"phase": phase, "runnable": phase is not None and not blockers(state, phase),
                    "blockers": blockers(state, phase) if phase else [],
                    "pause_after": should_pause_after(state, phase) if phase else False,
-                   "mode": state["mode"], "resume_point": describe_next(state)})
+                   "mode": state["mode"], "resume_point": describe_next(state),
+                   "waivers": waivers(state)})
             return 0
         if args.command == "mode":
             if args.value:
@@ -402,6 +620,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             save(state, args.dir)
             registry_upsert(state, args.dir)
             _emit({"gate": args.gate, "passed": gate_passed(state, args.gate),
+                   "next": describe_next(state)})
+            return 0
+        if args.command == "waive":
+            waive(state, args.gate, args.reason)
+            save(state, args.dir)
+            registry_upsert(state, args.dir)
+            _emit({"gate": args.gate, "ruling": WAIVED, "reason": args.reason.strip(),
+                   "skipped": [p for p in JUDGE_PHASES
+                               if state["phases"][p]["status"] == "skipped"],
                    "next": describe_next(state)})
             return 0
         if args.command == "budget":

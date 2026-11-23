@@ -37,17 +37,17 @@ gh repo create miricoder/pankra --private --clone && cd pankra
 git -C /tmp clone --depth 1 -b app/pankra-design https://github.com/miricoder/project-kit pk-src
 mkdir -p docs && cp /tmp/pk-src/apps/pankra/docs/* docs/
 
-# 3. Start the pipeline at the judge gate: the design phases are already written
-pk state -C . init --project pankra
-pk state -C . phase ideate complete --artifact docs/research.md
-pk state -C . phase proposal complete --artifact docs/proposal.md
-pk state -C . phase design complete --artifact docs/spec.md --artifact docs/acceptance.feature
-pk state -C . next          # -> handover: /handover, then /verdict, /initiate, /build, ...
+# 3. Import the design: copies docs/ and marks ideate, proposal and design complete
+pk state -C . import /tmp/pk-src/apps/pankra --project pankra
+pk state -C . next          # -> handover (the judge panel)
+
+#    Or skip the panel and go straight to the backlog and build:
+pk state -C . import /tmp/pk-src/apps/pankra --project pankra --skip-judge "<reason>"
+pk state -C . next          # -> /initiate, then /build
 ```
 
-Marking the first three phases complete records that their artefacts exist; it opens no
-gate. The judge gate before `/initiate` still needs a recorded ruling from `/handover` and
-`/verdict`.
+The judge panel is the default but optional. Skipping it is recorded as `WAIVED` with your
+reason and shown everywhere the ruling would be; running `/handover` later replaces it.
 
 Runtime skills come from this repository's `registry/` at `REGISTRY_REF` (see
 `docs/spec.md`, "Registry sync"). Nothing in `registry/` needs copying.
