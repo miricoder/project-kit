@@ -124,6 +124,10 @@ research and proposal behind it), import it into an empty project directory:
 pk state -C . import <folder-with-your-docs> --project <name>
 ```
 
+Your design can live in this repository (as `apps/pankra` does): run the import from here
+and the project is created beside the plugin as `../<name>`, or wherever `--to <dir>` says.
+In practice you just tell Claude "build apps/pankra" and `/build` does the import itself.
+
 `research.md`, `proposal.md`, `spec.md` and `acceptance.feature` are copied into `docs/`;
 each phase whose file arrived is marked complete, earlier ones without a file are marked
 `skipped`. The spec must come with its Gherkin scenarios: `/build` turns them into tests.

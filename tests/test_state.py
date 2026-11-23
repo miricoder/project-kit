@@ -474,3 +474,24 @@ class ImportTest(StateTestCase):
         st = state.load(proj)
         self.assertEqual(state.next_phase(st), "initiate")
         self.assertEqual(state.blockers(st, "initiate"), [])
+
+
+class ImportFromPluginTest(StateTestCase):
+    """A design kept in the plugin's apps/<name> is imported into a sibling project."""
+
+    def test_import_run_inside_plugin_creates_sibling_project(self):
+        plugin = self.dir / "project-kit"
+        (plugin / ".claude-plugin").mkdir(parents=True)
+        (plugin / ".claude-plugin" / "plugin.json").write_text('{"name": "project-kit"}')
+        docs = plugin / "apps" / "pankra" / "docs"
+        docs.mkdir(parents=True)
+        for n in ("research.md", "proposal.md", "spec.md", "acceptance.feature"):
+            (docs / n).write_text(n)
+        rc = state.main(["-C", str(plugin), "import", str(plugin / "apps" / "pankra"),
+                         "--skip-judge", "owner-reviewed"])
+        self.assertEqual(rc, 0)
+        project = self.dir / "pankra"
+        self.assertTrue((project / "pipeline.json").is_file())
+        self.assertTrue((project / "docs" / "spec.md").is_file())
+        self.assertFalse((plugin / "pipeline.json").exists())
+        self.assertEqual(state.next_phase(state.load(project)), "initiate")

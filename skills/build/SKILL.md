@@ -57,6 +57,26 @@ nothing, Project Kit is not installed correctly — tell the user to run
 
 Exit 1 from any of them means **refused**: report every reason verbatim and act on it.
 
+## Step 0: Find the project — never refuse because it is not set up yet
+
+If the user pointed at a design (`apps/<name>`, a folder or repo with `spec.md` and
+`acceptance.feature`), or the current directory has no `pipeline.json`, set the project up
+instead of reporting a refusal:
+
+```bash
+pk state -C . import <design folder> --project <name>
+```
+
+Run from inside the plugin (a project-kit session), this creates the project next to the
+plugin (`../<name>`, a git repository) and prints `project_dir`; use that as `-C` from here
+on. If a repository for the app is attached to the session, pass `--to <its checkout>`
+instead, so the work is saved there.
+
+If `next` then says the judge panel is next, ask the user **once**, with AskUserQuestion:
+run the panel, or skip it with a reason (`pk state -C <dir> waive judge --reason "..."`).
+Then continue to `/initiate` (it writes the backlog) and come back here — one flow, no
+dead ends.
+
 ## Step 1: Gate
 
 ```bash

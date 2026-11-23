@@ -450,6 +450,31 @@ def _emit(data: Any) -> None:
     print(json.dumps(data, indent=2))
 
 
+def _import_target(args: argparse.Namespace) -> str:
+    """Where an import lands. Running it from inside the plugin (a project-kit session
+    whose design lives in apps/<name>) is not an error: the project is created next to the
+    plugin, named after it, as a git repository, and its path is reported."""
+    if args.to:
+        target = Path(os.path.expanduser(args.to))
+    else:
+        inside = plugin_root_of(args.dir)
+        if inside is None:
+            return args.dir
+        src = Path(os.path.expanduser(args.source)).resolve()
+        name = args.project or slugify(src.parent.name if src.name == "docs" else src.name)
+        args.project = name
+        target = inside.parent / name
+    if plugin_root_of(target.parent if not target.exists() else target) is not None:
+        raise StateError(f"{target} is inside the Project Kit plugin; choose a directory "
+                         "outside it with --to")
+    fresh = not target.exists() or not any(target.iterdir())
+    target.mkdir(parents=True, exist_ok=True)
+    if fresh and not (target / ".git").exists():
+        import subprocess
+        subprocess.run(["git", "init", "-q", str(target)], check=False)
+    return str(target)
+
+
 def _check_home(directory: str, here: bool, project: Optional[str]) -> None:
     """Refuse to start a project inside the plugin, or in a directory that looks wrong."""
     inside = plugin_root_of(directory)
@@ -518,6 +543,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                    help="also waive the judge gate, so /initiate can run next")
     p.add_argument("--here", action="store_true",
                    help="import even if this directory looks like a poor home")
+    p.add_argument("--to", metavar="DIR",
+                   help="project directory to create or use (default: -C, or a sibling "
+                        "of the plugin named after the project when -C is inside it)")
 
     p = sub.add_parser("budget", help="inspect or adjust the budget")
     p.add_argument("--add", type=float)
@@ -527,6 +555,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         if args.command == "import":
             created = False
+            args.dir = _import_target(args)
             if not state_path(args.dir).exists():
                 _check_home(args.dir, args.here, args.project)
                 project = args.project or slugify(Path(os.path.realpath(args.dir)).name)
@@ -542,7 +571,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 waive(st, "judge", args.skip_judge)
             save(st, args.dir)
             registry_upsert(st, args.dir)
-            _emit({"project": st["project"], "created": created,
+            _emit({"project": st["project"], "project_dir": str(Path(args.dir).resolve()),
+                   "created": created,
                    "imported": st["imports"][-1],
                    "phases": {p: st["phases"][p]["status"] for p in PHASES},
                    "waivers": waivers(st), "next": describe_next(st)})
