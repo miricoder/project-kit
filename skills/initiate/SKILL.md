@@ -14,7 +14,8 @@ one at a time.
 1. **Always ask before starting development — in every mode, `yolo` included.** This is the
    one approval the pipeline never skips. No answer, no backlog.
 2. **The gate decides, not you.** `pk gate phase initiate` refuses unless the judge gate has
-   a recorded pass. Never work around it.
+   a recorded pass or a recorded waiver from the user (`pk state waive judge`). Never work
+   around it, and never waive it on the user's behalf without asking.
 3. **The backlog covers the plan exactly.** Every acceptance scenario lands in a slice;
    nothing outside the proposal's v1 cut is added. `pk qa backlog` checks the first.
 
@@ -56,14 +57,16 @@ matter:
 pk gate -C . phase initiate
 ```
 
-Exit 1: report verbatim and stop. A closed judge gate sends the user to `/remediate`.
+Exit 1: report verbatim and stop. A closed judge gate: offer both routes in one question —
+run the panel (`/handover`, or `/remediate` in yolo), or skip it with a reason
+(`pk state -C . waive judge --reason "..."`) and continue here.
 
 ## Step 2: Ask
 
 Show, then **wait for an explicit yes**:
 
     READY TO BUILD  <project>
-    Judge ruling:  <ruling>, round <n>   (docs/ruling.md)
+    Judge ruling:  <ruling>, round <n>   (docs/ruling.md)   — or "WAIVED: <reason>"
     Checks:        all passed            (qa/report.json)
     v1:            <the proposal's one-sentence v1>
     Slices:        about <n>, from the proposal's phases

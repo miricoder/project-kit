@@ -63,7 +63,11 @@ Exit 1 from any of them means **refused**: report every reason verbatim and act 
 pk gate -C . phase build
 ```
 
-Exit 1: report verbatim and stop. A refusal naming `initiate` sends the user to `/initiate`.
+Exit 1: report the reasons. If the only thing missing is `initiate` (no backlog yet), say so
+in one line and run `/initiate` now — it asks the user before writing the backlog, then
+comes back here. If the judge gate or a planning phase is what blocks, offer the routes in
+`/pipeline` ("The user already has a plan", "The user wants to skip the judge panel")
+instead of stopping with a refusal.
 
 ## Step 2: Pick the slice
 

@@ -19,13 +19,15 @@ Order is pipeline order. `next` returns the first phase that is not `complete`.
 ## Status enum
 
 `not started | in progress | blocked | complete` — the house convention from
-`.github/continuity_protocol.md`.
+`.github/continuity_protocol.md` — plus `skipped`: the user chose not to run the phase
+(imported a plan without its artifact, or waived the judge panel). `skipped` satisfies
+ordering like `complete` but is always reported as skipped.
 
 ## Gates
 
 | Gate | Guards | Passes when |
 |---|---|---|
-| judge | `initiate` | A recorded ruling of `SOUND`, or `FIX FIRST` with no fix left open |
+| judge | `initiate` | A recorded ruling of `SOUND`, or `FIX FIRST` with no fix left open, or a user waiver (`pk state waive judge --reason`), recorded as `WAIVED` |
 | security | `launch` | `pk ship audit` recorded `PASS`: no secrets in files or history, dependencies clean, threat model complete |
 | test | `launch` (via phase order and `pk ship done launch`) | `pk ship test` recorded `PASS`: full suite green, every scenario mapped |
 

@@ -115,6 +115,30 @@ Pass `--here` to `pk state init` only if you deliberately want to initialise in 
 A bare `/ideate` with no idea asks what you want to build and writes nothing, leaving the
 directory exactly as it found it.
 
+### Already have a plan? Start where you are
+
+You do not have to begin at `/ideate`. If you already have a spec (and, optionally, the
+research and proposal behind it), import it into an empty project directory:
+
+```bash
+pk state -C . import <folder-with-your-docs> --project <name>
+```
+
+`research.md`, `proposal.md`, `spec.md` and `acceptance.feature` are copied into `docs/`;
+each phase whose file arrived is marked complete, earlier ones without a file are marked
+`skipped`. The spec must come with its Gherkin scenarios: `/build` turns them into tests.
+
+The judge panel is the default next step, but you can skip it with a reason:
+
+```bash
+pk state -C . waive judge --reason "spec reviewed by hand"
+# or in one step: pk state -C . import <folder> --skip-judge "spec reviewed by hand"
+```
+
+Then `/initiate` writes the backlog and `/build` starts. The waiver is recorded as `WAIVED`
+and shown by `/pipeline`, the tracker and the graph; running `/handover` later replaces it
+with a real ruling. The test and security gates cannot be waived.
+
 ## Using it from a terminal
 
 The plugin works in any Claude Code session — the VS Code extension, or the CLI.
@@ -204,7 +228,8 @@ python3 "$CLAUDE_PLUGIN_ROOT/skills/pipeline/scripts/gate.py" -C . phase design
 | `/graph` | all | **Not a phase.** Skills, phases, gates, artifacts and slices as a graph in a local database; `pk graph serve` shows it in any browser, `pk graph export` writes Cypher for Neo4j | ✅ |
 
 Three hard gates: the **judge gate** guards `/initiate`; the **test gate** and **security
-gate** guard `/launch`.
+gate** guard `/launch`. The judge gate is the only one you can waive (on the record, with
+a reason); the test and security gates always have to pass.
 
 ## Building and the graph
 

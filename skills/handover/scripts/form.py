@@ -317,4 +317,4 @@ def fix_label(fix: Dict[str, Any], width: int = 160) -> str:
 
 def passes(ruling: Optional[str], open_fixes: Sequence[Any]) -> bool:
     """Mirrors state.gate_passed, so a ruling can be explained before it is recorded."""
-    return ruling == "SOUND" or (ruling == "FIX FIRST" and not open_fixes)
+    return ruling in ("SOUND", "WAIVED") or (ruling == "FIX FIRST" and not open_fixes)
