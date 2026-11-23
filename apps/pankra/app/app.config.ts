@@ -20,5 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     ...config.extra,
     apiUrl: process.env.PANKRA_API_URL ?? config.extra?.apiUrl,
+    // PANKRA_PREVIEW=1 builds the claude.ai browser preview (no server; see src/demo/).
+    preview: process.env.PANKRA_PREVIEW === '1',
   },
 });

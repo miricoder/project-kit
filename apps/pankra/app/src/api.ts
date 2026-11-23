@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
+import { previewFetch, previewPostUrl } from './demo/server';
 import { Platform } from 'react-native';
 import type {
   Activity,
@@ -26,9 +27,14 @@ import type {
   Session,
 } from '@pankra/shared';
 
-const API_URL: string =
-  (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
-  'http://localhost:3000/api/v1';
+const EXTRA = (Constants.expoConfig?.extra ?? {}) as { apiUrl?: string; preview?: boolean };
+const API_URL: string = EXTRA.apiUrl ?? 'http://localhost:3000/api/v1';
+
+/**
+ * The browser preview on claude.ai: no server, the API's routes answered in the page and
+ * skills run on Claude through claude.ai (see src/demo/server.ts).
+ */
+export const IS_PREVIEW = EXTRA.preview === true;
 
 /**
  * The session: an HttpOnly cookie on the web (the browser keeps it), a bearer token in the
@@ -51,6 +57,7 @@ async function setSessionToken(token: string | null): Promise<void> {
 }
 
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
+  if (IS_PREVIEW) return previewFetch(path, init);
   const token = await sessionToken();
   const headers = new Headers(init.headers);
   if (token) headers.set('authorization', `Bearer ${token}`);
@@ -150,8 +157,10 @@ export const api = {
     await setSessionToken(null);
   },
   /** The day's workout as a 1080 x 1350 PNG. */
-  postUrl: (sessionId: string, theme: PostTheme) =>
-    `${API_URL}/sessions/${encodeURIComponent(sessionId)}/post.png?theme=${theme}`,
+  postUrl: async (sessionId: string, theme: PostTheme) => {
+    if (IS_PREVIEW) return previewPostUrl(sessionId, theme);
+    return `${API_URL}/sessions/${encodeURIComponent(sessionId)}/post.png?theme=${theme}`;
+  },
 };
 
 /**

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import type { PostTheme } from '@pankra/shared';
-import { api } from '../../src/api';
+import { IS_PREVIEW, api } from '../../src/api';
+import { savePostPng } from '../../src/demo/download';
 
 const THEMES: Array<{ id: PostTheme; label: string }> = [
   { id: 'whiteboard', label: 'Whiteboard' },
@@ -14,7 +15,27 @@ const THEMES: Array<{ id: PostTheme; label: string }> = [
 export default function Share() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const [theme, setTheme] = useState<PostTheme>('whiteboard');
-  const url = api.postUrl(sessionId, theme);
+  const [url, setUrl] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    api.postUrl(sessionId, theme).then((u) => live && setUrl(u));
+    return () => {
+      live = false;
+    };
+  }, [sessionId, theme]);
+
+  async function download() {
+    if (!url) return;
+    setMessage(null);
+    if (!IS_PREVIEW) return void Linking.openURL(url);
+    try {
+      setMessage(await savePostPng(url, `pankra-${theme}.png`));
+    } catch (e) {
+      setMessage((e as Error).message);
+    }
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
@@ -32,15 +53,18 @@ export default function Share() {
           </Pressable>
         ))}
       </View>
-      <Image
-        source={{ uri: url }}
-        style={styles.preview}
-        resizeMode="contain"
-        accessibilityLabel={`The day's workout as a post, ${theme} theme`}
-      />
-      <Pressable accessibilityRole="button" onPress={() => Linking.openURL(url)} style={styles.button}>
+      {url ? (
+        <Image
+          source={{ uri: url }}
+          style={styles.preview}
+          resizeMode="contain"
+          accessibilityLabel={`The day's workout as a post, ${theme} theme`}
+        />
+      ) : null}
+      <Pressable accessibilityRole="button" onPress={download} style={styles.button}>
         <Text style={styles.buttonText}>Download PNG (1080 × 1350)</Text>
       </Pressable>
+      {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
     </ScrollView>
   );
 }

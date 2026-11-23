@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
 import { nodeBadge, type CredentialStatus, type JSONSchema, type NodeSummary, type Provider, type Run } from '@pankra/shared';
-import { ApiError, api } from './api';
+import { ApiError, IS_PREVIEW, api } from './api';
 
 const NAMES: Record<Provider, string> = { claude: 'Claude', gpt: 'GPT' };
 
@@ -28,13 +28,16 @@ export function RunPanel({ node, credentials, input, inputSchema, onResult }: {
   inputSchema?: JSONSchema;
   onResult?: (run: Run) => void;
 }) {
-  const offered = (Object.keys(node.providers) as Provider[]).filter((p) => node.providers[p]);
+  // The preview runs every skill on Claude through claude.ai, with no key.
+  const offered = (Object.keys(node.providers) as Provider[]).filter(
+    (p) => node.providers[p] && (!IS_PREVIEW || p === 'claude'),
+  );
   const [provider, setProvider] = useState<Provider>(offered[0] ?? 'claude');
   const [busy, setBusy] = useState(false);
   const [run, setRun] = useState<Run | null>(null);
   const [refusal, setRefusal] = useState<ApiError | null>(null);
   const [typed, setTyped] = useState<Record<string, string>>({});
-  const badge = nodeBadge(node, provider, credentials);
+  const badge = IS_PREVIEW ? 'green' : nodeBadge(node, provider, credentials);
   const fields = textFields(inputSchema).filter((f) => !(f.name in input));
 
   async function go() {
@@ -86,7 +89,11 @@ export function RunPanel({ node, credentials, input, inputSchema, onResult }: {
         />
       ))}
       <Text style={badge === 'green' ? styles.ok : styles.warn}>
-        {badge === 'green' ? `● Ready on ${NAMES[provider]}` : `● Needs a ${NAMES[provider]} key`}
+        {IS_PREVIEW
+          ? '● Runs on Claude through claude.ai (no key needed)'
+          : badge === 'green'
+            ? `● Ready on ${NAMES[provider]}`
+            : `● Needs a ${NAMES[provider]} key`}
       </Text>
       <Pressable
         accessibilityRole="button"
