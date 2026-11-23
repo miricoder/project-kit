@@ -15,7 +15,7 @@ Chicago, 11–15 Feb 2027) who also trains at a CrossFit box wants **one place**
 3. reshuffles the week when the box programmes a class;
 4. tracks paces per machine (Air runner, motorised treadmill, track), which differ a lot;
 5. suggests food from what is in the fridge, and posts the day's workout to Instagram;
-6. plays the right music for each part of the session.
+6. plays the right music for each part of the session (future R&D, after v1).
 
 Today this is spread over five apps and a chat. The chat worked because a model did the
 analysis; the app keeps that, and makes the model swappable (Claude or GPT).
@@ -45,6 +45,6 @@ analysis; the app keeps that, and makes the model swappable (Claude or GPT).
 
 - Roxfit export or API: unknown; screenshots for v1, integration is a future R&D task.
 - Apple distribution: the owner plans a free Apple Developer account, which allows only
-  installs from Xcode on a Mac, lasting 7 days. Whether he has a Mac is not yet confirmed.
+  installs from Xcode on a Mac, lasting 7 days. The owner has a Mac (confirmed 23 Nov 2026).
 - Music service: Spotify (needs Premium for a developer app) or Apple Music (needs the paid
-  Apple account). Not yet confirmed.
+  Apple account). Decided: future R&D, not in v1.

@@ -97,7 +97,7 @@ Feature: Registry and skills graph
     Given REGISTRY_REF points at a tag whose index.json lists 13 nodes
     When the registry sync runs
     Then the Skills screen shows 13 nodes
-    And the weekly-coach agent has 4 numbered steps
+    And the weekly-coach agent has 3 numbered steps
 
   Scenario: registry offline keeps current skills
     Given 13 nodes are loaded
@@ -116,7 +116,7 @@ Feature: Registry and skills graph
   Scenario: hovering an agent shows its run order
     Given the Skills screen is open
     When the athlete hovers weekly-coach
-    Then its 4 skills are highlighted and numbered 1 to 4
+    Then its 3 skills are highlighted and numbered 1 to 3
     And every other node is dimmed
 
   Scenario: clicking a node opens its run panel
@@ -130,20 +130,6 @@ Feature: Data in
     Given Strava activity 123456 was imported
     When the Strava webhook sends activity 123456 again
     Then exactly 1 activity 123456 exists
-
-Feature: Music
-
-  Scenario: a session gets a playlist by section
-    Given Spotify is connected and the session has warm-up, strength and engine sections
-    When the athlete opens the session's music
-    Then the tempo plan shows 110-125 BPM for warm-up and 150-175 BPM for engine
-    And a playlist is ready to play
-
-  Scenario: session without music service
-    Given no music service is connected
-    When the athlete opens the session's music
-    Then the tempo plan is shown
-    And the athlete is asked to connect Spotify
 
 Feature: iPhone app
 

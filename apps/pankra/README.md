@@ -3,7 +3,7 @@
 PANKRA (from *pankration*, "all strength", the original hybrid sport) is the all-in-one iOS
 and web app for hybrid athletes: training plans as whiteboard cards, result logging and
 analysis, Hyrox race breakdowns, rescheduling around box classes, paces per machine, fuel,
-Instagram posts and session music. Every AI job is a skill, agent or plugin from
+Instagram posts, with session music planned as future R&D. Every AI job is a skill, agent or plugin from
 [`registry/`](../../registry/README.md), run on Claude or GPT.
 
 This folder is the **design input** Project Kit pulls to build and deploy the app. It is not

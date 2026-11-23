@@ -18,8 +18,6 @@ iOS and web app, with every AI job run by registry skills on Claude or GPT.
 - **Paces:** targets per machine from his own runs; Strava sync.
 - **Fuel:** meals before and after from a fridge photo; race-morning plan.
 - **Share:** the day's workout as a 1080 × 1350 Instagram image.
-- **Music:** a playlist per session with tempo by section and ducking for timer cues
-  (Spotify in v1).
 - **Skills graph:** every skill, agent, plugin and provider as an interactive node graph;
   hover shows connections and run order, click runs the node.
 - **Keys:** Claude and GPT keys entered in the app, encrypted, kept for a retention period the
@@ -32,7 +30,8 @@ iOS and web app, with every AI job run by registry skills on Claude or GPT.
 - Other users, coaches, teams — one user now; every record keeps `userId` for later.
 - Android — iPhone and web cover the owner.
 - App Store or TestFlight release — needs the paid Apple account; v1 installs from Xcode.
-- Apple Music, push notifications, Sign in with Apple — all need the paid Apple account.
+- Session music (Spotify or Apple Music) — future R&D and integration; the service is not chosen.
+- Push notifications, Sign in with Apple — both need the paid Apple account.
 - Roxfit or Hyrox API integration — no known public API; screenshots instead (R&D later).
 - Llama or other providers — the adapter makes them a later addition, not a v1 one.
 - Payments, social feed, wearables beyond Strava.
@@ -46,14 +45,14 @@ iOS and web app, with every AI job run by registry skills on Claude or GPT.
 | 2 | LLM layer | A skill runs on Claude and on GPT; a missing key blocks the run and asks for it; a key past retention is gone | 2–3 sessions |
 | 3 | Registry and graph | Registry sync loads 13 nodes from project-kit; hovering an agent lights its steps in order; clicking runs it | 2 sessions |
 | 4 | Data in | Strava runs arrive by webhook; a Hyrox screenshot becomes confirmed splits; race analysis shows | 2–3 sessions |
-| 5 | Fuel, share, music | Meals from a fridge photo; a PNG post exports; a session playlist plays and ducks on cues | 2–3 sessions |
+| 5 | Fuel and share | Meals from a fridge photo; a 1080 × 1350 PNG post exports | 1–2 sessions |
 | 6 | iPhone | The app installs from Xcode on the owner's iPhone and shows the same week as the web app | 1 session |
 
 ## Cost
 
 | Kind | Estimate | Driven by |
 |---|---|---|
-| Build effort | 12–17 working sessions | Music and screenshot reading are the least predictable |
+| Build effort | 11–16 working sessions | Screenshot reading is the least predictable |
 | Running cost | $0–15 a month hosting on free tiers; LLM use $5–30 a month | Number of runs and image size; a monthly cap per provider stops runs past it |
 | One-off | $0 (free Apple account); $99 a year if upgraded | Distribution choice |
 
@@ -62,6 +61,5 @@ tedious and force the $99 upgrade.
 
 ## Risks carried forward
 
-- Whether the owner has a Mac (no Mac = no free iPhone install; web app only).
-- Spotify Development Mode needs the owner on Premium and limits endpoints.
+- The 7-day reinstall from the owner's Mac may prove tedious enough to force the paid account.
 - Screenshot reading accuracy across apps that change their layouts.
