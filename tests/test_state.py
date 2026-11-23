@@ -477,9 +477,28 @@ class ImportTest(StateTestCase):
 
 
 class ImportFromPluginTest(StateTestCase):
-    """A design kept in the plugin's apps/<name> is imported into a sibling project."""
+    """A design kept elsewhere in the plugin (not apps/<name>) lands in a sibling project."""
 
-    def test_import_run_inside_plugin_creates_sibling_project(self):
+    def test_design_outside_apps_creates_sibling_project(self):
+        plugin = self.dir / "project-kit"
+        (plugin / ".claude-plugin").mkdir(parents=True)
+        (plugin / ".claude-plugin" / "plugin.json").write_text('{"name": "project-kit"}')
+        docs = plugin / "designs" / "pankra" / "docs"
+        docs.mkdir(parents=True)
+        for n in ("research.md", "proposal.md", "spec.md", "acceptance.feature"):
+            (docs / n).write_text(n)
+        rc = state.main(["-C", str(plugin), "import", str(plugin / "designs" / "pankra"),
+                         "--skip-judge", "owner-reviewed"])
+        self.assertEqual(rc, 0)
+        project = self.dir / "pankra"
+        self.assertTrue((project / "pipeline.json").is_file())
+        self.assertFalse((plugin / "pipeline.json").exists())
+
+
+class AppHomeTest(StateTestCase):
+    """apps/<name> in the plugin repository is a project home: design and app together."""
+
+    def make_plugin(self):
         plugin = self.dir / "project-kit"
         (plugin / ".claude-plugin").mkdir(parents=True)
         (plugin / ".claude-plugin" / "plugin.json").write_text('{"name": "project-kit"}')
@@ -487,11 +506,26 @@ class ImportFromPluginTest(StateTestCase):
         docs.mkdir(parents=True)
         for n in ("research.md", "proposal.md", "spec.md", "acceptance.feature"):
             (docs / n).write_text(n)
-        rc = state.main(["-C", str(plugin), "import", str(plugin / "apps" / "pankra"),
-                         "--skip-judge", "owner-reviewed"])
+        return plugin
+
+    def test_app_home_is_allowed_rest_of_plugin_is_not(self):
+        plugin = self.make_plugin()
+        app = plugin / "apps" / "pankra"
+        self.assertEqual(state.app_home_of(app / "docs"), app)
+        self.assertIsNone(state.blocked_by_plugin(app))
+        self.assertEqual(state.blocked_by_plugin(plugin), plugin)
+        self.assertEqual(state.blocked_by_plugin(plugin / "apps"), plugin)
+        self.assertEqual(state.blocked_by_plugin(plugin / "skills"), plugin)
+
+    def test_import_from_plugin_root_builds_in_place(self):
+        plugin = self.make_plugin()
+        app = plugin / "apps" / "pankra"
+        rc = state.main(["-C", str(plugin), "import", str(app), "--skip-judge", "reviewed"])
         self.assertEqual(rc, 0)
-        project = self.dir / "pankra"
-        self.assertTrue((project / "pipeline.json").is_file())
-        self.assertTrue((project / "docs" / "spec.md").is_file())
+        self.assertTrue((app / "pipeline.json").is_file())
         self.assertFalse((plugin / "pipeline.json").exists())
-        self.assertEqual(state.next_phase(state.load(project)), "initiate")
+        self.assertFalse((self.dir / "pankra").exists())
+        st = state.load(app)
+        self.assertEqual(st["project"], "pankra")
+        self.assertEqual(state.next_phase(st), "initiate")
+        self.assertEqual(st["imports"][-1]["copied"], [])   # already in place

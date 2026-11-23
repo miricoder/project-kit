@@ -79,10 +79,11 @@ pk state -C . import <folder> --project <name>
 
 It copies the files into `docs/`, marks each phase whose artifact arrived `complete` and
 any earlier phase with no artifact `skipped`. A spec without its Gherkin scenarios is
-refused: `/initiate` and `/build` need them. The source may be inside the plugin: run from
-there (a project-kit session, design in `apps/<name>`), the project is created next to the
-plugin as `../<name>` and its path printed as `project_dir`; `--to <dir>` puts it anywhere
-else, such as an attached app repository.
+refused: `/initiate` and `/build` need them. A design in the project-kit repository's
+`apps/<name>` is built in place: that folder becomes the project (`project_dir`), and the
+app is committed to the same repository. Elsewhere inside the plugin, the project is
+created beside it as `../<name>`; `--to <dir>` puts it anywhere else. Only the plugin's own
+source (everything outside `apps/<name>`) is refused.
 
 ### The user wants to skip the judge panel
 

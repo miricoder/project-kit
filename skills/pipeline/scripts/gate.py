@@ -87,11 +87,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     # A directory-level check: it must not depend on state existing, or the "no
     # pipeline.json" error masks the far more useful "you are inside the plugin".
     if args.command == "phase":
-        inside = state.plugin_root_of(args.dir)
+        inside = state.blocked_by_plugin(args.dir)
         if inside is not None:
             return _refuse([
                 f"this directory is inside the Project Kit plugin at {inside}",
-                "change to an empty directory for your product and run there"])
+                "run it in apps/<name> inside the plugin repository, or in a directory "
+                "outside it (pk state import <design> sets either up)"])
 
     try:
         current = state.load(args.dir)

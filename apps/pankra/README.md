@@ -6,10 +6,8 @@ analysis, Hyrox race breakdowns, rescheduling around box classes, paces per mach
 Instagram posts, with session music planned as future R&D. Every AI job is a skill, agent or plugin from
 [`registry/`](../../registry/README.md), run on Claude or GPT.
 
-This folder is the **design input** Project Kit pulls to build and deploy the app. It is not
-a project directory: Project Kit refuses to run its pipeline inside its own source tree
-(`plugin_root_of` in `skills/pipeline/scripts/state.py`), so the app is built in its own
-repository.
+This folder is the **PANKRA project**: the design is in `docs/`, and Project Kit builds
+the app here, in this same folder of the project-kit repository.
 
 ## Files
 
@@ -25,29 +23,19 @@ The full illustrated design (diagrams of the architecture and the skills graph) 
 doc "PANKRA: end-to-end design". This folder is the version Project Kit works from; where
 they differ, this folder wins.
 
-## How Project Kit picks this up
+## How to build it
 
-From a Claude Code session with the Project Kit plugin installed:
+In a Claude Code session on the `miricoder/project-kit` repository (the Project-Kit cloud
+environment installs the plugin), send:
 
-```bash
-# 1. A dedicated repository for the app (empty), e.g. miricoder/pankra
-gh repo create miricoder/pankra --private --clone && cd pankra
-
-# 2. Bring the design in from this branch of project-kit
-git -C /tmp clone --depth 1 -b app/pankra-design https://github.com/miricoder/project-kit pk-src
-mkdir -p docs && cp /tmp/pk-src/apps/pankra/docs/* docs/
-
-# 3. Import the design: copies docs/ and marks ideate, proposal and design complete
-pk state -C . import /tmp/pk-src/apps/pankra --project pankra
-pk state -C . next          # -> handover (the judge panel)
-
-#    Or skip the panel and go straight to the backlog and build:
-pk state -C . import /tmp/pk-src/apps/pankra --project pankra --skip-judge "<reason>"
-pk state -C . next          # -> /initiate, then /build
+```
+/project-kit:build apps/pankra
 ```
 
-The judge panel is the default but optional. Skipping it is recorded as `WAIVED` with your
-reason and shown everywhere the ruling would be; running `/handover` later replaces it.
+`/build` sets the project up in this folder (`pk state import apps/pankra`), asks once
+whether to run the judge panel or skip it, runs `/initiate` (which asks before writing
+`docs/backlog.md`), then builds slice by slice, committing to this repository. To pick up
+later, send the same command: progress lives in `apps/pankra/pipeline.json`.
 
 Runtime skills come from this repository's `registry/` at `REGISTRY_REF` (see
 `docs/spec.md`, "Registry sync"). Nothing in `registry/` needs copying.
