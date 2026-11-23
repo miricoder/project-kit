@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import type {
   Activity,
@@ -29,9 +30,39 @@ const API_URL: string =
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
   'http://localhost:3000/api/v1';
 
+/**
+ * The session: an HttpOnly cookie on the web (the browser keeps it), a bearer token in the
+ * iPhone's keychain.
+ */
+const TOKEN_KEY = 'pankra.session';
+let tokenCache: string | null | undefined;
+
+async function sessionToken(): Promise<string | null> {
+  if (Platform.OS === 'web') return null;
+  if (tokenCache === undefined) tokenCache = await SecureStore.getItemAsync(TOKEN_KEY);
+  return tokenCache;
+}
+
+async function setSessionToken(token: string | null): Promise<void> {
+  if (Platform.OS === 'web') return;
+  tokenCache = token;
+  if (token) await SecureStore.setItemAsync(TOKEN_KEY, token);
+  else await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
+
+async function request(path: string, init: RequestInit = {}): Promise<Response> {
+  const token = await sessionToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set('authorization', `Bearer ${token}`);
+  return fetch(`${API_URL}${path}`, { ...init, headers, credentials: 'include' });
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { credentials: 'include' });
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+  const res = await request(path);
+  if (!res.ok) {
+    const detail = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new ApiError(res.status, detail?.error ?? `HTTP ${res.status}`);
+  }
   return (await res.json()) as T;
 }
 
@@ -48,9 +79,8 @@ export class ApiError extends Error {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await request(path, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
@@ -62,15 +92,14 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function send(method: 'PUT' | 'DELETE', path: string, body?: unknown): Promise<unknown> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await request(path, {
     method,
-    credentials: 'include',
     headers: body ? { 'content-type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
     const detail = (await res.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(detail?.error ?? `HTTP ${res.status}`);
+    throw new ApiError(res.status, detail?.error ?? `HTTP ${res.status}`);
   }
   return res.status === 204 ? null : res.json();
 }
@@ -108,6 +137,18 @@ export const api = {
     get<RaceAnalysis>(`/races/${id}/analysis${targetS ? `?targetS=${targetS}` : ''}`),
   activities: () => get<Activity[]>('/activities'),
   stravaConnectUrl: () => get<{ url: string }>('/strava/connect'),
+  results: (from: string, to: string) => get<Result[]>(`/results?from=${from}&to=${to}`),
+  me: () => get<{ userId: string }>('/auth/me'),
+  requestSignInLink: (email: string) =>
+    post<{ sent: boolean; message: string }>('/auth/magic-link', { email, client: Platform.OS === 'web' ? 'web' : 'ios' }),
+  verifySignIn: async (token: string) => {
+    const session = await post<{ token?: string; expiresAt: string }>('/auth/verify', { token });
+    if (session.token) await setSessionToken(session.token);
+  },
+  signOut: async () => {
+    await request('/auth/sign-out', { method: 'POST' }).catch(() => undefined);
+    await setSessionToken(null);
+  },
   /** The day's workout as a 1080 x 1350 PNG. */
   postUrl: (sessionId: string, theme: PostTheme) =>
     `${API_URL}/sessions/${encodeURIComponent(sessionId)}/post.png?theme=${theme}`,
@@ -132,9 +173,8 @@ async function uploadScreenshot(
     // React Native's FormData takes a file reference instead of a Blob.
     form.append('image', { uri: image.uri, name, type: mime } as unknown as Blob);
   }
-  const res = await fetch(`${API_URL}/uploads?kind=${kind}${provider ? `&provider=${provider}` : ''}`, {
+  const res = await request(`/uploads?kind=${kind}${provider ? `&provider=${provider}` : ''}`, {
     method: 'POST',
-    credentials: 'include',
     body: form,
   });
   const body = (await res.json().catch(() => null)) as (Upload & { error?: string; needs?: { credential: Provider } }) | null;

@@ -4,9 +4,28 @@
     "slug": "pankra",
     "scheme": "pankra",
     "version": "0.1.0",
-    "platforms": ["ios", "web"],
-    "web": { "bundler": "metro", "output": "single" },
-    "plugins": ["expo-router"],
-    "extra": { "apiUrl": "http://localhost:3000/api/v1" }
+    "platforms": [
+      "ios",
+      "web"
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PANKRA reads the results screenshots and fridge photos you choose.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "http://localhost:3000/api/v1"
+    }
   }
 }

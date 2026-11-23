@@ -22,9 +22,14 @@ const strava =
         verifyToken: env.STRAVA_VERIFY_TOKEN,
       }
     : undefined;
+const auth = env.OWNER_EMAIL
+  ? { ownerEmail: env.OWNER_EMAIL, ownerId: OWNER, resendApiKey: env.RESEND_API_KEY, from: env.EMAIL_FROM ?? 'PANKRA <onboarding@resend.dev>' }
+  : undefined;
+if (!auth) console.warn('OWNER_EMAIL is not set: local dev mode, every request is the owner and nobody signs in.');
 const app = buildApp({
   store,
-  userId: () => OWNER,
+  userId: auth ? undefined : () => OWNER,
+  auth,
   vaultKey: env.VAULT_KEY,
   registry,
   corsOrigins,

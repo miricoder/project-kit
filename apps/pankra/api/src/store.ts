@@ -16,6 +16,8 @@ import type {
   Upload,
 } from '@pankra/shared';
 
+import type { AuthToken } from './auth.ts';
+
 /** Persistence for the training API. MongoDB implements it once the owner's cluster exists. */
 export interface Store {
   getProfile(userId: string): Profile | undefined;
@@ -59,6 +61,11 @@ export interface Store {
   /** Which user a Strava athlete id belongs to (the tokens themselves are in the vault). */
   linkStravaAthlete(userId: string, athleteId: number): void;
   userForStravaAthlete(athleteId: number): string | undefined;
+  listResults(userId: string): Result[];
+  saveAuthToken(token: AuthToken): void;
+  getAuthToken(hash: string): AuthToken | undefined;
+  deleteAuthToken(hash: string): void;
+  listAuthTokens(userId: string): AuthToken[];
 }
 
 export interface RegistryState {
@@ -95,6 +102,7 @@ export class MemoryStore implements Store {
   private races = new Map<string, Race>();
   private activities = new Map<string, Activity>();
   private stravaAthletes = new Map<number, string>();
+  private authTokens = new Map<string, AuthToken>();
 
   getProfile(userId: string): Profile | undefined {
     const p = this.profiles.get(userId);
@@ -272,6 +280,27 @@ export class MemoryStore implements Store {
 
   userForStravaAthlete(athleteId: number): string | undefined {
     return this.stravaAthletes.get(athleteId);
+  }
+
+  listResults(userId: string): Result[] {
+    return [...this.results.values()].filter((r) => r.userId === userId).map((r) => structuredClone(r));
+  }
+
+  saveAuthToken(token: AuthToken): void {
+    this.authTokens.set(token.hash, structuredClone(token));
+  }
+
+  getAuthToken(hash: string): AuthToken | undefined {
+    const t = this.authTokens.get(hash);
+    return t && structuredClone(t);
+  }
+
+  deleteAuthToken(hash: string): void {
+    this.authTokens.delete(hash);
+  }
+
+  listAuthTokens(userId: string): AuthToken[] {
+    return [...this.authTokens.values()].filter((t) => t.userId === userId).map((t) => structuredClone(t));
   }
 
   /** Everything stored, for tests that check what was (and was not) written. */

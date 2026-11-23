@@ -10,6 +10,7 @@ export default defineConfig({
       'react-native': 'react-native-web',
       'expo-router': fileURLToPath(new URL('./tests/stubs/expo-router.tsx', import.meta.url)),
       'expo-constants': fileURLToPath(new URL('./tests/stubs/expo-constants.ts', import.meta.url)),
+      'expo-secure-store': fileURLToPath(new URL('./tests/stubs/expo-secure-store.ts', import.meta.url)),
     },
   },
   test: { include: ['tests/**/*.test.{ts,tsx}'] },

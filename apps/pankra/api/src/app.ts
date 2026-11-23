@@ -26,12 +26,19 @@ import { syncRegistry, type RegistryConfig } from './registry.ts';
 import { MemoryStorage, type ObjectStorage } from './storage.ts';
 import { authorizeUrl, connect, importActivity, type StravaConfig } from './strava.ts';
 import multipart from '@fastify/multipart';
+import cookie from '@fastify/cookie';
+import { AuthError, SESSION_COOKIE, requestLink, signOut, userForRequest, verifyLink, type AuthConfig } from './auth.ts';
 import { Resvg } from '@resvg/resvg-js';
 
 export interface AppDeps {
   store: Store;
-  /** Resolves the signed-in user for a request; undefined means not signed in. */
-  userId: (headers: Record<string, unknown>) => string | undefined;
+  /**
+   * Resolves the signed-in user for a request; undefined means not signed in. Tests inject
+   * one; without it, sign-in (`auth`) decides.
+   */
+  userId?: (headers: Record<string, unknown>) => string | undefined;
+  /** Email-link sign-in for the single owner. */
+  auth?: AuthConfig;
   /** Base64 32-byte master key for the key vault (host secret VAULT_KEY). */
   vaultKey?: string;
   /** The clock; injected so retention can be tested. */
@@ -190,24 +197,74 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   });
   const now = deps.now ?? (() => new Date());
+  const userOf = deps.userId ?? ((headers: Record<string, unknown>) => userForRequest(deps.store, headers, now()));
   const vault = deps.vaultKey ? new Vault(deps.vaultKey) : undefined;
   const fetchImpl = deps.fetch ?? fetch;
   const adapters = { claude: claudeAdapter(fetchImpl), gpt: gptAdapter(fetchImpl) };
   const storage = deps.storage ?? new MemoryStorage();
   void app.register(multipart, { limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 5 } });
+  void app.register(cookie);
+
+  // Sign-in: an email link for the owner; a bearer token on iPhone, a cookie on the web.
+  app.post('/api/v1/auth/magic-link', async (req, reply) => {
+    const body = z.object({ email: z.string().email().max(320), client: z.enum(['web', 'ios']).default('web') }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
+    if (!deps.auth) return reply.code(503).send({ error: 'Sign-in is not configured (OWNER_EMAIL)' });
+    try {
+      await requestLink({ store: deps.store, config: deps.auth, fetch: fetchImpl, now: now(), webUrl: deps.webUrl }, body.data.email, body.data.client);
+    } catch (e) {
+      if (e instanceof AuthError) return reply.code(e.status).send({ error: e.message });
+      throw e;
+    }
+    // The same answer whether or not the address is the owner's.
+    return reply.code(202).send({ sent: true, message: 'If that address can sign in, a link is on its way.' });
+  });
+
+  app.post('/api/v1/auth/verify', async (req, reply) => {
+    const body = z.object({ token: z.string().min(20).max(200) }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
+    try {
+      const session = verifyLink(deps.store, body.data.token, now());
+      reply.setCookie(SESSION_COOKIE, session.token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+        expires: new Date(session.expiresAt),
+      });
+      // The web app relies on the cookie; the iPhone keeps the token in its keychain.
+      return session.client === 'ios'
+        ? { token: session.token, expiresAt: session.expiresAt }
+        : { signedIn: true, expiresAt: session.expiresAt };
+    } catch (e) {
+      if (e instanceof AuthError) return reply.code(e.status).send({ error: e.message });
+      throw e;
+    }
+  });
+
+  app.post('/api/v1/auth/sign-out', async (req, reply) => {
+    signOut(deps.store, req.headers);
+    reply.clearCookie(SESSION_COOKIE, { path: '/' });
+    return reply.code(204).send();
+  });
+
+  app.get('/api/v1/auth/me', async (req, reply) => {
+    const userId = userOf(req.headers);
+    return userId ? { userId } : reply.code(401).send({ error: 'Sign in required' });
+  });
 
   // Registry: skills, agents and plugins pulled from project-kit's registry/ by the API.
   const registry = deps.registry ?? DEFAULT_REGISTRY;
 
   app.post('/api/v1/registry/sync', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const report = await syncRegistry({ store: deps.store, fetch: fetchImpl, config: registry, now, auditUserId: userId });
     return report.ok ? report : reply.code(502).send(report);
   });
 
   app.get('/api/v1/registry/status', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const state = deps.store.getRegistryState();
     const status: RegistryStatus = {
@@ -221,7 +278,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   // The graph: the latest version of every node still in the registry, and the edges.
   app.get('/api/v1/nodes', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const latest = new Map<string, RegistryNode>();
     for (const n of deps.store.listNodes()) {
@@ -238,14 +295,14 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.get('/api/v1/edges', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     return deps.store.listEdges();
   });
 
   // Runs: a skill or agent on a chosen provider. Refusals happen before any provider call.
   app.post('/api/v1/runs', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const body = RunBody.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
@@ -255,7 +312,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.get('/api/v1/runs/:id', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const run = deps.store.getRun(userId, (req.params as { id: string }).id);
     if (!run) return reply.code(404).send({ error: 'No such run' });
@@ -264,7 +321,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   // Monthly spending caps per provider, and what has been spent this month.
   app.get('/api/v1/caps', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const at = now();
     return (['claude', 'gpt'] as const).map((provider) => ({
@@ -275,7 +332,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.put('/api/v1/caps/:provider', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const params = ProviderParam.safeParse(req.params);
     if (!params.success) return reply.code(404).send({ error: 'Unknown provider' });
@@ -288,7 +345,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   app.get('/api/v1/health', async () => ({ ok: true }));
 
   app.get('/api/v1/sessions', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const parsed = SessionsQuery.safeParse(req.query);
     if (!parsed.success) {
@@ -301,7 +358,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   // Insert a session (usually a box class) and push later planned sessions (schedule-shifter).
   app.post('/api/v1/sessions/insert', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const parsed = InsertBody.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: errorText(parsed.error) });
@@ -325,7 +382,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   // Keys: the app only ever sees provider, last4 and expiry.
   app.get('/api/v1/credentials', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const at = now();
     return deps.store
@@ -335,7 +392,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.put('/api/v1/credentials/:provider', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const params = CredentialParams.safeParse(req.params);
     if (!params.success) return reply.code(404).send({ error: 'Unknown provider' });
@@ -358,7 +415,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.delete('/api/v1/credentials/:provider', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const params = CredentialParams.safeParse(req.params);
     if (!params.success) return reply.code(404).send({ error: 'Unknown provider' });
@@ -376,7 +433,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   // Results: typed against a session; result-analyzer's feedback is kept with them.
   app.post('/api/v1/results', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const body = ResultBody.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
@@ -396,8 +453,21 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     return result;
   });
 
+  // A week's results, for the Week screen.
+  app.get('/api/v1/results', async (req, reply) => {
+    const userId = userOf(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const parsed = SessionsQuery.safeParse(req.query);
+    if (!parsed.success) return reply.code(400).send({ error: errorText(parsed.error) });
+    const ids = new Set(deps.store.listSessions(userId, parsed.data.from, parsed.data.to).map((s) => s.id));
+    return deps.store
+      .listResults(userId)
+      .filter((r) => ids.has(r.sessionId))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  });
+
   app.get('/api/v1/results/:id', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const result = deps.store.getResult(userId, (req.params as { id: string }).id);
     if (!result) return reply.code(404).send({ error: 'No such result' });
@@ -405,7 +475,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.get('/api/v1/profile', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const profile = deps.store.getProfile(userId);
     if (!profile) return reply.code(404).send({ error: 'No profile yet' });
@@ -415,7 +485,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   // Uploads: an image is stored privately, read by screenshot-reader, and shown for
   // confirmation. Nothing becomes a race until the athlete confirms.
   app.post('/api/v1/uploads', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const query = UploadQuery.safeParse(req.query);
     if (!query.success) return reply.code(400).send({ error: errorText(query.error) });
@@ -458,7 +528,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.post('/api/v1/uploads/:id/confirm', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const upload = deps.store.getUpload(userId, (req.params as { id: string }).id);
     if (!upload) return reply.code(404).send({ error: 'No such upload' });
@@ -473,20 +543,20 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.get('/api/v1/races', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     return deps.store.listRaces(userId);
   });
 
   app.get('/api/v1/races/:id', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const race = deps.store.getRace(userId, (req.params as { id: string }).id);
     return race ?? reply.code(404).send({ error: 'No such race' });
   });
 
   app.get('/api/v1/races/:id/analysis', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const race = deps.store.getRace(userId, (req.params as { id: string }).id);
     if (!race) return reply.code(404).send({ error: 'No such race' });
@@ -499,7 +569,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
 
   // Share: the day's workout as a 1080 x 1350 PNG for Instagram.
   app.get('/api/v1/sessions/:id/post.png', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const q = z.object({ theme: PostThemeSchema.default('whiteboard') }).safeParse(req.query);
     if (!q.success) return reply.code(400).send({ error: errorText(q.error) });
@@ -515,7 +585,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.post('/api/v1/posts/render', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     const body = RenderBody.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
@@ -523,7 +593,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   });
 
   app.get('/api/v1/activities', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     return deps.store.listActivities(userId);
   });
@@ -536,7 +606,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   };
 
   app.get('/api/v1/strava/connect', async (req, reply) => {
-    const userId = deps.userId(req.headers);
+    const userId = userOf(req.headers);
     if (!userId) return reply.code(401).send({ error: 'Sign in required' });
     if (!deps.strava) return reply.code(503).send({ error: 'Strava is not configured (STRAVA_CLIENT_ID)' });
     const state = randomUUID();
