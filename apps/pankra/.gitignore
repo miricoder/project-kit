@@ -3,3 +3,4 @@ node_modules/
 dist/
 app/src/demo/registry.json
 dist-preview/
+dist-web/

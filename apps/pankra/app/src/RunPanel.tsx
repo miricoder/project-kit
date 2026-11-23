@@ -90,7 +90,7 @@ export function RunPanel({ node, credentials, input, inputSchema, onResult }: {
       ))}
       <Text style={badge === 'green' ? styles.ok : styles.warn}>
         {IS_PREVIEW
-          ? '● Runs on Claude through claude.ai (no key needed)'
+          ? '● Preview: runs on Claude when opened on claude.ai (no key needed)'
           : badge === 'green'
             ? `● Ready on ${NAMES[provider]}`
             : `● Needs a ${NAMES[provider]} key`}

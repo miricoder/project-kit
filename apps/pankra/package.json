@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p packages/shared && tsc -p api && tsc -p app"
+    "typecheck": "tsc -p packages/shared && tsc -p api && tsc -p app",
+    "build:web": "node scripts/build-web.mjs"
   },
   "devDependencies": {
     "@types/cytoscape": "^3.21.9",
@@ -17,6 +18,6 @@
     "vitest": "^2.1.8"
   },
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   }
 }
