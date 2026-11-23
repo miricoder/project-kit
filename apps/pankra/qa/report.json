@@ -1,7 +1,7 @@
 {
   "passed": true,
   "checks": {
-    "a11y": {
+    "backlog": {
       "passed": true,
       "problems": []
     }
