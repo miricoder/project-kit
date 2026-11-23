@@ -1,0 +1,36 @@
+name: pankra
+
+# CI for the PANKRA app in apps/pankra. Runs only when the app changes.
+on:
+  push:
+    paths: ['apps/pankra/**', '.github/workflows/pankra.yml']
+  pull_request:
+    paths: ['apps/pankra/**', '.github/workflows/pankra.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/pankra
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/pankra/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Cache MongoDB test binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('apps/pankra/package-lock.json') }}
+      - name: Type-check and test (shared, api, app)
+        run: npm test
+      - name: Build the web app
+        run: npm run build:web -w @pankra/app

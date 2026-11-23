@@ -1,7 +1,15 @@
 {
   "passed": true,
   "checks": {
-    "backlog": {
+    "lint": {
+      "passed": true,
+      "problems": []
+    },
+    "a11y": {
+      "passed": true,
+      "problems": []
+    },
+    "judge": {
       "passed": true,
       "problems": []
     }

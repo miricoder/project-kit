@@ -1,0 +1,19 @@
+{
+  "name": "pankra",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "api",
+    "app"
+  ],
+  "scripts": {
+    "test": "npm run test -w @pankra/shared && npm run test -w @pankra/api && npm run test -w @pankra/app",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

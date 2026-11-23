@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "pankra",
   "created_at": "2026-11-23T16:16:07+00:00",
-  "updated_at": "2026-11-23T16:17:05+00:00",
+  "updated_at": "2026-11-23T16:31:39+00:00",
   "mode": "auto",
   "budget": {
     "max_usd": 25.0,
@@ -51,7 +51,7 @@
       "completed_at": "2026-11-23T16:17:05+00:00"
     },
     "build": {
-      "status": "not started",
+      "status": "in progress",
       "artifacts": []
     },
     "devops": {
@@ -118,5 +118,20 @@
       "copied": [],
       "at": "2026-11-23T16:16:07+00:00"
     }
-  ]
+  ],
+  "slices": {
+    "1": {
+      "status": "complete",
+      "name": "Foundation",
+      "started_at": "2026-11-23T16:19:49+00:00",
+      "completed_at": "2026-11-23T16:31:39+00:00"
+    }
+  },
+  "build": {
+    "test_command": "npm test",
+    "tests": [
+      "api/test",
+      "app/test"
+    ]
+  }
 }

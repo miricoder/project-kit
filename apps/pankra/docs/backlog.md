@@ -6,7 +6,7 @@
 ## Slice 1: Foundation
 - **Delivers:** the web app and API run, the owner signs in, and CI is green on every push
 - **Proposal phase:** 0
-- **Scenarios:** none (infrastructure; proven by CI and later slices)
+- **Scenarios:** the owner signs in with an email link; a sign-in link works only once; the API reports its health
 - **Touches:** monorepo `api/` (Node 22, Fastify, TypeScript, Zod) and `app/` (Expo + Expo Router, web first); MongoDB connection and `migrations` collection with up/down scripts; single-owner auth (email magic link, `HttpOnly` `Secure` `SameSite=Lax` cookie, bearer token for iOS); `/api/v1` health route; shared types package; CI workflow running both test suites
 - **Done when:** `npm test` passes in `api/` and `app/`; CI runs it; `pk qa -C .` still passes
 
@@ -69,9 +69,9 @@
 ## Slice 10: Fuel and share
 - **Delivers:** meals before and after from a fridge photo, a race-morning plan, and the day's workout exported as a 1080 × 1350 Instagram PNG
 - **Proposal phase:** 5
-- **Scenarios:** none in docs/acceptance.feature (covered by unit tests of the fuel skill call and the PNG export size)
+- **Scenarios:** meals are suggested from a fridge photo; the day's workout exports as an Instagram image
 - **Touches:** Fuel screen using the skill runner with an image; Share screen rendering the day's card to PNG
-- **Done when:** its tests pass; `pk qa -C .` still passes
+- **Done when:** its scenarios pass as automated tests; `pk qa -C .` still passes
 
 ## Slice 11: iPhone app
 - **Delivers:** the app installs from Xcode on the owner's iPhone and shows the same week as the web app

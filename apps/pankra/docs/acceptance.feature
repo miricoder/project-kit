@@ -138,3 +138,32 @@ Feature: iPhone app
     And the iPhone app expired after 7 days
     When the athlete reinstalls it from Xcode and signs in
     Then the Week screen shows the same 6 sessions with their results
+
+Feature: Foundation
+
+  Scenario: the owner signs in with an email link
+    Given the owner's email is set on the API
+    When the owner asks for a sign-in link and opens it within 15 minutes
+    Then the web app shows the owner signed in
+    And the session cookie is HttpOnly, Secure and SameSite=Lax
+
+  Scenario: a sign-in link works only once
+    Given the owner has already signed in with a link
+    When the same link is opened again
+    Then sign-in is refused with "link is invalid or expired"
+
+  Scenario: the API reports its health
+    When the app calls GET /api/v1/health
+    Then the API answers ok with whether the database is reachable
+
+Feature: Fuel and share
+
+  Scenario: meals are suggested from a fridge photo
+    Given a fridge photo and the day's session
+    When the athlete asks for meals
+    Then a meal before and a meal after the session are shown, using what is in the photo
+
+  Scenario: the day's workout exports as an Instagram image
+    Given the session on 2026-11-25
+    When the athlete shares it
+    Then a 1080 × 1350 PNG of the card is produced
