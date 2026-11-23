@@ -80,6 +80,19 @@ Write down in `docs/runbook.md` how long each step took and the exact commands. 
 what someone follows when a bad release reaches production: how to roll back, where the
 logs are, and who holds the accounts.
 
+## Step 4b: Upkeep
+
+Before recording the launch, make sure production is looked after once you stop watching.
+Use `skills/devops/references/targets.md` → **Upkeep**, and for each item give the user the
+command or confirm it is already in place:
+
+- an uptime alert on the production health path, emailed to the user;
+- a budget alert;
+- dependency updates (`.github/dependabot.yml`, on the default branch);
+- a `docs/runbook.md` with the rollback commands from the drill.
+
+Report each one as in place, or as waiting on the user.
+
 ## Step 5: Record the launch
 
 ```bash
@@ -92,6 +105,7 @@ pk ship -C . done launch
     Production:  <url>   (health answered <status> in <ms> ms)
     Rollback:    rehearsed: <tag> → <previous> → <tag>, both checked
     Runbook:     docs/runbook.md
+    Upkeep:      uptime alert <in place|waiting>, budget alert <…>, dependency updates <…>
     Open it:     on a phone, open <url> in Safari or Chrome, then Add to Home Screen
 
 The pipeline is complete.

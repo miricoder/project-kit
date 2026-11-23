@@ -94,6 +94,9 @@ class ShipTest(unittest.TestCase):
         (self.dir / ".github" / "workflows").mkdir(parents=True)
         (self.dir / ".github" / "workflows" / "ci.yml").write_text(
             f"jobs:\n  test:\n    steps:\n      - run: {PASS}\n")
+        (self.dir / ".github" / "workflows" / "deploy.yml").write_text(
+            "jobs:\n  deploy-staging:\n    steps:\n      - run: sh scripts/deploy.sh staging\n")
+        (self.dir / ".github" / "dependabot.yml").write_text("version: 2\nupdates: []\n")
         (self.dir / "CHANGELOG.md").write_text("# Changelog\n\n## 1.0.0\n\n- first release\n")
         (self.dir / "docs" / "threat-model.md").write_text(
             "# Threat model\n\n## Assets\n\nUser data.\n\n## Threats\n\nStolen session.\n\n"
@@ -214,6 +217,14 @@ class ShipTest(unittest.TestCase):
         err = self.refused("done", "devops")
         self.assertIn("no CI file runs the project's test command", err)
         self.assertIn("no release tagged", err)
+
+    def test_devops_done_refuses_without_continuous_deploy_or_dependency_updates(self):
+        (self.dir / ".github" / "workflows" / "deploy.yml").unlink()
+        (self.dir / ".github" / "dependabot.yml").unlink()
+        self.ok("config", "--target", "cloudrun", "--health", "/health")
+        err = self.refused("done", "devops")
+        self.assertIn("no CI job deploys to staging", err)
+        self.assertIn("no dependency updates configured", err)
 
     def test_devops_done_refuses_while_build_is_unfinished(self):
         st = self.state()

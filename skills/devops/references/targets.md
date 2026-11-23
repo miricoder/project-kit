@@ -91,8 +91,78 @@ Any other platform works the same way: deploy by its own means, then `pk ship re
 URL. A rollback is whatever returns production to the previous version. The script checks
 the result, not the method.
 
+## Continuous deploy
+
+Iterations should ship without a person running commands: **CI deploys staging after the
+tests pass, on every push**, and production on a release tag, behind an approval.
+`pk ship done devops` refuses until a CI file deploys to staging (a job that names both
+"deploy" and "staging").
+
+The shape, for any target, in `.github/workflows/ci.yml`:
+
+```yaml
+on: { push: { branches: [main], tags: ['v*'] }, pull_request: {} }
+jobs:
+  test:  { ... runs the project's test command ... }
+  deploy-staging:
+    needs: test
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/') && vars.DEPLOY_READY != ''
+    environment: staging
+    steps: [checkout, <log in to the target>, run: sh scripts/deploy.sh staging]
+  deploy-production:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') && vars.DEPLOY_READY != ''
+    environment: production     # add yourself as a Required reviewer in GitHub > Settings > Environments
+    steps: [checkout, <log in to the target>, run: sh scripts/deploy.sh production]
+```
+
+The `vars.…` condition skips the deploy jobs until the user has set the target up, so CI stays
+green before that. Keep one `scripts/deploy.sh <env>` that both CI and a person can run.
+
+How CI logs in, without storing a key where one can be avoided:
+
+- **cloudrun:** Workload Identity Federation. A one-time script, run in Cloud Shell, does the
+  setup:
+  - creates a pool whose GitHub provider is limited to the repository by
+    `--attribute-condition "assertion.repository == 'owner/repo'"`;
+  - creates a deployer service account with `roles/run.admin` and
+    `roles/artifactregistry.writer`, plus `roles/iam.serviceAccountUser` on the runtime account;
+  - grants `roles/iam.workloadIdentityUser` to
+    `principalSet://…/attribute.repository/owner/repo`.
+
+  The job then uses `google-github-actions/auth@v2` with `workload_identity_provider` and
+  `service_account`, both kept as repository *variables* because they are not secret.
+  Build with `docker build`, push to Artifact Registry, and run `gcloud run deploy --image`.
+  A worked example is the Dumpit project's `scripts/setup-cloud.sh` and `scripts/deploy.sh`.
+- **fly:** `fly tokens create deploy` makes a deploy token. Store it as the repository secret
+  `FLY_API_TOKEN`, then use `superfly/flyctl-actions/setup-flyctl` and run `fly deploy`.
+- **render:** turn on Auto-Deploy for the branch in Render, so no CI job is needed. Keep a CI
+  job that waits for the health check after a push, so `pk ship` can see a staging deploy
+  step.
+
+**Stamp every build with its version** (`git describe --tags`, or the newest CHANGELOG version
+plus the commit), and bake it into the image. Then the running service can report it, and a
+web app can tell its user it was updated.
+
+## Upkeep
+
+Run these once per environment, right after its first deploy. `/launch` checks with the
+user that each one is in place for production.
+
+| What | Why | cloudrun |
+|---|---|---|
+| Uptime alert | an email when the app stops answering | `gcloud monitoring uptime create` on the health path, plus an alert policy on `uptime_check/check_passed` sent to an email channel |
+| Budget alert | an email before any real cost | `gcloud billing budgets create … --threshold-rule percent=0.2` |
+| Dependency updates | libraries kept current, each update tested by CI | `.github/dependabot.yml` for each ecosystem (`pk ship done devops` checks it exists). GitHub reads it only from the **default branch**. |
+| Rollback | a bad release undone in a minute | the target's Rollback command above, rehearsed at `/launch` |
+
 ## The web app on a phone
 
 A web app that answers over https on a public URL is reachable from any phone and computer.
-For a home-screen app on iPhone: open the URL in Safari, then Share → Add to Home Screen.
-On Android: open it in Chrome, then menu → Install app.
+With a web manifest and a service worker it installs like an app, with no App Store:
+- iPhone: Safari → Share → Add to Home Screen.
+- Android: Chrome → ⋮ → Install app.
+- Computer: Chrome or Edge, using the install icon in the address bar.
+
+An access rule in the app (such as an allowlist of sign-in emails) keeps it private while the
+address is public.
