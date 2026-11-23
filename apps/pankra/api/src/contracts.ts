@@ -1,5 +1,11 @@
-import { analyzeResult, type JSONSchema, type RegistryNode, type Run } from '@pankra/shared';
+import { analyzeResult, raceFromScreen, type JSONSchema, type RegistryNode, type Run } from '@pankra/shared';
+import type { ObjectStorage } from './storage.ts';
 import type { Store } from './store.ts';
+
+export interface RunImage {
+  mime: string;
+  data: Buffer;
+}
 
 /**
  * What PANKRA adds around a registry node: the data it reads (its `tools`, resolved before
@@ -8,6 +14,8 @@ import type { Store } from './store.ts';
  */
 export interface NodeContract {
   context?(store: Store, userId: string, input: Record<string, unknown>): Record<string, unknown> | string;
+  /** Images the node reads (vision); a string is a refusal. */
+  images?(store: Store, storage: ObjectStorage, userId: string, input: Record<string, unknown>): Promise<RunImage[] | string>;
   outputSchema?(base: JSONSchema): JSONSchema;
   finish?(output: Record<string, unknown>, context: Record<string, unknown>): Record<string, unknown>;
   persist?(store: Store, userId: string, run: Run, input: Record<string, unknown>): void;
@@ -56,8 +64,45 @@ const resultAnalyzer: NodeContract = {
   },
 };
 
+const MAX_IMAGES = 4;
+
+/**
+ * screenshot-reader: reads uploaded images; its output becomes the upload's `extracted`
+ * values, parsed in code, and is never saved as a race until the athlete confirms.
+ */
+const screenshotReader: NodeContract = {
+  async images(store, storage, userId, input) {
+    const ids = Array.isArray(input.uploadIds) ? input.uploadIds.map(String) : [];
+    if (ids.length === 0) return 'Upload an image first';
+    if (ids.length > MAX_IMAGES) return `At most ${MAX_IMAGES} images per run`;
+    const images: RunImage[] = [];
+    for (const id of ids) {
+      const upload = store.getUpload(userId, id);
+      if (!upload) return `No upload ${id}`;
+      const object = await storage.get(upload.storageKey);
+      if (!object) return `The image for upload ${id} is missing`;
+      images.push({ mime: object.mime, data: object.bytes });
+    }
+    return images;
+  },
+  persist(store, userId, run, input) {
+    const out = run.output as { kind: string; data: Record<string, unknown>; uncertain?: Array<{ field?: string; seen?: string }> };
+    const profile = store.getProfile(userId);
+    for (const id of (input.uploadIds as string[]) ?? []) {
+      const upload = store.getUpload(userId, id);
+      if (!upload || upload.confirmed) continue;
+      const extracted = raceFromScreen(out.data ?? {}, out.uncertain ?? [], {
+        date: upload.createdAt.slice(0, 10),
+        division: profile?.division,
+      });
+      store.saveUpload({ ...upload, extracted: { ...extracted, kind: out.kind || upload.kind } });
+    }
+  },
+};
+
 export const CONTRACTS: Record<string, NodeContract> = {
   'skill:result-analyzer': resultAnalyzer,
+  'skill:screenshot-reader': screenshotReader,
 };
 
 export function contractFor(node: Pick<RegistryNode, 'kind' | 'name'>): NodeContract {

@@ -49,6 +49,8 @@ export interface Profile {
   units: 'metric';
   goals?: string[];
   equipment?: string[];
+  /** Race goal in seconds, e.g. 3600 for sub-60. */
+  raceTargetS?: number;
 }
 
 export type Provider = 'claude' | 'gpt';
@@ -186,4 +188,86 @@ export interface RegistryStatus {
   lastError: string | null;
   lastReport: SyncReport | null;
   nodes: number;
+}
+
+export interface Race {
+  id: string;
+  userId: string;
+  event: string;
+  date: string;
+  division: string;
+  /** Seconds. */
+  totalS: number;
+  runs: number[]; // 8 runs, seconds
+  stations: number[]; // 8 stations in race order, seconds
+  roxzoneS: number;
+  ranks?: { overall?: number; ageGroup?: number };
+  lapsPerKm?: number;
+  uploadId?: string;
+  createdAt: string;
+}
+
+/** A race read from a screenshot, before the athlete confirms it. */
+export type RaceDraft = Omit<Race, 'id' | 'userId' | 'createdAt'>;
+
+export interface ExtractedField {
+  label: string;
+  /** As the app shows it, e.g. "2:59". */
+  text: string;
+  seconds?: number;
+  uncertain: boolean;
+  /** What the reader saw, when it was unsure. */
+  seen?: string;
+}
+
+export interface Extracted {
+  kind: string;
+  fields: ExtractedField[];
+  race?: RaceDraft;
+  missing: string[];
+}
+
+export type UploadKind = 'race' | 'run' | 'class' | 'meal' | 'other';
+
+export interface Upload {
+  id: string;
+  userId: string;
+  storageKey: string;
+  mime: string;
+  kind: UploadKind;
+  extracted: Extracted | null;
+  confirmed: boolean;
+  raceId?: string;
+  createdAt: string;
+}
+
+export interface RaceSegment {
+  name: string;
+  actualSeconds: number;
+  targetSeconds: number;
+  gainSeconds: number;
+}
+
+export interface RaceAnalysis {
+  raceId: string;
+  totalS: number;
+  targetS: number;
+  /** How the target was split: a model, not a fact. */
+  model: string;
+  segments: RaceSegment[];
+}
+
+/** A run or ride imported from Strava. */
+export interface Activity {
+  id: string;
+  userId: string;
+  source: 'strava';
+  externalId: string;
+  name: string;
+  sport: string;
+  startDate: string;
+  distanceM: number;
+  movingTimeS: number;
+  averageSpeedMs: number;
+  importedAt: string;
 }

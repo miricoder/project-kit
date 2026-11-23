@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Ajv, type ErrorObject } from 'ajv';
 import type { NodeSummary, Provider, RegistryNode, Run } from '@pankra/shared';
 import { contractFor } from './contracts.ts';
+import type { ObjectStorage } from './storage.ts';
 import { ProviderError, type ProviderAdapter } from './providers/types.ts';
 import type { Store } from './store.ts';
 import { isExpired, type Vault } from './vault.ts';
@@ -20,6 +21,7 @@ export interface RunnerDeps {
   vault?: Vault;
   adapters: Record<Provider, ProviderAdapter>;
   now: () => Date;
+  storage: ObjectStorage;
 }
 
 /** Either a refusal before any provider call, or a run that was attempted and saved. */
@@ -105,6 +107,9 @@ export async function runNode(deps: RunnerDeps, userId: string, req: RunRequest)
   const input = req.input as Record<string, unknown>;
   const context = contract.context?.(deps.store, userId, input);
   if (typeof context === 'string') return refuse(400, context);
+  const images = contract.images ? await contract.images(deps.store, deps.storage, userId, input) : [];
+  if (typeof images === 'string') return refuse(400, images);
+  if (images.length > 0 && !node.vision) return refuse(400, `${node.name} does not read images`);
 
   const model = req.model ?? providerConfig.model;
   const adapter = deps.adapters[req.provider];
@@ -130,7 +135,7 @@ export async function runNode(deps: RunnerDeps, userId: string, req: RunRequest)
     const first: Record<string, unknown> = context ? { ...input, context } : input;
     let sent: unknown = first;
     for (let attempt = 1; attempt <= 2 && run.status !== 'succeeded'; attempt++) {
-      const result = await adapter.run({ system, input: sent, images: [], tools: [], outputSchema, model, apiKey });
+      const result = await adapter.run({ system, input: sent, images, tools: [], outputSchema, model, apiKey });
       run.tokens.in += result.tokensIn;
       run.tokens.out += result.tokensOut;
       run.costUsd = Math.round((run.costUsd + result.costUsd) * 1e6) / 1e6;

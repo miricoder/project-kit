@@ -1,4 +1,5 @@
 import type {
+  Activity,
   AuditEntry,
   Credential,
   CredentialProvider,
@@ -6,11 +7,13 @@ import type {
   NodeSummary,
   Profile,
   Provider,
+  Race,
   RegistryNode,
   Result,
   Run,
   Session,
   SyncReport,
+  Upload,
 } from '@pankra/shared';
 
 /** Persistence for the training API. MongoDB implements it once the owner's cluster exists. */
@@ -44,6 +47,18 @@ export interface Store {
   saveEdges(edges: Edge[]): void;
   getRegistryState(): RegistryState;
   setRegistryState(state: RegistryState): void;
+  getUpload(userId: string, id: string): Upload | undefined;
+  saveUpload(upload: Upload): void;
+  getRace(userId: string, id: string): Race | undefined;
+  listRaces(userId: string): Race[];
+  saveRace(race: Race): void;
+  listActivities(userId: string): Activity[];
+  /** Insert or replace, unique on source + externalId: a repeated import changes nothing. */
+  upsertActivity(activity: Activity): Activity;
+  deleteActivity(userId: string, source: Activity['source'], externalId: string): void;
+  /** Which user a Strava athlete id belongs to (the tokens themselves are in the vault). */
+  linkStravaAthlete(userId: string, athleteId: number): void;
+  userForStravaAthlete(athleteId: number): string | undefined;
 }
 
 export interface RegistryState {
@@ -76,6 +91,10 @@ export class MemoryStore implements Store {
   private caps = new Map<string, number>();
   private edges: Edge[] = [];
   private registryState: RegistryState = { lastAttemptAt: null, lastSuccessAt: null, lastError: null, lastReport: null };
+  private uploads = new Map<string, Upload>();
+  private races = new Map<string, Race>();
+  private activities = new Map<string, Activity>();
+  private stravaAthletes = new Map<number, string>();
 
   getProfile(userId: string): Profile | undefined {
     const p = this.profiles.get(userId);
@@ -203,6 +222,58 @@ export class MemoryStore implements Store {
     this.registryState = structuredClone(state);
   }
 
+  getUpload(userId: string, id: string): Upload | undefined {
+    const u = this.uploads.get(id);
+    return u && u.userId === userId ? structuredClone(u) : undefined;
+  }
+
+  saveUpload(upload: Upload): void {
+    this.uploads.set(upload.id, structuredClone(upload));
+  }
+
+  getRace(userId: string, id: string): Race | undefined {
+    const r = this.races.get(id);
+    return r && r.userId === userId ? structuredClone(r) : undefined;
+  }
+
+  listRaces(userId: string): Race[] {
+    return [...this.races.values()]
+      .filter((r) => r.userId === userId)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .map((r) => structuredClone(r));
+  }
+
+  saveRace(race: Race): void {
+    this.races.set(race.id, structuredClone(race));
+  }
+
+  listActivities(userId: string): Activity[] {
+    return [...this.activities.values()]
+      .filter((a) => a.userId === userId)
+      .sort((a, b) => b.startDate.localeCompare(a.startDate))
+      .map((a) => structuredClone(a));
+  }
+
+  upsertActivity(activity: Activity): Activity {
+    const key = `${activity.userId}:${activity.source}:${activity.externalId}`;
+    const existing = this.activities.get(key);
+    const saved = existing ? { ...activity, id: existing.id } : activity;
+    this.activities.set(key, structuredClone(saved));
+    return structuredClone(saved);
+  }
+
+  deleteActivity(userId: string, source: Activity['source'], externalId: string): void {
+    this.activities.delete(`${userId}:${source}:${externalId}`);
+  }
+
+  linkStravaAthlete(userId: string, athleteId: number): void {
+    this.stravaAthletes.set(athleteId, userId);
+  }
+
+  userForStravaAthlete(athleteId: number): string | undefined {
+    return this.stravaAthletes.get(athleteId);
+  }
+
   /** Everything stored, for tests that check what was (and was not) written. */
   dump() {
     return {
@@ -213,6 +284,9 @@ export class MemoryStore implements Store {
       nodes: [...this.nodes.values()],
       runs: [...this.runs.values()],
       results: [...this.results.values()],
+      uploads: [...this.uploads.values()],
+      races: [...this.races.values()],
+      activities: [...this.activities.values()],
     };
   }
 }

@@ -11,8 +11,27 @@ const registry = {
   repo: process.env.REGISTRY_REPO ?? DEFAULT_REGISTRY.repo,
   ref: process.env.REGISTRY_REF ?? DEFAULT_REGISTRY.ref,
 };
-const corsOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean);
-const app = buildApp({ store, userId: () => OWNER, vaultKey: process.env.VAULT_KEY, registry, corsOrigins });
+const env = process.env;
+const corsOrigins = env.CORS_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean);
+const strava =
+  env.STRAVA_CLIENT_ID && env.STRAVA_CLIENT_SECRET
+    ? {
+        clientId: env.STRAVA_CLIENT_ID,
+        clientSecret: env.STRAVA_CLIENT_SECRET,
+        subscriptionId: env.STRAVA_SUBSCRIPTION_ID ? Number(env.STRAVA_SUBSCRIPTION_ID) : undefined,
+        verifyToken: env.STRAVA_VERIFY_TOKEN,
+      }
+    : undefined;
+const app = buildApp({
+  store,
+  userId: () => OWNER,
+  vaultKey: env.VAULT_KEY,
+  registry,
+  corsOrigins,
+  strava,
+  publicApiUrl: env.PUBLIC_API_URL,
+  webUrl: env.WEB_URL,
+});
 
 // Jobs (Agenda on MongoDB replaces these timers once the database is in place).
 const MINUTE = 60_000;

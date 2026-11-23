@@ -23,6 +23,12 @@ export default function Today() {
       <Link href="/week" style={styles.link}>
         Week ›
       </Link>
+      <Link href="/races" style={styles.link}>
+        Races ›
+      </Link>
+      <Link href="/paces" style={styles.link}>
+        Paces ›
+      </Link>
       <Link href="/skills" style={styles.link}>
         Skills ›
       </Link>
