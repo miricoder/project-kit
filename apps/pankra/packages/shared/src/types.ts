@@ -50,3 +50,48 @@ export interface Profile {
   goals?: string[];
   equipment?: string[];
 }
+
+export type Provider = 'claude' | 'gpt';
+export type CredentialProvider = Provider | 'strava';
+/** How long a saved key is kept: this session (12 h), 24 hours, 7 days, 30 days, until deleted. */
+export type Retention = 'session' | '24h' | '7d' | '30d' | 'forever';
+
+/** A stored secret. Only the API sees it; `ciphertext` is AES-256-GCM. */
+export interface Credential {
+  userId: string;
+  provider: CredentialProvider;
+  ciphertext: string; // base64
+  iv: string; // base64, 96-bit
+  authTag: string; // base64
+  last4: string;
+  retention: Retention;
+  expiresAt: string | null; // ISO time, null for "until deleted"
+  createdAt: string;
+}
+
+/** What the app may see of a credential. */
+export interface CredentialStatus {
+  provider: CredentialProvider;
+  last4: string;
+  retention: Retention;
+  expiresAt: string | null;
+}
+
+export type AuditAction = 'keyAdded' | 'keyDeleted' | 'retentionChanged' | 'registrySynced';
+
+export interface AuditEntry {
+  userId: string;
+  action: AuditAction;
+  at: string;
+  detail: Record<string, unknown>;
+}
+
+/** The parts of a registry node the app needs to show and run it. */
+export interface NodeSummary {
+  kind: 'skill' | 'agent' | 'plugin' | 'provider';
+  name: string;
+  version: string;
+  description?: string;
+  providers: Partial<Record<Provider, { model: string }>>;
+  requires: string[];
+}

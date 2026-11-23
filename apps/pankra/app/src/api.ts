@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import type { Profile, ScheduleChange, Section, Session } from '@pankra/shared';
+import type { CredentialStatus, Profile, Provider, Retention, ScheduleChange, Section, Session } from '@pankra/shared';
 
 const API_URL: string =
   (Constants.expoConfig?.extra as { apiUrl?: string } | undefined)?.apiUrl ??
@@ -25,6 +25,20 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
+async function send(method: 'PUT' | 'DELETE', path: string, body?: unknown): Promise<unknown> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    credentials: 'include',
+    headers: body ? { 'content-type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const detail = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(detail?.error ?? `HTTP ${res.status}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
 export interface NewClass {
   title: string;
   type: 'class';
@@ -34,6 +48,10 @@ export interface NewClass {
 export const api = {
   sessions: (from: string, to: string) => get<Session[]>(`/sessions?from=${from}&to=${to}`),
   profile: () => get<Profile>('/profile'),
+  credentials: () => get<CredentialStatus[]>('/credentials'),
+  saveKey: (provider: Provider, secret: string, retention: Retention) =>
+    send('PUT', `/credentials/${provider}`, { secret, retention }) as Promise<{ last4: string; expiresAt: string | null }>,
+  deleteKey: (provider: Provider) => send('DELETE', `/credentials/${provider}`),
   insert: (date: string, session: NewClass) =>
     post<{ session: Session; changes: ScheduleChange[] }>('/sessions/insert', { date, session }),
 };

@@ -1,14 +1,25 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
-import { shiftSchedule, type Session } from '@pankra/shared';
+import { shiftSchedule, type CredentialStatus, type Session } from '@pankra/shared';
 import type { Store } from './store.ts';
+import { Vault, isExpired } from './vault.ts';
 
 export interface AppDeps {
   store: Store;
   /** Resolves the signed-in user for a request; undefined means not signed in. */
   userId: (headers: Record<string, unknown>) => string | undefined;
+  /** Base64 32-byte master key for the key vault (host secret VAULT_KEY). */
+  vaultKey?: string;
+  /** The clock; injected so retention can be tested. */
+  now?: () => Date;
 }
+
+const CredentialParams = z.object({ provider: z.enum(['claude', 'gpt']) });
+const CredentialBody = z.object({
+  secret: z.string().trim().min(8).max(500),
+  retention: z.enum(['session', '24h', '7d', '30d', 'forever']),
+});
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
 const SessionsQuery = z.object({ from: isoDate, to: isoDate });
@@ -46,7 +57,10 @@ function errorText(error: z.ZodError): string {
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
+  // Request bodies are never logged: they can carry keys.
   const app = Fastify({ logger: false });
+  const now = deps.now ?? (() => new Date());
+  const vault = deps.vaultKey ? new Vault(deps.vaultKey) : undefined;
 
   app.get('/api/v1/health', async () => ({ ok: true }));
 
@@ -84,6 +98,57 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     const { updated, changes } = shiftSchedule(existing, inserted, profile);
     for (const s of updated) deps.store.saveSession(s);
     return { session: inserted, changes };
+  });
+
+  // Keys: the app only ever sees provider, last4 and expiry.
+  app.get('/api/v1/credentials', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const at = now();
+    return deps.store
+      .listCredentials(userId)
+      .filter((c) => !isExpired(c, at))
+      .map(({ provider, last4, retention, expiresAt }): CredentialStatus => ({ provider, last4, retention, expiresAt }));
+  });
+
+  app.put('/api/v1/credentials/:provider', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const params = CredentialParams.safeParse(req.params);
+    if (!params.success) return reply.code(404).send({ error: 'Unknown provider' });
+    const body = CredentialBody.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: errorText(body.error) });
+    if (!vault) return reply.code(503).send({ error: 'Key vault is not configured (VAULT_KEY)' });
+
+    const at = now();
+    const { provider } = params.data;
+    const replaced = deps.store.getCredential(userId, provider);
+    const credential = vault.seal(userId, provider, body.data.secret, body.data.retention, at);
+    deps.store.saveCredential(credential);
+    deps.store.addAudit({
+      userId,
+      action: 'keyAdded',
+      at: at.toISOString(),
+      detail: { provider, last4: credential.last4, retention: credential.retention, replaced: Boolean(replaced) },
+    });
+    return { last4: credential.last4, expiresAt: credential.expiresAt };
+  });
+
+  app.delete('/api/v1/credentials/:provider', async (req, reply) => {
+    const userId = deps.userId(req.headers);
+    if (!userId) return reply.code(401).send({ error: 'Sign in required' });
+    const params = CredentialParams.safeParse(req.params);
+    if (!params.success) return reply.code(404).send({ error: 'Unknown provider' });
+    const existing = deps.store.getCredential(userId, params.data.provider);
+    if (existing && deps.store.deleteCredential(userId, params.data.provider)) {
+      deps.store.addAudit({
+        userId,
+        action: 'keyDeleted',
+        at: now().toISOString(),
+        detail: { provider: params.data.provider, reason: 'requested', last4: existing.last4 },
+      });
+    }
+    return reply.code(204).send();
   });
 
   app.get('/api/v1/profile', async (req, reply) => {

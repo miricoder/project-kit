@@ -23,6 +23,9 @@ export default function Today() {
       <Link href="/week" style={styles.link}>
         Week ›
       </Link>
+      <Link href="/settings" style={styles.link}>
+        Settings ›
+      </Link>
       {error ? <Text accessibilityRole="alert">Could not load today: {error}</Text> : null}
       {!cards && !error ? <ActivityIndicator accessibilityLabel="Loading" /> : null}
       {cards?.length === 0 ? <Text>Nothing planned today.</Text> : null}
